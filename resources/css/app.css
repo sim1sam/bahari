@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-50: #ecfeff;
+    --color-brand-100: #cffafe;
+    --color-brand-200: #a5f3fc;
+    --color-brand-300: #67e8f9;
+    --color-brand-400: #22d3ee;
+    --color-brand-500: #06b6d4;
+    --color-brand-600: #0891b2;
+    --color-brand-700: #0e7490;
+    --color-brand-800: #155e75;
+    --color-brand-900: #164e63;
+    --color-brand-950: #083344;
+
+    --color-surface: #f8fafc;
+    --color-surface-elevated: #ffffff;
+    --color-ink: #1c1917;
+    --color-ink-muted: #78716c;
+    --color-border: #e7e5e4;
+}
+
+@layer base {
+    body {
+        @apply bg-surface text-ink antialiased;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .container-store {
+        @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    }
+
+    .hero-slider img {
+        @apply select-none pointer-events-none;
+    }
+
+    .hero-slider-overlay {
+        background: linear-gradient(
+            to right,
+            rgb(8 51 68 / 0.9) 0%,
+            rgb(22 78 99 / 0.55) 50%,
+            rgb(22 78 99 / 0.2) 100%
+        );
+    }
+
+    .hero-slider-overlay-bottom {
+        background: linear-gradient(to top, rgb(8 51 68 / 0.5) 0%, transparent 100%);
+    }
+
+    .category-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+        .category-layout {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2.5rem;
+        }
+    }
+
+    .category-sidebar {
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 1024px) {
+        .category-sidebar {
+            width: 260px;
+            position: sticky;
+            top: 7rem;
+        }
+    }
+
+    .category-products {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+    }
+}
