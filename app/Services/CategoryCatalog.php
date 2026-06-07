@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Category;
+
 class CategoryCatalog
 {
     private const IMG = 'https://images.unsplash.com/%s?auto=format&fit=crop&w=1200&h=400&q=80';
@@ -129,6 +131,19 @@ class CategoryCatalog
 
     private function categories(): array
     {
+        if ($this->usesDatabase()) {
+            return Category::where('is_active', true)->orderBy('sort_order')->get()
+                ->mapWithKeys(function (Category $cat) {
+                    $data = $cat->toCatalogArray();
+                    $count = $this->countFor($data);
+
+                    return [$cat->slug => array_merge($data, [
+                        'count' => $count,
+                        'count_label' => $count > 0 ? $count.' items' : 'Coming soon',
+                    ])];
+                })->all();
+        }
+
         $items = [
             $this->category('dresses', 'Dresses', 'rose', 'photo-1595777457583-95e059d581b8', [
                 'description' => 'From casual day dresses to elegant evening styles — find your perfect fit.',
@@ -218,5 +233,14 @@ class CategoryCatalog
     private function cardImg(string $id): string
     {
         return sprintf(self::CARD_IMG, $id);
+    }
+
+    private function usesDatabase(): bool
+    {
+        try {
+            return Category::count() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

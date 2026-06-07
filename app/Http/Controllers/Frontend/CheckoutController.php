@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -69,17 +72,55 @@ class CheckoutController extends Controller
         ]);
 
         $orderNumber = 'LW-'.strtoupper(substr(uniqid(), -8));
+        $items = array_values($this->cart->items());
+        $subtotal = $this->cart->subtotal();
+        $shipping = $this->cart->shipping();
+        $discount = $this->cart->discount();
+        $coupon = $this->cart->coupon();
+        $total = $this->cart->total();
+
+        DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total) {
+            $order = Order::create([
+                'number' => $orderNumber,
+                'customer_name' => $validated['name'],
+                'customer_email' => $validated['email'],
+                'customer_phone' => $validated['phone'],
+                'address' => $validated['address'],
+                'city' => $validated['city'],
+                'zip' => $validated['zip'],
+                'payment_method' => $validated['payment'],
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'shipping' => $shipping,
+                'total' => $total,
+                'coupon_code' => $coupon['code'] ?? null,
+                'status' => 'pending',
+            ]);
+
+            foreach ($items as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_slug' => $item['slug'],
+                    'product_name' => $item['name'],
+                    'image' => $item['image'],
+                    'size' => $item['size'],
+                    'color' => $item['color'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                ]);
+            }
+        });
 
         session([
             'last_order' => [
                 'number' => $orderNumber,
                 'customer' => $validated,
-                'items' => $this->cart->items(),
-                'subtotal' => $this->cart->subtotal(),
-                'shipping' => $this->cart->shipping(),
-                'discount' => $this->cart->discount(),
-                'coupon' => $this->cart->coupon(),
-                'total' => $this->cart->total(),
+                'items' => $items,
+                'subtotal' => $subtotal,
+                'shipping' => $shipping,
+                'discount' => $discount,
+                'coupon' => $coupon,
+                'total' => $total,
                 'placed_at' => now()->toDateTimeString(),
             ],
         ]);
