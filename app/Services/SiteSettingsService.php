@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+
+class SiteSettingsService
+{
+    private const CACHE_KEY = 'site_settings';
+
+    public function get(): SiteSetting
+    {
+        $data = Cache::remember(self::CACHE_KEY, 3600, fn () => SiteSetting::current()->toArray());
+
+        $settings = new SiteSetting;
+        $settings->forceFill($data);
+        $settings->exists = true;
+
+        return $settings;
+    }
+
+    public function clearCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
+    public function siteName(): string
+    {
+        return $this->get()->site_name ?: config('app.name', 'Shop');
+    }
+
+    public function tagline(): string
+    {
+        return $this->get()->tagline ?: 'Premium women\'s fashion for every occasion.';
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->assetUrl($this->get()->logo);
+    }
+
+    public function faviconUrl(): ?string
+    {
+        return $this->assetUrl($this->get()->favicon);
+    }
+
+    public function ogImageUrl(): ?string
+    {
+        return $this->assetUrl($this->get()->og_image);
+    }
+
+    public function pageTitle(?string $pageTitle = null): string
+    {
+        $site = $this->siteName();
+
+        if ($pageTitle) {
+            return "{$pageTitle} — {$site}";
+        }
+
+        return $this->get()->meta_title ?: $site;
+    }
+
+    public function metaDescription(?string $fallback = null): string
+    {
+        return $this->get()->meta_description
+            ?: $fallback
+            ?: 'Shop the latest fashion with fast delivery and great prices.';
+    }
+
+    public function metaKeywords(): ?string
+    {
+        return $this->get()->meta_keywords;
+    }
+
+    public function ogTitle(?string $pageTitle = null): string
+    {
+        return $this->get()->og_title ?: $this->pageTitle($pageTitle);
+    }
+
+    public function ogDescription(?string $fallback = null): string
+    {
+        return $this->get()->og_description ?: $this->metaDescription($fallback);
+    }
+
+    public function footerDescription(): string
+    {
+        return $this->get()->footer_description ?: $this->tagline();
+    }
+
+    public function logoInitial(): string
+    {
+        return strtoupper(substr($this->siteName(), 0, 1));
+    }
+
+    private function assetUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return Storage::disk('public')->url($path);
+    }
+}

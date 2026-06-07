@@ -25,10 +25,7 @@
             </button>
 
             {{-- Logo --}}
-            <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0">
-                <span class="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-600 text-white font-bold text-lg">L</span>
-                <span class="font-semibold text-xl tracking-tight hidden sm:block">{{ config('app.name', 'Shop') }}</span>
-            </a>
+            <x-site.logo :show-name="true" name-class="hidden sm:block" />
 
             {{-- Desktop search --}}
             <div class="hidden lg:flex flex-1 max-w-xl mx-8">

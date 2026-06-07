@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="@yield('meta_description', 'Shop the latest products with fast delivery and great prices.')">
-
-    <title>@yield('title', config('app.name', 'Shop')) — {{ config('app.name', 'Shop') }}</title>
+    <x-site.meta
+        :title="trim($__env->yieldContent('title')) ?: null"
+        :description="trim($__env->yieldContent('meta_description')) ?: null"
+    />
 
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])

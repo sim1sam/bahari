@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Dashboard') — {{ config('app.name') }} Admin</title>
+    <x-site.meta :title="(trim($__env->yieldContent('title')) ?: 'Dashboard').' Admin'" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -35,10 +35,7 @@
 
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <a href="{{ route('admin.dashboard') }}" class="brand-link">
-            <span class="brand-image img-circle elevation-3 bg-info d-flex align-items-center justify-content-center" style="width:33px;height:33px;opacity:.9">
-                <i class="fas fa-store text-white" style="font-size:14px"></i>
-            </span>
-            <span class="brand-text font-weight-light">{{ config('app.name') }} Admin</span>
+            <x-site.admin-logo />
         </a>
         <div class="sidebar">
             <nav class="mt-2">
@@ -65,6 +62,12 @@
                         <a href="{{ route('admin.orders.index') }}" class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shopping-cart"></i>
                             <p>Orders</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.settings.edit') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>Site Settings</p>
                         </a>
                     </li>
                 </ul>
@@ -103,7 +106,7 @@
     </div>
 
     <footer class="main-footer">
-        <strong>{{ config('app.name') }} Admin Panel</strong>
+        <strong>{{ $site->siteName() }} Admin Panel</strong>
     </footer>
 </div>
 

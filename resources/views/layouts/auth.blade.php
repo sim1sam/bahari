@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') — {{ config('app.name') }}</title>
+    <x-site.meta :title="trim($__env->yieldContent('title')) ?: null" />
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet">
     <style>
@@ -357,8 +357,12 @@
     <aside class="auth-brand">
         <div class="brand-inner">
             <a href="{{ route('home') }}" class="brand-logo">
-                <span class="brand-logo-icon">L</span>
-                {{ config('app.name') }}
+                @if ($site->logoUrl())
+                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:44px;width:auto">
+                @else
+                    <span class="brand-logo-icon">{{ $site->logoInitial() }}</span>
+                @endif
+                {{ $site->siteName() }}
             </a>
             <div class="brand-hero">
                 @yield('brand_heading')
@@ -372,8 +376,12 @@
 
     <main class="auth-main">
         <a href="{{ route('home') }}" class="mobile-logo">
-            <span class="mobile-logo-icon">L</span>
-            {{ config('app.name') }}
+            @if ($site->logoUrl())
+                <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:36px;width:auto">
+            @else
+                <span class="mobile-logo-icon">{{ $site->logoInitial() }}</span>
+            @endif
+            {{ $site->siteName() }}
         </a>
 
         <div class="auth-form-panel">

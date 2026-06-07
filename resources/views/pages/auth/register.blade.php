@@ -3,7 +3,7 @@
 @section('title', 'Create Account')
 
 @section('brand_heading')
-    <h2>Join the {{ config('app.name') }} family</h2>
+    <h2>Join the {{ $site->siteName() }} family</h2>
 @endsection
 
 @section('brand_text')

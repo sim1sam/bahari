@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Login — {{ config('app.name') }}</title>
+    <x-site.meta title="Admin Login" />
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -327,8 +327,12 @@
     <aside class="login-brand">
         <div class="brand-content">
             <div class="brand-logo">
-                <span class="brand-logo-icon"><i class="fas fa-store"></i></span>
-                {{ config('app.name') }}
+                @if ($site->logoUrl())
+                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:44px;width:auto;border-radius:12px">
+                @else
+                    <span class="brand-logo-icon">{{ $site->logoInitial() }}</span>
+                @endif
+                {{ $site->siteName() }}
             </div>
             <div class="brand-hero">
                 <h1>Manage your store with ease</h1>
@@ -355,7 +359,7 @@
         <div class="login-form-wrap">
             <div class="mobile-logo">
                 <span class="mobile-logo-icon"><i class="fas fa-store"></i></span>
-                {{ config('app.name') }} Admin
+                {{ $site->siteName() }} Admin
             </div>
 
             <div class="login-card">
