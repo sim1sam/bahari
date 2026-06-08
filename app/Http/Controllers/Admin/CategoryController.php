@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    public function __construct(private MediaStorageService $media) {}
+
     public function index(): View
     {
         return view('admin.categories.index', [
@@ -43,6 +46,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
+        $this->media->delete($category->image);
+        $this->media->delete($category->card_image);
         $category->delete();
 
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted.');
@@ -55,17 +60,77 @@ class CategoryController extends Controller
             'name' => 'required|string|max:100',
             'description' => 'nullable|string',
             'color' => 'nullable|string|max:30',
-            'image' => 'nullable|url|max:500',
-            'card_image' => 'nullable|url|max:500',
+            'image' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:3072',
+            'image_url' => 'nullable|url|max:500',
+            'card_image' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:3072',
+            'card_image_url' => 'nullable|url|max:500',
             'sort_order' => 'nullable|integer|min:0',
             'is_sale' => 'boolean',
             'is_active' => 'boolean',
+            'remove_image' => 'boolean',
+            'remove_card_image' => 'boolean',
         ]);
 
-        $validated['is_sale'] = $request->boolean('is_sale');
-        $validated['is_active'] = $request->boolean('is_active', true);
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $data = collect($validated)->except([
+            'image', 'image_url', 'card_image', 'card_image_url', 'remove_image', 'remove_card_image',
+        ])->all();
 
-        return $validated;
+        $data['is_sale'] = $request->boolean('is_sale');
+        $data['is_active'] = $request->boolean('is_active', true);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        $data['image'] = $this->resolveImageField(
+            $request,
+            'image',
+            'image_url',
+            'remove_image',
+            $category?->image
+        );
+
+        $data['card_image'] = $this->resolveImageField(
+            $request,
+            'card_image',
+            'card_image_url',
+            'remove_card_image',
+            $category?->card_image
+        );
+
+        return $data;
+    }
+
+    private function resolveImageField(
+        Request $request,
+        string $fileKey,
+        string $urlKey,
+        string $removeKey,
+        ?string $current
+    ): ?string {
+        if ($request->boolean($removeKey)) {
+            $this->media->delete($current);
+
+            return null;
+        }
+
+        $file = $request->file($fileKey);
+
+        if ($file && $file->getError() !== UPLOAD_ERR_NO_FILE) {
+            return $this->media->storeUpload(
+                $file,
+                'categories',
+                $current,
+                $fileKey
+            );
+        }
+
+        if ($request->filled($urlKey)) {
+            return $this->media->storeFromUrl(
+                $request->input($urlKey),
+                'categories',
+                $current,
+                $urlKey
+            );
+        }
+
+        return $this->media->storedPath($current);
     }
 }

@@ -96,7 +96,9 @@ class SiteSettingsService
 
     private function assetUrl(?string $path): ?string
     {
-        if (! $path) {
+        $path = trim((string) $path);
+
+        if ($path === '') {
             return null;
         }
 
@@ -104,6 +106,10 @@ class SiteSettingsService
             return $path;
         }
 
-        return Storage::disk('public')->url($path);
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return asset('storage/'.$path);
     }
 }

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
+use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function __construct(private SiteSettingsService $settings) {}
+    public function __construct(
+        private SiteSettingsService $settings,
+        private MediaStorageService $media,
+    ) {}
 
     public function edit(): View
     {
@@ -54,35 +57,32 @@ class SettingsController extends Controller
         ])->all();
 
         if ($request->boolean('remove_logo')) {
-            $this->deleteStoredFile($settings->logo);
+            $this->media->delete($settings->logo);
             $data['logo'] = null;
-        } elseif ($request->hasFile('logo')) {
-            $this->deleteStoredFile($settings->logo);
-            $data['logo'] = $request->file('logo')->store('settings', 'public');
-        } elseif (! empty($validated['logo_url'])) {
-            $data['logo'] = $validated['logo_url'];
+        } else {
+            $logoFile = $request->file('logo');
+            if ($logoFile && $logoFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $data['logo'] = $this->media->storeUpload($logoFile, 'settings', $settings->logo, 'logo');
+            } elseif (! empty($validated['logo_url'])) {
+                $data['logo'] = $this->media->storeFromUrl($validated['logo_url'], 'settings', $settings->logo, 'logo_url');
+            }
         }
 
         if ($request->boolean('remove_favicon')) {
-            $this->deleteStoredFile($settings->favicon);
+            $this->media->delete($settings->favicon);
             $data['favicon'] = null;
-        } elseif ($request->hasFile('favicon')) {
-            $this->deleteStoredFile($settings->favicon);
-            $data['favicon'] = $request->file('favicon')->store('settings', 'public');
-        } elseif (! empty($validated['favicon_url'])) {
-            $data['favicon'] = $validated['favicon_url'];
+        } else {
+            $faviconFile = $request->file('favicon');
+            if ($faviconFile && $faviconFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $data['favicon'] = $this->media->storeUpload($faviconFile, 'settings', $settings->favicon, 'favicon');
+            } elseif (! empty($validated['favicon_url'])) {
+                $data['favicon'] = $this->media->storeFromUrl($validated['favicon_url'], 'settings', $settings->favicon, 'favicon_url');
+            }
         }
 
         $settings->update($data);
         $this->settings->clearCache();
 
         return redirect()->route('admin.settings.edit')->with('success', 'Site settings updated.');
-    }
-
-    private function deleteStoredFile(?string $path): void
-    {
-        if ($path && ! str_starts_with($path, 'http')) {
-            Storage::disk('public')->delete($path);
-        }
     }
 }
