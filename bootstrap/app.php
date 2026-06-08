@@ -19,10 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'customer' => \App\Http\Middleware\CustomerMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => match (true) {
             $request->is('admin', 'admin/*') => route('admin.login'),
+            $request->is('account', 'account/*') => route('login'),
             default => route('login'),
         });
     })

@@ -81,6 +81,7 @@ class CheckoutController extends Controller
 
         DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total) {
             $order = Order::create([
+                'user_id' => auth()->id(),
                 'number' => $orderNumber,
                 'customer_name' => $validated['name'],
                 'customer_email' => $validated['email'],

@@ -36,7 +36,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('home'))->with('success', 'Welcome back!');
+        return redirect()->intended(route('account.dashboard'))->with('success', 'Welcome back!');
     }
 
     public function showRegister(): View|RedirectResponse
@@ -62,7 +62,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('home')->with('success', 'Account created successfully!');
+        return redirect()->route('account.dashboard')->with('success', 'Account created successfully!');
     }
 
     public function logout(Request $request): RedirectResponse

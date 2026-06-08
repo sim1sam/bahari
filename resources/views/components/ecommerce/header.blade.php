@@ -64,14 +64,11 @@
 
                 @auth
                     @if (! auth()->user()->is_admin)
-                        <form action="{{ route('logout') }}" method="POST" class="hidden sm:block">
-                            @csrf
-                            <button type="submit" class="p-2 text-ink-muted hover:text-ink transition-colors" aria-label="Logout" title="Logout ({{ auth()->user()->name }})">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                </svg>
-                            </button>
-                        </form>
+                        <a href="{{ route('account.dashboard') }}" class="p-2 text-ink-muted hover:text-ink transition-colors {{ request()->routeIs('account.*') ? 'text-brand-600' : '' }}" aria-label="My Account" title="{{ auth()->user()->name }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </a>
                     @endif
                 @else
                     <a href="{{ route('login') }}" class="p-2 text-ink-muted hover:text-ink transition-colors hidden sm:block" aria-label="Account">
@@ -143,10 +140,7 @@
                 <a href="{{ route('register') }}" class="px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors" @click="mobileOpen = false">Register</a>
             @else
                 @if (! auth()->user()->is_admin)
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface hover:text-brand-600 transition-colors">Logout</button>
-                    </form>
+                    <a href="{{ route('account.dashboard') }}" class="px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors" @click="mobileOpen = false">My Account</a>
                 @endif
             @endguest
         </nav>
