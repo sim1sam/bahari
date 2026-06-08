@@ -12,7 +12,7 @@ class Order extends Model
         'user_id', 'number', 'order_type', 'customer_name', 'customer_email', 'customer_phone',
         'address', 'city', 'zip', 'payment_method', 'reference_code', 'bank_name',
         'payment_screenshot', 'notes', 'subtotal', 'discount', 'shipping', 'total',
-        'coupon_code', 'status',
+        'coupon_code', 'status', 'payment_status', 'amount_paid',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class Order extends Model
             'discount' => 'decimal:2',
             'shipping' => 'decimal:2',
             'total' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
         ];
     }
 
@@ -33,6 +34,61 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class)->latest();
+    }
+
+    public function amountDue(): float
+    {
+        return max(0, (float) $this->total - (float) $this->amount_paid);
+    }
+
+    public function recalculatePaymentStatus(): void
+    {
+        $paid = (float) $this->amount_paid;
+        $total = (float) $this->total;
+
+        if ($paid <= 0) {
+            $this->payment_status = 'due';
+        } elseif ($paid >= $total) {
+            $this->payment_status = 'paid';
+            $this->amount_paid = $total;
+        } else {
+            $this->payment_status = 'partial';
+        }
+    }
+
+    public function paymentStatusLabel(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'Paid',
+            'partial' => 'Partial',
+            'due' => 'Due',
+            default => 'Pending',
+        };
+    }
+
+    public function paymentStatusColor(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'bg-green-100 text-green-700',
+            'partial' => 'bg-amber-100 text-amber-700',
+            'due' => 'bg-red-100 text-red-700',
+            default => 'bg-gray-100 text-gray-700',
+        };
+    }
+
+    public function paymentStatusBadgeClass(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'badge-success',
+            'partial' => 'badge-warning',
+            'due' => 'badge-danger',
+            default => 'badge-secondary',
+        };
     }
 
     public function isCustom(): bool

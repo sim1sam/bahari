@@ -18,9 +18,7 @@
 
     <div class="px-6 py-5 border-b border-border bg-brand-50/50">
         <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-            </div>
+            <x-account.avatar :user="auth()->user()" size="md" />
             <div class="min-w-0">
                 <p class="font-semibold text-ink truncate">{{ auth()->user()->name }}</p>
                 <p class="text-xs text-ink-muted truncate">{{ auth()->user()->email }}</p>

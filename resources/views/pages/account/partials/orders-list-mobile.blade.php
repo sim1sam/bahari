@@ -12,7 +12,10 @@
                         <p class="font-semibold text-sm">{{ $order->number }}</p>
                         <p class="text-xs text-ink-muted mt-0.5">{{ $order->created_at->format('M d, Y') }}</p>
                     </div>
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-medium {{ $order->paymentStatusColor() }}">{{ $order->paymentStatusLabel() }}</span>
+                    </div>
                 </div>
                 <div class="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <span class="text-xs text-ink-muted">{{ $order->items->count() }} items · ${{ number_format($order->total, 2) }}</span>

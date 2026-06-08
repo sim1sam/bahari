@@ -13,6 +13,7 @@
                         <th>Customer</th>
                         <th>Email</th>
                         <th>Total</th>
+                        <th>Payment</th>
                         <th>Status</th>
                         <th>Date</th>
                         <th></th>
@@ -30,6 +31,7 @@
                             <td>{{ $order->customer_name }}</td>
                             <td>{{ $order->customer_email }}</td>
                             <td>${{ number_format($order->total, 2) }}</td>
+                            <td><span class="badge {{ $order->paymentStatusBadgeClass() }}">{{ $order->paymentStatusLabel() }}</span></td>
                             <td><span class="badge badge-info">{{ ucfirst($order->status) }}</span></td>
                             <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
                             <td class="text-nowrap">
@@ -43,7 +45,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted">No orders yet</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted">No orders yet</td></tr>
                     @endforelse
                 </tbody>
             </table>

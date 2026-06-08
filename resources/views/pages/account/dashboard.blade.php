@@ -10,9 +10,13 @@
     <div class="lg:hidden px-4 pt-4 space-y-5">
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold">
-                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                </div>
+                @if ($user->avatarUrl())
+                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-14 h-14 rounded-2xl object-cover border-2 border-white/30 shadow-sm shrink-0">
+                @else
+                    <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold shrink-0">
+                        {{ $user->initials() }}
+                    </div>
+                @endif
                 <div class="min-w-0 flex-1">
                     <p class="text-brand-100 text-sm">Welcome back</p>
                     <p class="text-xl font-bold truncate">{{ $user->name }}</p>

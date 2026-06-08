@@ -14,9 +14,10 @@
 @section('content')
     {{-- Mobile --}}
     <div class="lg:hidden px-4 pt-4 space-y-5 max-w-xl mx-auto">
-        <form action="{{ route('account.profile.update') }}" method="POST" class="space-y-5">
+        <form action="{{ route('account.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
             @csrf
             @method('PUT')
+            @include('pages.account.partials.profile-avatar-fields')
             @include('pages.account.partials.profile-form-fields')
             <button type="submit" class="auth-btn-primary w-full">Save Changes</button>
         </form>
@@ -27,9 +28,12 @@
     </div>
 
     {{-- Desktop --}}
-    <form action="{{ route('account.profile.update') }}" method="POST" class="hidden lg:block px-8 pt-8 w-full">
+    <form action="{{ route('account.profile.update') }}" method="POST" enctype="multipart/form-data" class="hidden lg:block px-8 pt-8 w-full">
         @csrf
         @method('PUT')
+        <div class="mb-6">
+            @include('pages.account.partials.profile-avatar-fields')
+        </div>
         <div class="grid grid-cols-2 gap-6">
             <div class="account-panel">
                 <div class="account-panel-header"><h2 class="font-semibold">Personal Information</h2></div>

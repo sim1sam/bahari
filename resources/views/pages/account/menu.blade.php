@@ -33,9 +33,7 @@
     {{-- Mobile --}}
     <div class="lg:hidden px-4 pt-4 space-y-5 pb-2">
         <div class="rounded-2xl bg-surface-elevated border border-border p-4 flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-xl font-bold">
-                {{ strtoupper(substr($user->name, 0, 1)) }}
-            </div>
+            <x-account.avatar :user="$user" size="xl" rounded="2xl" />
             <div class="min-w-0">
                 <p class="font-semibold text-ink truncate">{{ $user->name }}</p>
                 <p class="text-sm text-ink-muted truncate">{{ $user->email }}</p>

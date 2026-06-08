@@ -38,7 +38,7 @@ class AccountController extends Controller
             abort(403);
         }
 
-        $order->load('items');
+        $order->load(['items', 'payments']);
 
         return view('pages.account.order-show', compact('order'));
     }
@@ -87,14 +87,15 @@ class AccountController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(Request $request, MediaStorageService $media): RedirectResponse
     {
         $user = auth()->user();
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:150|unique:users,email,'.$user->id,
-            'phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|max:2048',
+            'remove_avatar' => 'nullable|boolean',
             'current_password' => 'nullable|required_with:password',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
@@ -104,6 +105,18 @@ class AccountController extends Controller
                 return back()->withErrors(['current_password' => 'Current password is incorrect.']);
             }
             $user->password = Hash::make($validated['password']);
+        }
+
+        if ($request->boolean('remove_avatar')) {
+            $media->delete($user->avatar);
+            $user->avatar = null;
+        } elseif ($request->hasFile('avatar')) {
+            $user->avatar = $media->storeUpload(
+                $request->file('avatar'),
+                'users/avatars',
+                $user->avatar,
+                field: 'avatar'
+            );
         }
 
         $user->name = $validated['name'];
