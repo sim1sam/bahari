@@ -109,7 +109,7 @@
     }
 
     .account-shell {
-        @apply w-full;
+        @apply w-full min-h-screen;
     }
 
     .safe-bottom {
@@ -121,17 +121,11 @@
     }
 
     .account-content {
-        @apply min-h-0;
+        @apply min-h-0 w-full flex-1;
     }
 
-    @media (max-width: 1023px) {
-        .account-app {
-            @apply bg-surface;
-        }
-
-        .account-main {
-            @apply w-full;
-        }
+    .account-desktop-header {
+        @apply w-full shrink-0;
     }
 
     .account-stat-card {
@@ -189,12 +183,20 @@
     }
 
     @media (min-width: 1024px) {
+        .account-app {
+            @apply bg-surface min-h-screen;
+        }
+
         .account-shell {
-            @apply w-full;
+            @apply min-h-screen h-screen;
         }
 
         .account-main {
-            @apply max-w-none;
+            @apply w-full max-w-none min-h-screen h-screen overflow-hidden;
+        }
+
+        .account-content {
+            @apply overflow-y-auto;
         }
     }
 }

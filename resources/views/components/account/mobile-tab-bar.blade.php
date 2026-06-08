@@ -28,7 +28,7 @@
             'label' => 'Menu',
             'route' => 'account.menu',
             'icon' => 'menu',
-            'active' => ['account.menu'],
+            'active' => ['account.menu', 'account.custom-order'],
         ],
     ];
 @endphp

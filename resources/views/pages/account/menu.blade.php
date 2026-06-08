@@ -23,6 +23,7 @@
             'Account' => [
                 ['label' => 'Dashboard', 'route' => 'account.dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
                 ['label' => 'My Orders', 'route' => 'account.orders', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
+                ['label' => 'Custom Order', 'route' => 'account.custom-order', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
                 ['label' => 'Transactions', 'route' => 'account.transactions', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
                 ['label' => 'Profile & Settings', 'route' => 'account.profile', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
             ],
@@ -71,7 +72,7 @@
     </div>
 
     {{-- Desktop --}}
-    <div class="hidden lg:grid lg:grid-cols-2 lg:gap-6 px-8 pt-8 max-w-5xl">
+    <div class="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-6 px-8 pt-8 w-full">
         @foreach ($sections as $title => $items)
             <div class="account-panel">
                 <div class="account-panel-header"><h2 class="font-semibold">{{ $title }}</h2></div>

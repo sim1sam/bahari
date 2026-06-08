@@ -15,10 +15,10 @@
     @stack('styles')
 </head>
 <body class="account-app min-h-screen bg-surface text-ink antialiased">
-    <div class="account-shell lg:flex lg:min-h-screen">
+    <div class="account-shell lg:flex">
         <x-account.sidebar />
 
-        <div class="account-main flex-1 flex flex-col min-w-0 min-h-screen lg:min-h-0 lg:bg-surface">
+        <div class="account-main flex flex-col flex-1 min-w-0 lg:bg-surface">
             @php
                 $pageTitle = trim($__env->yieldContent('page_title')) ?: 'My Account';
                 $mobileTitle = trim($__env->yieldContent('mobile_title')) ?: $pageTitle;

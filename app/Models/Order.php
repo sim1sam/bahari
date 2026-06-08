@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     protected $fillable = [
-        'user_id', 'number', 'customer_name', 'customer_email', 'customer_phone',
-        'address', 'city', 'zip', 'payment_method',
-        'subtotal', 'discount', 'shipping', 'total', 'coupon_code', 'status',
+        'user_id', 'number', 'order_type', 'customer_name', 'customer_email', 'customer_phone',
+        'address', 'city', 'zip', 'payment_method', 'reference_code', 'bank_name',
+        'payment_screenshot', 'notes', 'subtotal', 'discount', 'shipping', 'total',
+        'coupon_code', 'status',
     ];
 
     protected function casts(): array
@@ -32,6 +33,30 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function isCustom(): bool
+    {
+        return $this->order_type === 'custom';
+    }
+
+    public function paymentMethodLabel(): string
+    {
+        return match ($this->payment_method) {
+            'cod' => 'COD (Cash on Delivery)',
+            'bank_transfer' => 'Bank Transfer',
+            'order_code' => 'COD',
+            default => ucfirst(str_replace('_', ' ', $this->payment_method ?? 'card')),
+        };
+    }
+
+    public function paymentScreenshotUrl(): ?string
+    {
+        if (! $this->payment_screenshot) {
+            return null;
+        }
+
+        return app(\App\Services\MediaStorageService::class)->url($this->payment_screenshot);
     }
 
     public function statusLabel(): string

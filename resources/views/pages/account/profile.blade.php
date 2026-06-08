@@ -27,7 +27,7 @@
     </div>
 
     {{-- Desktop --}}
-    <form action="{{ route('account.profile.update') }}" method="POST" class="hidden lg:block px-8 pt-8 max-w-4xl">
+    <form action="{{ route('account.profile.update') }}" method="POST" class="hidden lg:block px-8 pt-8 w-full">
         @csrf
         @method('PUT')
         <div class="grid grid-cols-2 gap-6">

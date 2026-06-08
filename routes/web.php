@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AuthController;
+use App\Http\Controllers\Frontend\CustomOrderController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CategoryController;
 use App\Http\Controllers\Frontend\CheckoutController;
@@ -25,6 +26,8 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
+    Route::get('/custom-order', [CustomOrderController::class, 'create'])->name('custom-order');
+    Route::post('/custom-order', [CustomOrderController::class, 'store'])->name('custom-order.store');
     Route::get('/menu', [AccountController::class, 'menu'])->name('menu');
     Route::get('/profile', [AccountController::class, 'profile'])->name('profile');
     Route::put('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');

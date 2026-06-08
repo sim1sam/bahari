@@ -57,8 +57,8 @@
                                     <td>
                                         <div class="flex gap-1.5">
                                             @foreach ($order->items->take(3) as $item)
-                                                @if ($item->image)
-                                                    <img src="{{ $item->image }}" alt="" class="w-10 h-12 rounded object-cover border border-border">
+                                                @if ($item->imageUrl())
+                                                    <img src="{{ $item->imageUrl() }}" alt="" class="w-10 h-12 rounded object-cover border border-border">
                                                 @endif
                                             @endforeach
                                             @if ($order->items->count() > 3)

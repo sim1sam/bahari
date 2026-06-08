@@ -31,7 +31,7 @@
         </div>
 
         <div class="grid grid-cols-4 gap-2">
-            @foreach ([['Order', 'account.orders', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'], ['Transaction', 'account.transactions', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'], ['Profile', 'account.profile', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'], ['Menu', 'account.menu', 'M4 6h16M4 12h16M4 18h16']] as [$label, $route, $path])
+            @foreach ([['Order', 'account.orders', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'], ['Custom', 'account.custom-order', 'M12 6v6m0 0v6m0-6h6m-6 0H6'], ['Transaction', 'account.transactions', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'], ['Menu', 'account.menu', 'M4 6h16M4 12h16M4 18h16']] as [$label, $route, $path])
                 <a href="{{ route($route) }}" class="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-surface-elevated border border-border active:scale-95 transition-transform">
                     <span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $path }}"/></svg>

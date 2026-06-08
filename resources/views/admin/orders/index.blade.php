@@ -21,7 +21,12 @@
                 <tbody>
                     @forelse ($orders as $order)
                         <tr>
-                            <td>{{ $order->number }}</td>
+                            <td>
+                                {{ $order->number }}
+                                @if ($order->isCustom())
+                                    <span class="badge badge-secondary ml-1">Custom</span>
+                                @endif
+                            </td>
                             <td>{{ $order->customer_name }}</td>
                             <td>{{ $order->customer_email }}</td>
                             <td>${{ number_format($order->total, 2) }}</td>
