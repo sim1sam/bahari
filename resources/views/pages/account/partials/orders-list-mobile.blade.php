@@ -18,7 +18,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                    <span class="text-xs text-ink-muted">{{ $order->items->count() }} items · ${{ number_format($order->total, 2) }}</span>
+                    <span class="text-xs text-ink-muted">{{ $order->items->count() }} items · {{ money($order->total) }}</span>
                     @if ($order->isProcessed())
                         <span class="text-[10px] text-ink-muted">Locked</span>
                     @endif

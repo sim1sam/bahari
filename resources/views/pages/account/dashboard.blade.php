@@ -28,7 +28,7 @@
                     <p class="text-xs text-brand-100">Orders</p>
                 </div>
                 <div class="rounded-xl bg-white/15 px-4 py-3">
-                    <p class="text-2xl font-bold">${{ number_format($totalSpent, 0) }}</p>
+                    <p class="text-2xl font-bold">{{ money($totalSpent, 0) }}</p>
                     <p class="text-xs text-brand-100">Spent</p>
                 </div>
             </div>
@@ -70,7 +70,7 @@
             </div>
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Total Spent</p>
-                <p class="text-3xl font-bold text-brand-700 mt-1">${{ number_format($totalSpent, 2) }}</p>
+                <p class="text-3xl font-bold text-brand-700 mt-1">{{ money($totalSpent) }}</p>
             </div>
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Cart Items</p>
@@ -114,7 +114,7 @@
                                             <td class="text-ink-muted">{{ $order->created_at->format('M d, Y') }}</td>
                                             <td class="text-ink-muted">{{ $order->items->sum('quantity') }}</td>
                                             <td><span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span></td>
-                                            <td class="text-right font-semibold text-brand-700">${{ number_format($order->total, 2) }}</td>
+                                            <td class="text-right font-semibold text-brand-700">{{ money($order->total) }}</td>
                                             <td class="text-right"><a href="{{ route('account.orders.show', $order) }}" class="text-sm text-brand-600 hover:underline">View</a></td>
                                         </tr>
                                     @endforeach

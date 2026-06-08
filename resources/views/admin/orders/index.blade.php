@@ -30,7 +30,7 @@
                             </td>
                             <td>{{ $order->customer_name }}</td>
                             <td>{{ $order->customer_email }}</td>
-                            <td>${{ number_format($order->total, 2) }}</td>
+                            <td>{{ money($order->total) }}</td>
                             <td><span class="badge {{ $order->paymentStatusBadgeClass() }}">{{ $order->paymentStatusLabel() }}</span></td>
                             <td><span class="badge badge-info">{{ ucfirst($order->status) }}</span></td>
                             <td>{{ $order->created_at->format('M d, Y H:i') }}</td>

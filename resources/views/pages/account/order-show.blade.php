@@ -87,13 +87,13 @@
                                         @if ($item->size || $item->color)
                                             Size: {{ $item->size ?: '—' }} · Color: {{ $item->color ?: '—' }} ·
                                         @endif
-                                        Qty: {{ $item->quantity }} · ${{ number_format($item->price, 2) }} each
+                                        Qty: {{ $item->quantity }} · {{ money($item->price) }} each
                                     </p>
                                     @if ($item->product_link)
                                         <a href="{{ $item->product_link }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline mt-1 inline-block">View product link</a>
                                     @endif
                                 </div>
-                                <p class="font-semibold text-brand-700 shrink-0">${{ number_format($item->price * $item->quantity, 2) }}</p>
+                                <p class="font-semibold text-brand-700 shrink-0">{{ money($item->price * $item->quantity) }}</p>
                             </div>
                         @endforeach
                     </div>

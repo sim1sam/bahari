@@ -67,7 +67,7 @@
                                         </div>
                                     </td>
                                     <td><span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span></td>
-                                    <td class="text-right font-semibold text-brand-700">${{ number_format($order->total, 2) }}</td>
+                                    <td class="text-right font-semibold text-brand-700">{{ money($order->total) }}</td>
                                     <td class="text-right">
                                         @include('pages.account.partials.order-actions', ['order' => $order])
                                     </td>

@@ -30,7 +30,10 @@ class CartService
 
     public function shipping(): float
     {
-        return $this->subtotal() >= 50 || $this->subtotal() == 0 ? 0 : 5.99;
+        $threshold = (float) config('currency.free_shipping_threshold', 2000);
+        $fee = (float) config('currency.shipping_fee', 120);
+
+        return $this->subtotal() >= $threshold || $this->subtotal() == 0 ? 0 : $fee;
     }
 
     public function coupon(): ?array

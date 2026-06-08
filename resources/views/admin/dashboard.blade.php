@@ -38,7 +38,7 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>${{ number_format($stats['revenue'], 0) }}</h3>
+                    <h3>{{ money($stats['revenue'], 0) }}</h3>
                     <p>Revenue</p>
                 </div>
                 <div class="icon"><i class="fas fa-dollar-sign"></i></div>
@@ -67,7 +67,7 @@
                         <tr>
                             <td><a href="{{ route('admin.orders.show', $order) }}">{{ $order->number }}</a></td>
                             <td>{{ $order->customer_name }}</td>
-                            <td>${{ number_format($order->total, 2) }}</td>
+                            <td>{{ money($order->total) }}</td>
                             <td><span class="badge badge-info">{{ ucfirst($order->status) }}</span></td>
                             <td>{{ $order->created_at->format('M d, Y') }}</td>
                         </tr>

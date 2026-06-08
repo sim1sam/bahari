@@ -84,7 +84,7 @@ class OrderController extends Controller
         $due = $order->amountDue();
 
         if ($amount > $due) {
-            return back()->with('error', 'Payment amount cannot exceed balance due ($'.number_format($due, 2).').');
+            return back()->with('error', 'Payment amount cannot exceed balance due ('.money($due).').');
         }
 
         $screenshotPath = null;
@@ -119,7 +119,7 @@ class OrderController extends Controller
 
         $order->save();
 
-        return back()->with('success', 'Payment of $'.number_format($amount, 2).' recorded.');
+        return back()->with('success', 'Payment of '.money($amount).' recorded.');
     }
 
     public function destroy(Order $order, MediaStorageService $media): RedirectResponse

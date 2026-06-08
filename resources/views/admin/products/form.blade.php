@@ -36,13 +36,13 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Price *</label>
+                            <label>Price (BDT) *</label>
                             <input type="number" step="0.01" name="price" class="form-control" value="{{ old('price', $product->price) }}" required>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Original Price</label>
+                            <label>Original Price (BDT)</label>
                             <input type="number" step="0.01" name="original_price" class="form-control" value="{{ old('original_price', $product->original_price) }}">
                         </div>
                     </div>

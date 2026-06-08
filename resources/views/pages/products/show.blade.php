@@ -72,9 +72,9 @@
                     @endif
 
                     <div class="flex items-baseline gap-3 mt-6">
-                        <span class="text-3xl font-bold text-ink">${{ number_format($product['price'], 2) }}</span>
+                        <span class="text-3xl font-bold text-ink">{{ money($product['price']) }}</span>
                         @if ($product['original_price'] ?? null)
-                            <span class="text-lg text-ink-muted line-through">${{ number_format($product['original_price'], 2) }}</span>
+                            <span class="text-lg text-ink-muted line-through">{{ money($product['original_price']) }}</span>
                             <x-ui.badge variant="sale">Save {{ round((1 - $product['price'] / $product['original_price']) * 100) }}%</x-ui.badge>
                         @endif
                     </div>

@@ -18,7 +18,7 @@
                                 <p class="font-semibold text-sm truncate">{{ $order->number }}</p>
                                 <p class="text-xs text-ink-muted mt-0.5 capitalize">{{ str_replace('_', ' ', $order->payment_method ?? 'card') }}</p>
                             </div>
-                            <p class="font-bold text-brand-700 shrink-0">${{ number_format($order->total, 2) }}</p>
+                            <p class="font-bold text-brand-700 shrink-0">{{ money($order->total) }}</p>
                         </div>
                         <div class="flex items-center justify-between mt-2">
                             <span class="text-xs text-ink-muted">{{ $order->created_at->format('M d, Y · g:i A') }}</span>

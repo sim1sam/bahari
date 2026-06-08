@@ -36,7 +36,7 @@
                                         @else — @endif
                                     </td>
                                     <td>{{ $item->quantity }}</td>
-                                    <td>${{ number_format($item->price * $item->quantity, 2) }}</td>
+                                    <td>{{ money($item->price * $item->quantity) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -66,7 +66,7 @@
                                 @foreach ($order->payments as $payment)
                                     <tr>
                                         <td>{{ $payment->created_at->format('M d, Y H:i') }}</td>
-                                        <td><strong>${{ number_format($payment->amount, 2) }}</strong></td>
+                                        <td><strong>{{ money($payment->amount) }}</strong></td>
                                         <td>{{ $payment->methodLabel() }}</td>
                                         <td>{{ $payment->bank_name ?: '—' }}</td>
                                         <td>{{ $payment->notes ?: '—' }}</td>
@@ -95,15 +95,15 @@
                         <p><strong>Address:</strong><br>{{ $order->address }}<br>{{ $order->city }}, {{ $order->zip }}</p>
                     @endif
                     <hr>
-                    <p>Subtotal: ${{ number_format($order->subtotal, 2) }}</p>
+                    <p>Subtotal: {{ money($order->subtotal) }}</p>
                     @if ($order->discount > 0)
-                        <p>Discount: -${{ number_format($order->discount, 2) }}</p>
+                        <p>Discount: -{{ money($order->discount) }}</p>
                     @endif
-                    <p>Shipping: {{ $order->shipping == 0 ? 'Free' : '$'.number_format($order->shipping, 2) }}</p>
-                    <p><strong>Total: ${{ number_format($order->total, 2) }}</strong></p>
+                    <p>Shipping: {{ money_or_free($order->shipping) }}</p>
+                    <p><strong>Total: {{ money($order->total) }}</strong></p>
                     <p>
-                        <strong>Paid:</strong> ${{ number_format($order->amount_paid, 2) }} ·
-                        <strong>Due:</strong> ${{ number_format($order->amountDue(), 2) }}
+                        <strong>Paid:</strong> {{ money($order->amount_paid) }} ·
+                        <strong>Due:</strong> {{ money($order->amountDue()) }}
                     </p>
                     <p>
                         Payment: {{ $order->paymentMethodLabel() }}
@@ -144,9 +144,9 @@
                                 </select>
                             </div>
                             <div class="form-group" id="partial_amount_group" style="display:none">
-                                <label>Amount Received ($)</label>
+                                <label>Amount Received (BDT)</label>
                                 <input type="number" name="amount_paid" class="form-control" min="0" max="{{ $order->total }}" step="0.01" placeholder="0.00">
-                                <small class="text-muted">Max: ${{ number_format($order->total, 2) }}</small>
+                                <small class="text-muted">Max: {{ money($order->total) }}</small>
                             </div>
                         </div>
                         <div class="card-footer">
@@ -163,9 +163,9 @@
                     <form action="{{ route('admin.orders.payments.store', $order) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="card-body">
-                            <p class="text-muted small">Balance due: <strong>${{ number_format($order->amountDue(), 2) }}</strong></p>
+                            <p class="text-muted small">Balance due: <strong>{{ money($order->amountDue()) }}</strong></p>
                             <div class="form-group">
-                                <label>Amount ($)</label>
+                                <label>Amount (BDT)</label>
                                 <input type="number" name="amount" class="form-control" min="0.01" max="{{ $order->amountDue() }}" step="0.01" required value="{{ $order->amountDue() }}">
                             </div>
                             <div class="form-group">

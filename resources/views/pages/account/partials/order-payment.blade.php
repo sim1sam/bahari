@@ -13,16 +13,16 @@
         </div>
         <div class="flex justify-between">
             <span class="text-ink-muted">Total</span>
-            <span class="font-medium">${{ number_format($order->total, 2) }}</span>
+            <span class="font-medium">{{ money($order->total) }}</span>
         </div>
         <div class="flex justify-between">
             <span class="text-ink-muted">Paid</span>
-            <span class="font-medium text-green-700">${{ number_format($order->amount_paid, 2) }}</span>
+            <span class="font-medium text-green-700">{{ money($order->amount_paid) }}</span>
         </div>
         @if ($order->amountDue() > 0)
             <div class="flex justify-between">
                 <span class="text-ink-muted">Balance Due</span>
-                <span class="font-bold text-red-600">${{ number_format($order->amountDue(), 2) }}</span>
+                <span class="font-bold text-red-600">{{ money($order->amountDue()) }}</span>
             </div>
         @endif
 
@@ -50,7 +50,7 @@
                     @foreach ($order->payments as $payment)
                         <div class="flex justify-between items-start gap-2 text-xs rounded-lg bg-surface/60 p-3">
                             <div>
-                                <p class="font-semibold text-ink">${{ number_format($payment->amount, 2) }}</p>
+                                <p class="font-semibold text-ink">{{ money($payment->amount) }}</p>
                                 <p class="text-ink-muted mt-0.5">{{ $payment->methodLabel() }} · {{ $payment->created_at->format('M d, Y') }}</p>
                                 @if ($payment->notes)
                                     <p class="text-ink-muted mt-0.5">{{ $payment->notes }}</p>

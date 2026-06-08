@@ -16,7 +16,7 @@
     <div class="lg:hidden px-4 pt-4 space-y-4">
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20">
             <p class="text-brand-100 text-sm">Total spent</p>
-            <p class="text-3xl font-bold mt-1">${{ number_format($totalSpent, 2) }}</p>
+            <p class="text-3xl font-bold mt-1">{{ money($totalSpent) }}</p>
             <p class="text-xs text-brand-100 mt-2">{{ $transactionsCount }} transaction{{ $transactionsCount === 1 ? '' : 's' }}</p>
         </div>
 
@@ -29,7 +29,7 @@
         <div class="grid grid-cols-3 gap-5 mb-8">
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Total Spent</p>
-                <p class="text-2xl font-bold text-ink mt-1">${{ number_format($totalSpent, 2) }}</p>
+                <p class="text-2xl font-bold text-ink mt-1">{{ money($totalSpent) }}</p>
             </div>
             <div class="account-stat-card col-span-2">
                 <p class="text-sm text-ink-muted">Transactions</p>
@@ -69,7 +69,7 @@
                                     <td class="text-ink-muted whitespace-nowrap">{{ $order->created_at->format('M d, Y g:i A') }}</td>
                                     <td class="capitalize">{{ str_replace('_', ' ', $order->payment_method ?? 'card') }}</td>
                                     <td><span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span></td>
-                                    <td class="text-right font-semibold text-brand-700">${{ number_format($order->total, 2) }}</td>
+                                    <td class="text-right font-semibold text-brand-700">{{ money($order->total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

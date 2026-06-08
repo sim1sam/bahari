@@ -1,7 +1,7 @@
 @extends('layouts.account')
 
 @section('title', 'Profile')
-@section('page_title', 'Profile & Settings')
+@section('page_title', 'Profile')
 @section('mobile_title', 'Profile')
 @section('page_subtitle', 'Manage your account details and password')
 

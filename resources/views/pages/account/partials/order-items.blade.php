@@ -17,7 +17,7 @@
                     @if ($item->product_link)
                         <a href="{{ $item->product_link }}" target="_blank" rel="noopener" class="text-xs text-brand-600 hover:underline mt-1 inline-block truncate max-w-full">View product link</a>
                     @endif
-                    <p class="text-sm font-semibold text-brand-700 mt-2">${{ number_format($item->price * $item->quantity, 2) }}</p>
+                    <p class="text-sm font-semibold text-brand-700 mt-2">{{ money($item->price * $item->quantity) }}</p>
                 </div>
             </div>
         @endforeach

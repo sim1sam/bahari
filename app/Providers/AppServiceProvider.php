@@ -30,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
             $view->with('cartCount', app(CartService::class)->count());
             $view->with('siteSettings', $settings->get());
             $view->with('site', $settings);
+            $view->with('currencySymbol', config('currency.symbol', '৳'));
+            $view->with('currencyCode', config('currency.code', 'BDT'));
         });
     }
 }

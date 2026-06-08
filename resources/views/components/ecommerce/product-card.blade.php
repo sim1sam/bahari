@@ -70,9 +70,9 @@
         @endif
 
         <div class="mt-auto pt-3 flex items-baseline gap-2">
-            <span class="text-lg font-bold text-ink">${{ number_format($price, 2) }}</span>
+            <span class="text-lg font-bold text-ink">{{ money($price) }}</span>
             @if ($originalPrice)
-                <span class="text-sm text-ink-muted line-through">${{ number_format($originalPrice, 2) }}</span>
+                <span class="text-sm text-ink-muted line-through">{{ money($originalPrice) }}</span>
             @endif
         </div>
     </div>

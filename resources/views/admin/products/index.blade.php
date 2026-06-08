@@ -31,7 +31,7 @@
                             </td>
                             <td>{{ $product->name }}</td>
                             <td>{{ $product->category?->name ?? '—' }}</td>
-                            <td>${{ number_format($product->price, 2) }}</td>
+                            <td>{{ money($product->price) }}</td>
                             <td>
                                 <span class="badge badge-{{ $product->is_active ? 'success' : 'secondary' }}">
                                     {{ $product->is_active ? 'Active' : 'Inactive' }}

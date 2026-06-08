@@ -89,7 +89,7 @@
                                 >
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Unit Price ($)</label>
+                                <label class="block text-sm font-medium mb-1">Unit Price ({{ $currencyCode }})</label>
                                 <input
                                     type="number"
                                     :name="'items[' + index + '][unit_price]'"
@@ -106,7 +106,7 @@
                                 <img :src="item.imagePreview" alt="" class="w-14 h-14 rounded-lg object-cover border border-border shrink-0">
                             </template>
                             <p class="text-sm text-ink-muted ml-auto">
-                                Line total: <span class="font-semibold text-brand-700" x-text="'$' + lineTotal(item).toFixed(2)"></span>
+                                Line total: <span class="font-semibold text-brand-700" x-text="formatMoney(lineTotal(item))"></span>
                             </p>
                         </div>
                     </div>
@@ -118,7 +118,7 @@
             </div>
             <div class="account-panel-footer flex items-center justify-between">
                 <span class="text-sm text-ink-muted">Calculated total</span>
-                <span class="text-xl font-bold text-brand-700" x-text="'$' + grandTotal().toFixed(2)"></span>
+                <span class="text-xl font-bold text-brand-700" x-text="formatMoney(grandTotal())"></span>
             </div>
         </div>
 
@@ -199,7 +199,7 @@
             </div>
             <div class="p-5 space-y-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1">Amount ($)</label>
+                    <label class="block text-sm font-medium mb-1">Amount ({{ $currencyCode }})</label>
                     <input
                         type="number"
                         name="payment_amount"
@@ -257,6 +257,7 @@
 <script>
 function customOrderForm() {
     return {
+        currencySymbol: @json($currencySymbol),
         items: [{ id: 1, name: '', product_link: '', imagePreview: null, quantity: 1, unit_price: 0 }],
         nextId: 2,
         paymentMode: @json(old('payment_mode', 'cod')),
@@ -292,6 +293,10 @@ function customOrderForm() {
             if (this.items.length > 1) {
                 this.items.splice(index, 1);
             }
+        },
+
+        formatMoney(amount) {
+            return this.currencySymbol + Number(amount || 0).toFixed(2);
         },
 
         lineTotal(item) {

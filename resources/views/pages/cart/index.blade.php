@@ -45,7 +45,7 @@
                                             <a href="{{ route('products.show', $item['slug']) }}" class="font-medium text-ink hover:text-brand-600 transition-colors line-clamp-2">{{ $item['name'] }}</a>
                                             <p class="mt-1 text-sm text-ink-muted">Color: {{ $item['color'] }}</p>
                                         </div>
-                                        <p class="font-semibold text-ink shrink-0">${{ number_format($item['price'] * $item['quantity'], 2) }}</p>
+                                        <p class="font-semibold text-ink shrink-0">{{ money($item['price'] * $item['quantity']) }}</p>
                                     </div>
 
                                     <div class="mt-auto pt-4 flex flex-wrap items-center justify-between gap-4">
@@ -109,7 +109,7 @@
                             <dl class="mt-6 space-y-3 text-sm">
                                 <div class="flex justify-between">
                                     <dt class="text-ink-muted">Subtotal</dt>
-                                    <dd class="font-medium text-ink">${{ number_format($subtotal, 2) }}</dd>
+                                    <dd class="font-medium text-ink">{{ money($subtotal) }}</dd>
                                 </div>
                                 <div class="flex justify-between">
                                     <dt class="text-ink-muted">Shipping</dt>
@@ -117,18 +117,19 @@
                                         @if ($shipping == 0)
                                             <span class="text-brand-600">Free</span>
                                         @else
-                                            ${{ number_format($shipping, 2) }}
+                                            {{ money($shipping) }}
                                         @endif
                                     </dd>
                                 </div>
-                                @if ($subtotal < 50 && $subtotal > 0)
+                                @php $freeShippingAt = config('currency.free_shipping_threshold', 2000); @endphp
+                                @if ($subtotal < $freeShippingAt && $subtotal > 0)
                                     <p class="text-xs text-brand-600 bg-brand-50 rounded-lg px-3 py-2">
-                                        Add ${{ number_format(50 - $subtotal, 2) }} more for free shipping!
+                                        Add {{ money($freeShippingAt - $subtotal) }} more for free shipping!
                                     </p>
                                 @endif
                                 <div class="flex justify-between pt-3 border-t border-border text-base">
                                     <dt class="font-semibold text-ink">Total</dt>
-                                    <dd class="font-bold text-ink text-lg">${{ number_format($total, 2) }}</dd>
+                                    <dd class="font-bold text-ink text-lg">{{ money($total) }}</dd>
                                 </div>
                             </dl>
 

@@ -4,7 +4,7 @@
         ['label' => 'My Orders', 'route' => 'account.orders', 'icon' => 'orders'],
         ['label' => 'Custom Order', 'route' => 'account.custom-order', 'icon' => 'custom'],
         ['label' => 'Transactions', 'route' => 'account.transactions', 'icon' => 'transaction'],
-        ['label' => 'Profile & Settings', 'route' => 'account.profile', 'icon' => 'user'],
+        ['label' => 'Profile', 'route' => 'account.profile', 'icon' => 'user'],
     ];
 @endphp
 

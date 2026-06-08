@@ -47,7 +47,7 @@
                                     <a href="{{ route('products.show', $item['slug']) }}" class="text-sm font-medium text-ink hover:text-brand-600 transition-colors">{{ $item['name'] }}</a>
                                     <p class="text-xs text-ink-muted mt-0.5">Qty {{ $item['quantity'] }} · Size {{ $item['size'] }} · {{ $item['color'] }}</p>
                                 </div>
-                                <p class="text-sm font-medium text-ink shrink-0">${{ number_format($item['price'] * $item['quantity'], 2) }}</p>
+                                <p class="text-sm font-medium text-ink shrink-0">{{ money($item['price'] * $item['quantity']) }}</p>
                             </li>
                         @endforeach
                     </ul>
@@ -56,21 +56,21 @@
                 <dl class="pt-6 border-t border-border space-y-2 text-sm">
                     <div class="flex justify-between">
                         <dt class="text-ink-muted">Subtotal</dt>
-                        <dd>${{ number_format($order['subtotal'], 2) }}</dd>
+                        <dd>{{ money($order['subtotal']) }}</dd>
                     </div>
                     @if (($order['discount'] ?? 0) > 0)
                         <div class="flex justify-between text-brand-600">
                             <dt>Discount@if (! empty($order['coupon']['code'])) ({{ $order['coupon']['code'] }})@endif</dt>
-                            <dd>−${{ number_format($order['discount'], 2) }}</dd>
+                            <dd>−{{ money($order['discount']) }}</dd>
                         </div>
                     @endif
                     <div class="flex justify-between">
                         <dt class="text-ink-muted">Shipping</dt>
-                        <dd>{{ $order['shipping'] == 0 ? 'Free' : '$'.number_format($order['shipping'], 2) }}</dd>
+                        <dd>{{ money_or_free($order['shipping']) }}</dd>
                     </div>
                     <div class="flex justify-between pt-2 text-base font-bold text-ink">
                         <dt>Total Paid</dt>
-                        <dd>${{ number_format($order['total'], 2) }}</dd>
+                        <dd>{{ money($order['total']) }}</dd>
                     </div>
                 </dl>
             </div>
