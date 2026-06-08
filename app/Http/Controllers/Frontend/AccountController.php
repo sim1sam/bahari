@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +41,25 @@ class AccountController extends Controller
         $order->load('items');
 
         return view('pages.account.order-show', compact('order'));
+    }
+
+    public function destroyOrder(Order $order, MediaStorageService $media): RedirectResponse
+    {
+        if (! $this->ownsOrder($order)) {
+            abort(403);
+        }
+
+        if (! $order->canBeDeleted()) {
+            return back()->with('error', 'This order cannot be deleted after processing has started.');
+        }
+
+        $order->load('items');
+        $this->deleteOrderFiles($order, $media);
+        $order->delete();
+
+        return redirect()
+            ->route('account.orders')
+            ->with('success', 'Order deleted successfully.');
     }
 
     public function transactions(): View
@@ -109,5 +129,16 @@ class AccountController extends Controller
         $user = auth()->user();
 
         return $order->user_id === $user->id || $order->customer_email === $user->email;
+    }
+
+    private function deleteOrderFiles(Order $order, MediaStorageService $media): void
+    {
+        $media->delete($order->payment_screenshot);
+
+        foreach ($order->items as $item) {
+            if ($item->image && ! str_starts_with($item->image, 'http')) {
+                $media->delete($item->image);
+            }
+        }
     }
 }

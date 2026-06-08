@@ -40,6 +40,16 @@ class Order extends Model
         return $this->order_type === 'custom';
     }
 
+    public function isProcessed(): bool
+    {
+        return in_array($this->status, ['processing', 'shipped', 'delivered', 'completed'], true);
+    }
+
+    public function canBeDeleted(): bool
+    {
+        return ! $this->isProcessed();
+    }
+
     public function paymentMethodLabel(): string
     {
         return match ($this->payment_method) {

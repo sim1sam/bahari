@@ -69,7 +69,7 @@
                                     <td><span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span></td>
                                     <td class="text-right font-semibold text-brand-700">${{ number_format($order->total, 2) }}</td>
                                     <td class="text-right">
-                                        <a href="{{ route('account.orders.show', $order) }}" class="inline-flex items-center px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-ink-muted hover:text-brand-600 hover:border-brand-300">Details</a>
+                                        @include('pages.account.partials.order-actions', ['order' => $order])
                                     </td>
                                 </tr>
                             @endforeach

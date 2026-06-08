@@ -32,7 +32,15 @@
                             <td>${{ number_format($order->total, 2) }}</td>
                             <td><span class="badge badge-info">{{ ucfirst($order->status) }}</span></td>
                             <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
-                            <td><a href="{{ route('admin.orders.show', $order) }}" class="btn btn-xs btn-primary">View</a></td>
+                            <td class="text-nowrap">
+                                <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-xs btn-primary">View</a>
+                                @if ($order->canBeDeleted())
+                                    <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this order?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="text-center text-muted">No orders yet</td></tr>

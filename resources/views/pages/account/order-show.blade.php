@@ -35,16 +35,40 @@
         @if (! $order->isCustom())
             @include('pages.account.partials.order-delivery', ['order' => $order])
         @endif
+        <div class="flex gap-2 pt-2">
+            <a href="{{ route('account.orders') }}" class="flex-1 py-3 rounded-xl border border-border text-sm font-medium text-center text-ink-muted">Back to Orders</a>
+            @if ($order->canBeDeleted())
+                <form action="{{ route('account.orders.destroy', $order) }}" method="POST" class="flex-1" onsubmit="return confirm('Delete this order?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full py-3 rounded-xl border border-red-200 text-sm font-semibold text-red-600 bg-red-50">Delete Order</button>
+                </form>
+            @elseif ($order->isProcessed())
+                <p class="flex-1 py-3 text-xs text-center text-ink-muted">Cannot delete after processing</p>
+            @endif
+        </div>
     </div>
 
     {{-- Desktop --}}
     <div class="hidden lg:block px-8 pt-8">
-        <div class="flex items-center gap-3 mb-6">
-            <span class="px-3 py-1.5 rounded-lg text-sm font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
-            @if ($order->isCustom())
-                <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-100 text-violet-700">Custom Order</span>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1.5 rounded-lg text-sm font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
+                @if ($order->isCustom())
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-100 text-violet-700">Custom Order</span>
+                @endif
+                <span class="text-sm text-ink-muted">{{ $order->paymentMethodLabel() }}</span>
+                @if ($order->isProcessed())
+                    <span class="text-xs text-ink-muted">· Cannot delete after processing</span>
+                @endif
+            </div>
+            @if ($order->canBeDeleted())
+                <form action="{{ route('account.orders.destroy', $order) }}" method="POST" onsubmit="return confirm('Delete this order?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-4 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50">Delete Order</button>
+                </form>
             @endif
-            <span class="text-sm text-ink-muted">{{ $order->paymentMethodLabel() }}</span>
         </div>
 
         <div class="grid grid-cols-3 gap-8">

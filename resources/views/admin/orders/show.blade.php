@@ -85,6 +85,14 @@
                     @endif
                 </div>
                 <div class="card-footer">
+                    @if ($order->canBeDeleted())
+                        <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="mb-3" onsubmit="return confirm('Delete this order?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-danger btn-block">Delete Order</button>
+                        </form>
+                    @else
+                        <p class="text-muted small mb-3">Cannot delete after processing has started.</p>
+                    @endif
                     <form action="{{ route('admin.orders.status', $order) }}" method="POST">
                         @csrf @method('PATCH')
                         <div class="form-group">

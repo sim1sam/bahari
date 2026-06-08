@@ -25,6 +25,7 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
+    Route::delete('/orders/{order}', [AccountController::class, 'destroyOrder'])->name('orders.destroy');
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
     Route::get('/custom-order', [CustomOrderController::class, 'create'])->name('custom-order');
     Route::post('/custom-order', [CustomOrderController::class, 'store'])->name('custom-order.store');
