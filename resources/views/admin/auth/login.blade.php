@@ -331,8 +331,8 @@
                     <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:44px;width:auto;border-radius:12px">
                 @else
                     <span class="brand-logo-icon">{{ $site->logoInitial() }}</span>
+                    {{ $site->siteName() }}
                 @endif
-                {{ $site->siteName() }}
             </div>
             <div class="brand-hero">
                 <h1>Manage your store with ease</h1>
@@ -358,8 +358,12 @@
     <main class="login-form-panel">
         <div class="login-form-wrap">
             <div class="mobile-logo">
-                <span class="mobile-logo-icon"><i class="fas fa-store"></i></span>
-                {{ $site->siteName() }} Admin
+                @if ($site->logoUrl())
+                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:36px;width:auto">
+                @else
+                    <span class="mobile-logo-icon"><i class="fas fa-store"></i></span>
+                    {{ $site->siteName() }} Admin
+                @endif
             </div>
 
             <div class="login-card">

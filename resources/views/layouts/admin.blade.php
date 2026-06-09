@@ -59,6 +59,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.customers.index') }}" class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Customers</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.orders.index') }}" class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shopping-cart"></i>
                             <p>Orders</p>

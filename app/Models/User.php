@@ -37,6 +37,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function scopeCustomers($query)
+    {
+        return $query->where('is_admin', false);
+    }
+
     public function avatarUrl(): ?string
     {
         if (! $this->avatar) {

@@ -12,4 +12,6 @@
         <span class="text-white font-weight-bold" style="font-size:14px">{{ $initial }}</span>
     </span>
 @endif
-<span class="brand-text font-weight-light">{{ $siteName }} Admin</span>
+@unless ($logoUrl)
+    <span class="brand-text font-weight-light">{{ $siteName }} Admin</span>
+@endunless

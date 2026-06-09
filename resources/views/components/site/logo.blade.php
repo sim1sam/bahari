@@ -30,7 +30,7 @@
     @else
         <span class="flex items-center justify-center {{ $s['box'] }} bg-brand-600 text-white font-bold">{{ $initial }}</span>
     @endif
-    @if ($showName)
+    @if ($showName && ! $logoUrl)
         <span class="font-semibold tracking-tight {{ $s['text'] }} {{ $nameClass }}">{{ $siteName }}</span>
     @endif
 @if ($link)

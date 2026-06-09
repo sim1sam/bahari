@@ -361,8 +361,8 @@
                     <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:44px;width:auto">
                 @else
                     <span class="brand-logo-icon">{{ $site->logoInitial() }}</span>
+                    {{ $site->siteName() }}
                 @endif
-                {{ $site->siteName() }}
             </a>
             <div class="brand-hero">
                 @yield('brand_heading')
@@ -380,8 +380,8 @@
                 <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:36px;width:auto">
             @else
                 <span class="mobile-logo-icon">{{ $site->logoInitial() }}</span>
+                {{ $site->siteName() }}
             @endif
-            {{ $site->siteName() }}
         </a>
 
         <div class="auth-form-panel">
