@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminFeatures;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +13,9 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (auth()->check() && auth()->user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
+            $route = AdminFeatures::firstAccessibleRoute(auth()->user()) ?? 'admin.dashboard';
+
+            return redirect()->route($route);
         }
 
         return view('admin.auth.login');
@@ -29,6 +32,12 @@ class AuthController extends Controller
             return back()->with('error', 'Invalid credentials.')->onlyInput('email');
         }
 
+        if (! auth()->user()->hasActiveRole()) {
+            auth()->logout();
+
+            return back()->with('error', 'Your role has been deactivated.')->onlyInput('email');
+        }
+
         if (! auth()->user()->isAdmin()) {
             auth()->logout();
 
@@ -37,7 +46,15 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        $route = AdminFeatures::firstAccessibleRoute(auth()->user());
+
+        if (! $route) {
+            auth()->logout();
+
+            return back()->with('error', 'Your role has no admin features assigned.')->onlyInput('email');
+        }
+
+        return redirect()->intended(route($route));
     }
 
     public function logout(Request $request): RedirectResponse

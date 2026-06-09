@@ -34,54 +34,25 @@
     </nav>
 
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="{{ route('admin.dashboard') }}" class="brand-link">
+        @php
+            $adminHomeRoute = \App\Support\AdminFeatures::firstAccessibleRoute(auth()->user()) ?? 'admin.dashboard';
+        @endphp
+        <a href="{{ route($adminHomeRoute) }}" class="brand-link">
             <x-site.admin-logo />
         </a>
         <div class="sidebar">
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
-                    <li class="nav-item">
-                        <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Dashboard</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-tshirt"></i>
-                            <p>Products</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-tags"></i>
-                            <p>Categories</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Users</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-user-shield"></i>
-                            <p>Roles</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.orders.index') }}" class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-shopping-cart"></i>
-                            <p>Orders</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.settings.edit') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-cog"></i>
-                            <p>Site Settings</p>
-                        </a>
-                    </li>
+                    @foreach (config('admin_features', []) as $key => $feature)
+                        @if (auth()->user()->canAccessAdminFeature($key))
+                            <li class="nav-item">
+                                <a href="{{ route($feature['route']) }}" class="nav-link {{ request()->routeIs($feature['active']) ? 'active' : '' }}">
+                                    <i class="nav-icon {{ $feature['icon'] }}"></i>
+                                    <p>{{ $feature['label'] }}</p>
+                                </a>
+                            </li>
+                        @endif
+                    @endforeach
                 </ul>
             </nav>
         </div>

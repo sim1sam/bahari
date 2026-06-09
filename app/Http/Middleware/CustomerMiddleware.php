@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\AdminFeatures;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,8 +15,16 @@ class CustomerMiddleware
             return redirect()->route('login');
         }
 
+        if (! auth()->user()->hasActiveRole()) {
+            auth()->logout();
+
+            return redirect()->route('login')->with('error', 'Your account role has been deactivated.');
+        }
+
         if (auth()->user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
+            $route = AdminFeatures::firstAccessibleRoute(auth()->user()) ?? 'admin.dashboard';
+
+            return redirect()->route($route);
         }
 
         return $next($request);

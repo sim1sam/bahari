@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Support\AdminFeatures;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RoleController extends Controller
@@ -19,7 +22,10 @@ class RoleController extends Controller
 
     public function create(): View
     {
-        return view('admin.roles.form', ['role' => new Role]);
+        return view('admin.roles.form', [
+            'role' => new Role,
+            'features' => AdminFeatures::all(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -31,14 +37,63 @@ class RoleController extends Controller
 
     public function edit(Role $role): View
     {
-        return view('admin.roles.form', compact('role'));
+        return view('admin.roles.form', [
+            'role' => $role,
+            'features' => AdminFeatures::all(),
+        ]);
     }
 
     public function update(Request $request, Role $role): RedirectResponse
     {
-        $role->update($this->validateRole($request, $role));
+        $validated = $this->validateRole($request, $role);
+
+        if (! $validated['is_active']) {
+            $error = $this->deactivationError($role);
+            if ($error) {
+                return redirect()->route('admin.roles.edit', $role)->with('error', $error);
+            }
+        }
+
+        $role->update($validated);
 
         return redirect()->route('admin.roles.index')->with('success', 'Role updated.');
+    }
+
+    public function toggleStatus(Role $role): RedirectResponse
+    {
+        if ($role->is_active) {
+            $error = $this->deactivationError($role);
+            if ($error) {
+                return redirect()->route('admin.roles.index')->with('error', $error);
+            }
+        }
+
+        $role->update(['is_active' => ! $role->is_active]);
+
+        $status = $role->is_active ? 'activated' : 'deactivated';
+
+        return redirect()->route('admin.roles.index')->with('success', "Role {$status}.");
+    }
+
+    private function deactivationError(Role $role): ?string
+    {
+        if (auth()->user()->role_id === $role->id) {
+            return 'Cannot deactivate your own role.';
+        }
+
+        if ($role->can_access_admin) {
+            $hasOtherActiveAdminRole = Role::query()
+                ->where('can_access_admin', true)
+                ->where('is_active', true)
+                ->where('id', '!=', $role->id)
+                ->exists();
+
+            if (! $hasOtherActiveAdminRole) {
+                return 'At least one active admin role is required.';
+            }
+        }
+
+        return null;
     }
 
     public function destroy(Role $role): RedirectResponse
@@ -63,9 +118,25 @@ class RoleController extends Controller
             'slug' => 'required|string|max:100|alpha_dash|unique:roles,slug,'.($role?->id ?? 'NULL'),
             'description' => 'nullable|string|max:255',
             'can_access_admin' => 'boolean',
+            'is_active' => 'boolean',
+            'permissions' => 'nullable|array',
+            'permissions.*' => ['string', Rule::in(AdminFeatures::keys())],
         ]);
 
         $validated['can_access_admin'] = $request->boolean('can_access_admin');
+        $validated['is_active'] = $request->boolean('is_active', true);
+
+        if ($validated['can_access_admin']) {
+            $validated['permissions'] = array_values(array_unique($request->input('permissions', [])));
+
+            if (empty($validated['permissions'])) {
+                throw ValidationException::withMessages([
+                    'permissions' => 'Select at least one admin feature.',
+                ]);
+            }
+        } else {
+            $validated['permissions'] = null;
+        }
 
         if ($role?->isSystem()) {
             $validated['slug'] = $role->slug;

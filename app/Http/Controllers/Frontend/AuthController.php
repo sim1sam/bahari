@@ -29,6 +29,12 @@ class AuthController extends Controller
             return back()->with('error', 'Invalid email or password.')->onlyInput('email');
         }
 
+        if (! auth()->user()->hasActiveRole()) {
+            Auth::logout();
+
+            return back()->with('error', 'Your account role has been deactivated.')->onlyInput('email');
+        }
+
         if (auth()->user()->isAdmin()) {
             Auth::logout();
 
@@ -53,11 +59,17 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        $customerRoleId = Role::active()->where('slug', Role::SLUG_CUSTOMER)->value('id');
+
+        if (! $customerRoleId) {
+            return back()->with('error', 'Registration is currently unavailable.')->onlyInput('name', 'email');
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role_id' => Role::where('slug', Role::SLUG_CUSTOMER)->value('id'),
+            'role_id' => $customerRoleId,
         ]);
 
         Auth::login($user);

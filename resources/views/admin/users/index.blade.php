@@ -33,6 +33,7 @@
                         <th>User</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Status</th>
                         <th>Orders</th>
                         <th>Joined</th>
                         <th>Actions</th>
@@ -59,6 +60,11 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td>
+                                <span class="badge badge-{{ $user->hasActiveRole() ? 'success' : 'danger' }}">
+                                    {{ $user->hasActiveRole() ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
                             <td>{{ $user->orders_count }}</td>
                             <td>{{ $user->created_at->format('M d, Y') }}</td>
                             <td>
@@ -72,7 +78,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted">No users found</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted">No users found</td></tr>
                     @endforelse
                 </tbody>
             </table>

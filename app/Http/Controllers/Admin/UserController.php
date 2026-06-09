@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -28,7 +29,7 @@ class UserController extends Controller
 
         return view('admin.users.index', [
             'users' => $query->paginate(15)->withQueryString(),
-            'roles' => Role::orderBy('name')->get(),
+            'roles' => Role::active()->orderBy('name')->get(),
             'search' => $search ?? '',
             'roleFilter' => $roleId ?? '',
         ]);
@@ -38,7 +39,7 @@ class UserController extends Controller
     {
         return view('admin.users.form', [
             'user' => new User,
-            'roles' => Role::orderBy('name')->get(),
+            'roles' => Role::active()->orderBy('name')->get(),
         ]);
     }
 
@@ -55,7 +56,15 @@ class UserController extends Controller
     {
         return view('admin.users.form', [
             'user' => $user,
-            'roles' => Role::orderBy('name')->get(),
+            'roles' => Role::query()
+                ->where(function ($q) use ($user) {
+                    $q->active();
+                    if ($user->role_id) {
+                        $q->orWhere('id', $user->role_id);
+                    }
+                })
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -85,6 +94,14 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
         ]);
+
+        $role = Role::find($validated['role_id']);
+
+        if (! $role || (! $role->is_active && $role->id !== $user?->role_id)) {
+            throw ValidationException::withMessages([
+                'role_id' => 'Selected role is inactive. Choose an active role.',
+            ]);
+        }
 
         if (empty($validated['password'])) {
             unset($validated['password']);

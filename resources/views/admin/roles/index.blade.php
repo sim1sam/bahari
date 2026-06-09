@@ -16,6 +16,8 @@
                         <th>Name</th>
                         <th>Slug</th>
                         <th>Admin Access</th>
+                        <th>Features</th>
+                        <th>Status</th>
                         <th>Users</th>
                         <th>Actions</th>
                     </tr>
@@ -35,8 +37,26 @@
                                     {{ $role->can_access_admin ? 'Yes' : 'No' }}
                                 </span>
                             </td>
-                            <td>{{ $role->users_count }}</td>
                             <td>
+                                @if ($role->can_access_admin)
+                                    {{ count($role->permissions ?? []) }} / {{ count(config('admin_features', [])) }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ $role->is_active ? 'success' : 'danger' }}">
+                                    {{ $role->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>{{ $role->users_count }}</td>
+                            <td class="text-nowrap">
+                                <form action="{{ route('admin.roles.status', $role) }}" method="POST" class="d-inline">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="btn btn-xs btn-{{ $role->is_active ? 'warning' : 'success' }}" title="{{ $role->is_active ? 'Deactivate' : 'Activate' }}">
+                                        <i class="fas fa-{{ $role->is_active ? 'ban' : 'check' }}"></i>
+                                    </button>
+                                </form>
                                 <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-xs btn-info"><i class="fas fa-edit"></i></a>
                                 @unless ($role->isSystem())
                                     <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this role?')">
@@ -47,7 +67,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="text-center text-muted">No roles found</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted">No roles found</td></tr>
                     @endforelse
                 </tbody>
             </table>

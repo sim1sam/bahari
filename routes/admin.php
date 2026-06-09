@@ -18,22 +18,40 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-        Route::resource('products', ProductController::class)->except(['show']);
-        Route::resource('categories', CategoryController::class)->except(['show']);
+        Route::middleware('admin.feature:dashboard')->group(function () {
+            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        });
 
-        Route::resource('users', UserController::class)->except(['show']);
-        Route::resource('roles', RoleController::class)->except(['show']);
+        Route::middleware('admin.feature:products')->group(function () {
+            Route::resource('products', ProductController::class)->except(['show']);
+        });
 
-        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-        Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
-        Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
-        Route::post('orders/{order}/payments', [OrderController::class, 'storePayment'])->name('orders.payments.store');
-        Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+        Route::middleware('admin.feature:categories')->group(function () {
+            Route::resource('categories', CategoryController::class)->except(['show']);
+        });
 
-        Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
-        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::middleware('admin.feature:users')->group(function () {
+            Route::resource('users', UserController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:roles')->group(function () {
+            Route::resource('roles', RoleController::class)->except(['show']);
+            Route::patch('roles/{role}/status', [RoleController::class, 'toggleStatus'])->name('roles.status');
+        });
+
+        Route::middleware('admin.feature:orders')->group(function () {
+            Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+            Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+            Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+            Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
+            Route::post('orders/{order}/payments', [OrderController::class, 'storePayment'])->name('orders.payments.store');
+            Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+        });
+
+        Route::middleware('admin.feature:settings')->group(function () {
+            Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
+            Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        });
     });
 });

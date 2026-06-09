@@ -42,9 +42,19 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function hasActiveRole(): bool
+    {
+        return (bool) $this->role?->is_active;
+    }
+
     public function isAdmin(): bool
     {
-        return (bool) $this->role?->can_access_admin;
+        return $this->hasActiveRole() && (bool) $this->role?->can_access_admin;
+    }
+
+    public function canAccessAdminFeature(string $feature): bool
+    {
+        return $this->isAdmin() && $this->role->hasFeature($feature);
     }
 
     public function hasRole(string $slug): bool

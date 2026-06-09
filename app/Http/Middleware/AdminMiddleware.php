@@ -10,7 +10,17 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->check() || ! auth()->user()->isAdmin()) {
+        if (! auth()->check()) {
+            return redirect()->route('admin.login')->with('error', 'Please login as admin.');
+        }
+
+        if (! auth()->user()->hasActiveRole()) {
+            auth()->logout();
+
+            return redirect()->route('admin.login')->with('error', 'Your role has been deactivated.');
+        }
+
+        if (! auth()->user()->isAdmin()) {
             return redirect()->route('admin.login')->with('error', 'Please login as admin.');
         }
 

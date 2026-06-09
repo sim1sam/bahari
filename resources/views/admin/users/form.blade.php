@@ -31,7 +31,9 @@
                             <select name="role_id" class="form-control @error('role_id') is-invalid @enderror" required>
                                 <option value="">— Select role —</option>
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}" @selected(old('role_id', $user->role_id) == $role->id)>{{ $role->name }}</option>
+                                    <option value="{{ $role->id }}" @selected(old('role_id', $user->role_id) == $role->id)>
+                                        {{ $role->name }}@unless($role->is_active) (Inactive)@endunless
+                                    </option>
                                 @endforeach
                             </select>
                             @error('role_id')<span class="invalid-feedback">{{ $message }}</span>@enderror

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
+use App\Support\AdminFeatures;
 use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
@@ -15,6 +16,8 @@ class RoleSeeder extends Seeder
                 'name' => 'Admin',
                 'description' => 'Full access to the admin panel',
                 'can_access_admin' => true,
+                'is_active' => true,
+                'permissions' => AdminFeatures::keys(),
             ]
         );
 
@@ -24,6 +27,8 @@ class RoleSeeder extends Seeder
                 'name' => 'Customer',
                 'description' => 'Storefront customer account',
                 'can_access_admin' => false,
+                'is_active' => true,
+                'permissions' => null,
             ]
         );
     }
