@@ -67,6 +67,11 @@ class User extends Authenticatable
         return $query->whereHas('role', fn ($q) => $q->where('slug', Role::SLUG_CUSTOMER));
     }
 
+    public function scopeStaff($query)
+    {
+        return $query->whereHas('role', fn ($q) => $q->where('can_access_admin', true));
+    }
+
     public function avatarUrl(): ?string
     {
         if (! $this->avatar) {

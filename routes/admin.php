@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Models\User;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
@@ -33,6 +35,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:users')->group(function () {
             Route::resource('users', UserController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:customers')->group(function () {
+            Route::bind('customer', fn (string $value) => User::customers()->findOrFail($value));
+            Route::resource('customers', CustomerController::class)->except(['show']);
         });
 
         Route::middleware('admin.feature:roles')->group(function () {

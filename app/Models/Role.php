@@ -43,6 +43,11 @@ class Role extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeWithAdminAccess($query)
+    {
+        return $query->where('can_access_admin', true);
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

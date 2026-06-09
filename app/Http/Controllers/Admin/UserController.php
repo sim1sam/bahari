@@ -14,7 +14,7 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = User::with('role')->withCount('orders')->latest();
+        $query = User::staff()->with('role')->withCount('orders')->latest();
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -29,7 +29,7 @@ class UserController extends Controller
 
         return view('admin.users.index', [
             'users' => $query->paginate(15)->withQueryString(),
-            'roles' => Role::active()->orderBy('name')->get(),
+            'roles' => Role::active()->withAdminAccess()->orderBy('name')->get(),
             'search' => $search ?? '',
             'roleFilter' => $roleId ?? '',
         ]);
@@ -39,7 +39,7 @@ class UserController extends Controller
     {
         return view('admin.users.form', [
             'user' => new User,
-            'roles' => Role::active()->orderBy('name')->get(),
+            'roles' => Role::active()->withAdminAccess()->orderBy('name')->get(),
         ]);
     }
 
@@ -54,9 +54,12 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
+        $this->ensureStaff($user);
+
         return view('admin.users.form', [
             'user' => $user,
             'roles' => Role::query()
+                ->withAdminAccess()
                 ->where(function ($q) use ($user) {
                     $q->active();
                     if ($user->role_id) {
@@ -70,6 +73,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->ensureStaff($user);
+
         $user->update($this->validateUser($request, $user));
 
         return redirect()->route('admin.users.index')->with('success', 'User updated.');
@@ -77,6 +82,8 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        $this->ensureStaff($user);
+
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
         }
@@ -84,6 +91,13 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'User deleted.');
+    }
+
+    private function ensureStaff(User $user): void
+    {
+        if (! $user->role?->can_access_admin) {
+            abort(404);
+        }
     }
 
     private function validateUser(Request $request, ?User $user = null): array
@@ -97,7 +111,13 @@ class UserController extends Controller
 
         $role = Role::find($validated['role_id']);
 
-        if (! $role || (! $role->is_active && $role->id !== $user?->role_id)) {
+        if (! $role || ! $role->can_access_admin) {
+            throw ValidationException::withMessages([
+                'role_id' => 'Select a valid staff/admin role.',
+            ]);
+        }
+
+        if (! $role->is_active && $role->id !== $user?->role_id) {
             throw ValidationException::withMessages([
                 'role_id' => 'Selected role is inactive. Choose an active role.',
             ]);

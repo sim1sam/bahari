@@ -21,9 +21,15 @@ return [
     ],
     'users' => [
         'label' => 'Users',
-        'icon' => 'fas fa-users',
+        'icon' => 'fas fa-user-cog',
         'route' => 'admin.users.index',
         'active' => 'admin.users.*',
+    ],
+    'customers' => [
+        'label' => 'Customers',
+        'icon' => 'fas fa-users',
+        'route' => 'admin.customers.index',
+        'active' => 'admin.customers.*',
     ],
     'roles' => [
         'label' => 'Roles',
