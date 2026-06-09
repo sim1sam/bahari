@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     public function showLogin(): View|RedirectResponse
     {
-        if (auth()->check() && auth()->user()->is_admin) {
+        if (auth()->check() && auth()->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
@@ -29,7 +29,7 @@ class AuthController extends Controller
             return back()->with('error', 'Invalid credentials.')->onlyInput('email');
         }
 
-        if (! auth()->user()->is_admin) {
+        if (! auth()->user()->isAdmin()) {
             auth()->logout();
 
             return back()->with('error', 'You do not have admin access.')->onlyInput('email');

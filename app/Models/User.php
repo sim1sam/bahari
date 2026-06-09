@@ -7,11 +7,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'avatar', 'password', 'is_admin'])]
+#[Fillable(['name', 'email', 'avatar', 'password', 'role_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,8 +29,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
         ];
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
     }
 
     public function orders(): HasMany
@@ -37,9 +42,19 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function isAdmin(): bool
+    {
+        return (bool) $this->role?->can_access_admin;
+    }
+
+    public function hasRole(string $slug): bool
+    {
+        return $this->role?->slug === $slug;
+    }
+
     public function scopeCustomers($query)
     {
-        return $query->where('is_admin', false);
+        return $query->whereHas('role', fn ($q) => $q->where('slug', Role::SLUG_CUSTOMER));
     }
 
     public function avatarUrl(): ?string

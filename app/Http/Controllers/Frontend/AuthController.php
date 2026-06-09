@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class AuthController extends Controller
             return back()->with('error', 'Invalid email or password.')->onlyInput('email');
         }
 
-        if (auth()->user()->is_admin) {
+        if (auth()->user()->isAdmin()) {
             Auth::logout();
 
             return back()->with('error', 'Please use the admin login page.')->onlyInput('email');
@@ -56,7 +57,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'is_admin' => false,
+            'role_id' => Role::where('slug', Role::SLUG_CUSTOMER)->value('id'),
         ]);
 
         Auth::login($user);

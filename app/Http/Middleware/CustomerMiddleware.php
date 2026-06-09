@@ -14,7 +14,7 @@ class CustomerMiddleware
             return redirect()->route('login');
         }
 
-        if (auth()->user()->is_admin) {
+        if (auth()->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
