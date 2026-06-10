@@ -10,6 +10,7 @@
 
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-site.theme-styles />
     @stack('styles')
 </head>
 <body class="min-h-screen flex flex-col">

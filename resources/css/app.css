@@ -20,6 +20,12 @@
     --color-brand-900: #164e63;
     --color-brand-950: #083344;
 
+    --theme-primary: #0891b2;
+    --theme-primary-dark: #164e63;
+    --theme-footer-bg: #1c1917;
+    --theme-text: #1c1917;
+    --theme-background: #f8fafc;
+
     --color-surface: #f8fafc;
     --color-surface-elevated: #ffffff;
     --color-ink: #1c1917;
@@ -49,14 +55,14 @@
     .hero-slider-overlay {
         background: linear-gradient(
             to right,
-            rgb(8 51 68 / 0.9) 0%,
-            rgb(22 78 99 / 0.55) 50%,
-            rgb(22 78 99 / 0.2) 100%
+            color-mix(in srgb, var(--theme-primary-dark) 90%, transparent) 0%,
+            color-mix(in srgb, var(--theme-primary-dark) 55%, transparent) 50%,
+            color-mix(in srgb, var(--theme-primary-dark) 20%, transparent) 100%
         );
     }
 
     .hero-slider-overlay-bottom {
-        background: linear-gradient(to top, rgb(8 51 68 / 0.5) 0%, transparent 100%);
+        background: linear-gradient(to top, color-mix(in srgb, var(--theme-primary-dark) 50%, transparent) 0%, transparent 100%);
     }
 
     .category-layout {

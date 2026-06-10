@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0891b2">
+    <meta name="theme-color" content="{{ $siteSettings->theme_primary ?? '#0891b2' }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <x-site.meta
@@ -12,6 +12,7 @@
     />
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-site.theme-styles />
     @stack('styles')
 </head>
 <body class="account-app min-h-screen bg-surface text-ink antialiased">

@@ -60,6 +60,11 @@ class SettingsController extends Controller
             'footer_shop_title' => 'nullable|string|max:100',
             'footer_support_title' => 'nullable|string|max:100',
             'footer_copyright' => 'nullable|string|max:255',
+            'theme_primary' => ['nullable', 'string', 'max:20', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'theme_primary_dark' => ['nullable', 'string', 'max:20', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'theme_footer_bg' => ['nullable', 'string', 'max:20', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'theme_text' => ['nullable', 'string', 'max:20', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'theme_background' => ['nullable', 'string', 'max:20', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'remove_logo' => 'boolean',
             'remove_favicon' => 'boolean',
         ]);

@@ -99,6 +99,11 @@ class HomepageContentSeeder extends Seeder
             'footer_shop_title' => 'Shop',
             'footer_support_title' => 'Support',
             'footer_copyright' => '© {year} {site}. All rights reserved.',
+            'theme_primary' => '#0891b2',
+            'theme_primary_dark' => '#164e63',
+            'theme_footer_bg' => '#1c1917',
+            'theme_text' => '#1c1917',
+            'theme_background' => '#f8fafc',
         ]);
     }
 }
