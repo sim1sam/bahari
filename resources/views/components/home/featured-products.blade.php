@@ -1,4 +1,9 @@
-@props(['products' => [], 'title' => 'Featured Products', 'subtitle' => 'Handpicked items just for you'])
+@props([
+    'products' => [],
+    'title' => 'Featured Products',
+    'subtitle' => 'Handpicked items just for you',
+    'actionHref' => null,
+])
 
 <section class="py-16 lg:py-20 bg-surface">
     <div class="container-store">
@@ -6,6 +11,7 @@
             :title="$title"
             :subtitle="$subtitle"
             actionLabel="See All Products"
+            :actionHref="$actionHref ?? route('categories.index')"
         />
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">

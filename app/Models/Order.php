@@ -131,9 +131,53 @@ class Order extends Model
             'processing' => 'Processing',
             'shipped' => 'Shipped',
             'delivered' => 'Delivered',
+            'completed' => 'Completed',
             'cancelled' => 'Cancelled',
             default => 'Pending',
         };
+    }
+
+    /** @return array<int, array{key: string, label: string, description: string, icon: string}> */
+    public static function trackingSteps(): array
+    {
+        return [
+            ['key' => 'pending', 'label' => 'Order Placed', 'description' => 'We received your order', 'icon' => 'clipboard'],
+            ['key' => 'processing', 'label' => 'Processing', 'description' => 'Your items are being prepared', 'icon' => 'cog'],
+            ['key' => 'shipped', 'label' => 'Shipped', 'description' => 'Your order is on the way', 'icon' => 'truck'],
+            ['key' => 'completed', 'label' => 'Completed', 'description' => 'Successfully delivered', 'icon' => 'check'],
+        ];
+    }
+
+    public function trackingStepIndex(): int
+    {
+        return match ($this->status) {
+            'processing' => 1,
+            'shipped' => 2,
+            'delivered', 'completed' => 3,
+            'cancelled' => -1,
+            default => 0,
+        };
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
+    }
+
+    public function trackingProgressPercent(): int
+    {
+        if ($this->isCancelled()) {
+            return 0;
+        }
+
+        $index = $this->trackingStepIndex();
+        $steps = count(self::trackingSteps());
+
+        if ($steps <= 1) {
+            return 0;
+        }
+
+        return (int) round(($index / ($steps - 1)) * 100);
     }
 
     public function statusColor(): string
@@ -141,7 +185,7 @@ class Order extends Model
         return match ($this->status) {
             'processing' => 'bg-blue-100 text-blue-700',
             'shipped' => 'bg-purple-100 text-purple-700',
-            'delivered' => 'bg-green-100 text-green-700',
+            'delivered', 'completed' => 'bg-green-100 text-green-700',
             'cancelled' => 'bg-red-100 text-red-700',
             default => 'bg-amber-100 text-amber-700',
         };

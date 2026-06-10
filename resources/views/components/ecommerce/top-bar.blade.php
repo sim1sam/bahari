@@ -18,7 +18,7 @@
             @if ($siteSettings->contact_email)
                 <a href="mailto:{{ $siteSettings->contact_email }}" class="transition-opacity hover:opacity-80" style="color: inherit;">Contact</a>
             @endif
-            <a href="{{ auth()->check() ? route('account.orders') : route('login') }}" class="transition-opacity hover:opacity-80" style="color: inherit;">Track Order</a>
+            <a href="{{ route('order.track') }}" class="transition-opacity hover:opacity-80" style="color: inherit;">Track Order</a>
         </div>
     </div>
 </div>

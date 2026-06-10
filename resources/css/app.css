@@ -205,4 +205,148 @@
             @apply overflow-y-auto;
         }
     }
+
+    /* Order tracking timeline */
+    .order-track-result {
+        animation: orderTrackFadeUp 0.6s ease-out both;
+    }
+
+    .order-track-step {
+        animation: orderTrackFadeUp 0.5s ease-out both;
+        animation-delay: var(--step-delay, 0s);
+    }
+
+    .order-track-rail-fill {
+        animation: orderTrackRailGrow 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+        width: 0;
+    }
+
+    .order-track-node--done {
+        animation: orderTrackPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-delay: var(--step-delay, 0s);
+    }
+
+    .order-track-node--current {
+        animation: orderTrackPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .order-track-check {
+        animation: orderTrackCheckIn 0.35s ease-out both;
+        animation-delay: calc(var(--step-delay, 0s) + 0.1s);
+    }
+
+    .order-track-pulse {
+        animation: orderTrackPulse 2s ease-out infinite;
+    }
+
+    .order-track-spin {
+        animation: orderTrackSpin 2.5s linear infinite;
+    }
+
+    .order-track-bounce {
+        animation: orderTrackBounce 1.5s ease-in-out infinite;
+    }
+
+    .order-track-dot {
+        animation: orderTrackDot 1.2s ease-in-out infinite;
+    }
+
+    .order-track-vertical-fill {
+        animation: orderTrackVerticalGrow 0.6s ease-out both;
+        animation-delay: var(--step-delay, 0s);
+    }
+
+    .order-track-cancelled {
+        animation: orderTrackFadeUp 0.5s ease-out both;
+    }
+
+    @keyframes orderTrackFadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes orderTrackRailGrow {
+        to {
+            width: var(--track-target-width, 0%);
+        }
+    }
+
+    @keyframes orderTrackPop {
+        0% {
+            opacity: 0;
+            transform: scale(0.6);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes orderTrackCheckIn {
+        from {
+            opacity: 0;
+            transform: scale(0.5) rotate(-20deg);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) rotate(0);
+        }
+    }
+
+    @keyframes orderTrackPulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.7;
+        }
+        70% {
+            transform: scale(1.35);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1.35);
+            opacity: 0;
+        }
+    }
+
+    @keyframes orderTrackSpin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes orderTrackBounce {
+        0%, 100% {
+            transform: translateX(0);
+        }
+        50% {
+            transform: translateX(3px);
+        }
+    }
+
+    @keyframes orderTrackDot {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.35;
+        }
+    }
+
+    @keyframes orderTrackVerticalGrow {
+        from {
+            transform: scaleY(0);
+        }
+        to {
+            transform: scaleY(1);
+        }
+    }
 }

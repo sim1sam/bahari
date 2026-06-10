@@ -77,7 +77,7 @@
 
             <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <x-ui.button :href="route('home')" size="lg">Continue Shopping</x-ui.button>
-                <x-ui.button :href="route('products.show', $order['items'][array_key_first($order['items'])]['slug'])" variant="secondary" size="lg">View Product</x-ui.button>
+                <x-ui.button :href="route('order.track', ['order' => $order['number']])" variant="secondary" size="lg">Track Order</x-ui.button>
             </div>
         </div>
     </section>

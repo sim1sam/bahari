@@ -7,6 +7,7 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CategoryController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,3 +51,8 @@ Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->nam
 Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
+
+Route::middleware('throttle:20,1')->group(function () {
+    Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('order.track');
+    Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('order.track.lookup');
+});
