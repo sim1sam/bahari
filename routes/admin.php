@@ -4,6 +4,11 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FooterLinkController;
+use App\Http\Controllers\Admin\HomeBannerController;
+use App\Http\Controllers\Admin\HomeFeatureController;
+use App\Http\Controllers\Admin\HomepageController;
+use App\Http\Controllers\Admin\HomeSliderController;
 use App\Models\User;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
@@ -13,7 +18,7 @@ use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
-    Route::middleware('guest')->group(function () {
+    Route::middleware('admin.guest')->group(function () {
         Route::get('login', [AuthController::class, 'showLogin'])->name('login');
         Route::post('login', [AuthController::class, 'login'])->name('login.submit');
     });
@@ -23,6 +28,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:dashboard')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        });
+
+        Route::middleware('admin.feature:homepage')->group(function () {
+            Route::get('homepage', [HomepageController::class, 'index'])->name('homepage.index');
+            Route::resource('homepage/sliders', HomeSliderController::class)->except(['show'])->names('homepage.sliders')->parameters(['sliders' => 'slider']);
+            Route::resource('homepage/banners', HomeBannerController::class)->except(['show'])->names('homepage.banners')->parameters(['banners' => 'banner']);
+            Route::resource('homepage/features', HomeFeatureController::class)->except(['show'])->names('homepage.features')->parameters(['features' => 'feature']);
+            Route::resource('homepage/footer-links', FooterLinkController::class)->except(['show'])->names('homepage.footer-links')->parameters(['footer-links' => 'footerLink']);
         });
 
         Route::middleware('admin.feature:products')->group(function () {

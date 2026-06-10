@@ -7,6 +7,12 @@ return [
         'route' => 'admin.dashboard',
         'active' => 'admin.dashboard',
     ],
+    'homepage' => [
+        'label' => 'Homepage',
+        'icon' => 'fas fa-home',
+        'route' => 'admin.homepage.index',
+        'active' => 'admin.homepage.*',
+    ],
     'products' => [
         'label' => 'Products',
         'icon' => 'fas fa-tshirt',

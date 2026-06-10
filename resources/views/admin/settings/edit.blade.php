@@ -108,6 +108,45 @@
             </div>
 
             <div class="col-lg-6">
+                <div class="card card-warning card-outline">
+                    <div class="card-header"><h3 class="card-title">Homepage & Top Bar</h3></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Top Bar Text (Desktop)</label>
+                            <input type="text" name="top_bar_text" class="form-control" value="{{ old('top_bar_text', $settings->top_bar_text) }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Top Bar Text (Mobile)</label>
+                            <input type="text" name="top_bar_text_mobile" class="form-control" value="{{ old('top_bar_text_mobile', $settings->top_bar_text_mobile) }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Newsletter Title</label>
+                            <input type="text" name="newsletter_title" class="form-control" value="{{ old('newsletter_title', $settings->newsletter_title) }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Newsletter Text</label>
+                            <textarea name="newsletter_text" class="form-control" rows="2">{{ old('newsletter_text', $settings->newsletter_text) }}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Footer Shop Column Title</label>
+                                    <input type="text" name="footer_shop_title" class="form-control" value="{{ old('footer_shop_title', $settings->footer_shop_title) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Footer Support Column Title</label>
+                                    <input type="text" name="footer_support_title" class="form-control" value="{{ old('footer_support_title', $settings->footer_support_title) }}">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-0">Sliders, banners, and footer links are managed in <a href="{{ route('admin.homepage.index') }}">Homepage</a>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
                 <div class="card card-success card-outline">
                     <div class="card-header"><h3 class="card-title">Social Links</h3></div>
                     <div class="card-body">

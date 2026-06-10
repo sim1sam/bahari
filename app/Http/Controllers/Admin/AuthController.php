@@ -28,9 +28,15 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        if (auth()->check() && ! auth()->user()->isAdmin()) {
+            auth()->logout();
+        }
+
         if (! auth()->attempt($credentials, $request->boolean('remember'))) {
             return back()->with('error', 'Invalid credentials.')->onlyInput('email');
         }
+
+        auth()->user()->load('role');
 
         if (! auth()->user()->hasActiveRole()) {
             auth()->logout();

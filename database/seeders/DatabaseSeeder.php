@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminSeeder::class,
             SiteSettingsSeeder::class,
+            HomepageContentSeeder::class,
             CatalogSeeder::class,
         ]);
     }

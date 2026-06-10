@@ -48,6 +48,12 @@ class SettingsController extends Controller
             'instagram_url' => 'nullable|url|max:255',
             'tiktok_url' => 'nullable|url|max:255',
             'youtube_url' => 'nullable|url|max:255',
+            'top_bar_text' => 'nullable|string|max:255',
+            'top_bar_text_mobile' => 'nullable|string|max:255',
+            'newsletter_title' => 'nullable|string|max:100',
+            'newsletter_text' => 'nullable|string|max:255',
+            'footer_shop_title' => 'nullable|string|max:100',
+            'footer_support_title' => 'nullable|string|max:100',
             'remove_logo' => 'boolean',
             'remove_favicon' => 'boolean',
         ]);
