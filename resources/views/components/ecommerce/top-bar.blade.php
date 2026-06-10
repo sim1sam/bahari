@@ -1,16 +1,25 @@
 @php
     $topBarText = $siteSettings->top_bar_text ?? 'Free shipping on dress orders over $50 ✦ New styles every week';
     $topBarMobile = $siteSettings->top_bar_text_mobile ?? 'Free shipping on orders $50+';
+    $bgColor = $siteSettings->top_bar_bg_color ?? '#164e63';
+    $textColor = $siteSettings->top_bar_text_color ?? '#ffffff';
+    $linkColor = $siteSettings->top_bar_link_color ?? '#cffafe';
 @endphp
-<div class="bg-brand-900 text-white text-sm">
+@if ($topBarText || $topBarMobile)
+<div class="text-sm" style="background-color: {{ $bgColor }}; color: {{ $textColor }};">
     <div class="container-store flex items-center justify-between py-2">
-        <p class="hidden sm:block">{{ $topBarText }}</p>
-        <p class="sm:hidden text-center flex-1">{{ $topBarMobile }}</p>
-        <div class="hidden md:flex items-center gap-4 text-brand-100">
+        @if ($topBarText)
+            <p class="hidden sm:block">{{ $topBarText }}</p>
+        @endif
+        @if ($topBarMobile)
+            <p class="sm:hidden text-center flex-1">{{ $topBarMobile }}</p>
+        @endif
+        <div class="hidden md:flex items-center gap-4" style="color: {{ $linkColor }};">
             @if ($siteSettings->contact_email)
-                <a href="mailto:{{ $siteSettings->contact_email }}" class="hover:text-white transition-colors">Contact</a>
+                <a href="mailto:{{ $siteSettings->contact_email }}" class="transition-opacity hover:opacity-80" style="color: inherit;">Contact</a>
             @endif
-            <a href="{{ route('account.orders') }}" class="hover:text-white transition-colors">Track Order</a>
+            <a href="{{ auth()->check() ? route('account.orders') : route('login') }}" class="transition-opacity hover:opacity-80" style="color: inherit;">Track Order</a>
         </div>
     </div>
 </div>
+@endif

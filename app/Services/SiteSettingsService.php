@@ -89,6 +89,47 @@ class SiteSettingsService
         return $this->get()->footer_description ?: $this->tagline();
     }
 
+    public function footerCopyright(): string
+    {
+        $template = $this->get()->footer_copyright ?: '© {year} {site}. All rights reserved.';
+
+        return str_replace(
+            ['{year}', '{site}'],
+            [date('Y'), $this->siteName()],
+            $template
+        );
+    }
+
+    public function newsletterPlaceholder(): string
+    {
+        return $this->get()->newsletter_placeholder ?: 'Your email';
+    }
+
+    public function newsletterButtonText(): string
+    {
+        return $this->get()->newsletter_button_text ?: 'Join';
+    }
+
+    public function footerShopTitle(): string
+    {
+        return $this->get()->footer_shop_title ?: 'Shop';
+    }
+
+    public function footerSupportTitle(): string
+    {
+        return $this->get()->footer_support_title ?: 'Support';
+    }
+
+    public function newsletterTitle(): string
+    {
+        return $this->get()->newsletter_title ?: 'Stay Updated';
+    }
+
+    public function newsletterText(): string
+    {
+        return $this->get()->newsletter_text ?: 'Get exclusive deals and new arrivals in your inbox.';
+    }
+
     public function logoInitial(): string
     {
         return strtoupper(substr($this->siteName(), 0, 1));

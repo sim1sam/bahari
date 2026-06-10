@@ -87,21 +87,75 @@
                 </div>
             </div>
 
-            <div class="col-lg-6">
+            <div class="col-lg-12">
                 <div class="card card-secondary card-outline">
-                    <div class="card-header"><h3 class="card-title">Footer & Contact</h3></div>
+                    <div class="card-header"><h3 class="card-title">Footer</h3></div>
                     <div class="card-body">
-                        <div class="form-group">
-                            <label>Footer Description</label>
-                            <textarea name="footer_description" class="form-control" rows="3">{{ old('footer_description', $settings->footer_description) }}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Contact Email</label>
-                            <input type="email" name="contact_email" class="form-control" value="{{ old('contact_email', $settings->contact_email) }}">
-                        </div>
-                        <div class="form-group">
-                            <label>Contact Phone</label>
-                            <input type="text" name="contact_phone" class="form-control" value="{{ old('contact_phone', $settings->contact_phone) }}">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Brand Description</label>
+                                    <textarea name="footer_description" class="form-control" rows="3" placeholder="Short about text under the logo">{{ old('footer_description', $settings->footer_description) }}</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Contact Email</label>
+                                            <input type="email" name="contact_email" class="form-control" value="{{ old('contact_email', $settings->contact_email) }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Contact Phone</label>
+                                            <input type="text" name="contact_phone" class="form-control" value="{{ old('contact_phone', $settings->contact_phone) }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Copyright Text</label>
+                                    <input type="text" name="footer_copyright" class="form-control" value="{{ old('footer_copyright', $settings->footer_copyright) }}" placeholder="© {year} {site}. All rights reserved.">
+                                    <small class="text-muted">Use <code>{year}</code> and <code>{site}</code> as placeholders.</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Shop Column Title</label>
+                                            <input type="text" name="footer_shop_title" class="form-control" value="{{ old('footer_shop_title', $settings->footer_shop_title) }}" placeholder="Shop">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Support Column Title</label>
+                                            <input type="text" name="footer_support_title" class="form-control" value="{{ old('footer_support_title', $settings->footer_support_title) }}" placeholder="Support">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Newsletter Title</label>
+                                    <input type="text" name="newsletter_title" class="form-control" value="{{ old('newsletter_title', $settings->newsletter_title) }}" placeholder="Stay Updated">
+                                </div>
+                                <div class="form-group">
+                                    <label>Newsletter Text</label>
+                                    <textarea name="newsletter_text" class="form-control" rows="2" placeholder="Get exclusive deals...">{{ old('newsletter_text', $settings->newsletter_text) }}</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Newsletter Email Placeholder</label>
+                                            <input type="text" name="newsletter_placeholder" class="form-control" value="{{ old('newsletter_placeholder', $settings->newsletter_placeholder) }}" placeholder="Your email">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Newsletter Button Text</label>
+                                            <input type="text" name="newsletter_button_text" class="form-control" value="{{ old('newsletter_button_text', $settings->newsletter_button_text) }}" placeholder="Join">
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-0">Footer menu links are managed in <a href="{{ route('admin.homepage.footer-links.index') }}">Homepage → Footer Links</a>.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -109,39 +163,49 @@
 
             <div class="col-lg-6">
                 <div class="card card-warning card-outline">
-                    <div class="card-header"><h3 class="card-title">Homepage & Top Bar</h3></div>
+                    <div class="card-header"><h3 class="card-title">Top Bar</h3></div>
                     <div class="card-body">
                         <div class="form-group">
                             <label>Top Bar Text (Desktop)</label>
-                            <input type="text" name="top_bar_text" class="form-control" value="{{ old('top_bar_text', $settings->top_bar_text) }}">
+                            <input type="text" name="top_bar_text" class="form-control" value="{{ old('top_bar_text', $settings->top_bar_text) }}" placeholder="Free shipping on orders over $50">
                         </div>
                         <div class="form-group">
                             <label>Top Bar Text (Mobile)</label>
-                            <input type="text" name="top_bar_text_mobile" class="form-control" value="{{ old('top_bar_text_mobile', $settings->top_bar_text_mobile) }}">
-                        </div>
-                        <div class="form-group">
-                            <label>Newsletter Title</label>
-                            <input type="text" name="newsletter_title" class="form-control" value="{{ old('newsletter_title', $settings->newsletter_title) }}">
-                        </div>
-                        <div class="form-group">
-                            <label>Newsletter Text</label>
-                            <textarea name="newsletter_text" class="form-control" rows="2">{{ old('newsletter_text', $settings->newsletter_text) }}</textarea>
+                            <input type="text" name="top_bar_text_mobile" class="form-control" value="{{ old('top_bar_text_mobile', $settings->top_bar_text_mobile) }}" placeholder="Free shipping $50+">
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Footer Shop Column Title</label>
-                                    <input type="text" name="footer_shop_title" class="form-control" value="{{ old('footer_shop_title', $settings->footer_shop_title) }}">
+                                    <label>Background Color</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="color" class="form-control form-control-color" value="{{ old('top_bar_bg_color', $settings->top_bar_bg_color ?? '#164e63') }}" oninput="this.nextElementSibling.value=this.value">
+                                        <input type="text" name="top_bar_bg_color" class="form-control" value="{{ old('top_bar_bg_color', $settings->top_bar_bg_color ?? '#164e63') }}" pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" oninput="this.previousElementSibling.value=this.value">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Footer Support Column Title</label>
-                                    <input type="text" name="footer_support_title" class="form-control" value="{{ old('footer_support_title', $settings->footer_support_title) }}">
+                                    <label>Text Color</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="color" class="form-control form-control-color" value="{{ old('top_bar_text_color', $settings->top_bar_text_color ?? '#ffffff') }}" oninput="this.nextElementSibling.value=this.value">
+                                        <input type="text" name="top_bar_text_color" class="form-control" value="{{ old('top_bar_text_color', $settings->top_bar_text_color ?? '#ffffff') }}" pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" oninput="this.previousElementSibling.value=this.value">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Link Color</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="color" class="form-control form-control-color" value="{{ old('top_bar_link_color', $settings->top_bar_link_color ?? '#cffafe') }}" oninput="this.nextElementSibling.value=this.value">
+                                        <input type="text" name="top_bar_link_color" class="form-control" value="{{ old('top_bar_link_color', $settings->top_bar_link_color ?? '#cffafe') }}" pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" oninput="this.previousElementSibling.value=this.value">
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <p class="text-muted small mb-0">Sliders, banners, and footer links are managed in <a href="{{ route('admin.homepage.index') }}">Homepage</a>.</p>
+                        <div id="top-bar-preview" class="rounded px-3 py-2 text-sm" style="background:{{ old('top_bar_bg_color', $settings->top_bar_bg_color ?? '#164e63') }};color:{{ old('top_bar_text_color', $settings->top_bar_text_color ?? '#ffffff') }}">
+                            <span>{{ old('top_bar_text', $settings->top_bar_text) ?: 'Top bar preview text' }}</span>
+                            <span class="ml-3" style="color:{{ old('top_bar_link_color', $settings->top_bar_link_color ?? '#cffafe') }}">Sample link</span>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -89,10 +89,16 @@ class HomepageContentSeeder extends Seeder
         SiteSetting::current()->update([
             'top_bar_text' => 'Free shipping on dress orders over $50 ✦ New styles every week',
             'top_bar_text_mobile' => 'Free shipping on orders $50+',
+            'top_bar_bg_color' => '#164e63',
+            'top_bar_text_color' => '#ffffff',
+            'top_bar_link_color' => '#cffafe',
             'newsletter_title' => 'Stay Updated',
             'newsletter_text' => 'Get exclusive deals and new arrivals in your inbox.',
+            'newsletter_placeholder' => 'Your email',
+            'newsletter_button_text' => 'Join',
             'footer_shop_title' => 'Shop',
             'footer_support_title' => 'Support',
+            'footer_copyright' => '© {year} {site}. All rights reserved.',
         ]);
     }
 }

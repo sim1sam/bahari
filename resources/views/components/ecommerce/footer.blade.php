@@ -3,10 +3,6 @@
     $shopLinks = $homepage->footerLinks('shop');
     $supportLinks = $homepage->footerLinks('support');
     $legalLinks = $homepage->footerLinks('legal');
-    $shopTitle = $siteSettings->footer_shop_title ?? 'Shop';
-    $supportTitle = $siteSettings->footer_support_title ?? 'Support';
-    $newsletterTitle = $siteSettings->newsletter_title ?? 'Stay Updated';
-    $newsletterText = $siteSettings->newsletter_text ?? 'Get exclusive deals and new arrivals in your inbox.';
 @endphp
 <footer class="bg-ink text-white mt-auto">
     <div class="container-store py-12 lg:py-16">
@@ -14,9 +10,11 @@
             {{-- Brand --}}
             <div class="sm:col-span-2 lg:col-span-1">
                 <x-site.logo class="mb-4" name-class="text-white" />
-                <p class="text-zinc-400 text-sm leading-relaxed max-w-xs">
-                    {{ $site->footerDescription() }}
-                </p>
+                @if ($site->footerDescription())
+                    <p class="text-zinc-400 text-sm leading-relaxed max-w-xs">
+                        {{ $site->footerDescription() }}
+                    </p>
+                @endif
                 @if ($siteSettings->contact_email || $siteSettings->contact_phone)
                     <div class="mt-4 text-sm text-zinc-400 space-y-1">
                         @if ($siteSettings->contact_email)
@@ -51,9 +49,9 @@
                 </div>
             </div>
 
-            @if (count($shopLinks) > 0)
+            @if (count($shopLinks) > 0 && $site->footerShopTitle())
             <div>
-                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $shopTitle }}</h3>
+                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->footerShopTitle() }}</h3>
                 <ul class="space-y-2.5 text-sm text-zinc-400">
                     @foreach ($shopLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
@@ -62,9 +60,9 @@
             </div>
             @endif
 
-            @if (count($supportLinks) > 0)
+            @if (count($supportLinks) > 0 && $site->footerSupportTitle())
             <div>
-                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $supportTitle }}</h3>
+                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->footerSupportTitle() }}</h3>
                 <ul class="space-y-2.5 text-sm text-zinc-400">
                     @foreach ($supportLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
@@ -73,18 +71,24 @@
             </div>
             @endif
 
+            @if ($site->newsletterTitle() || $site->newsletterText())
             <div>
-                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $newsletterTitle }}</h3>
-                <p class="text-sm text-zinc-400 mb-4">{{ $newsletterText }}</p>
+                @if ($site->newsletterTitle())
+                    <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->newsletterTitle() }}</h3>
+                @endif
+                @if ($site->newsletterText())
+                    <p class="text-sm text-zinc-400 mb-4">{{ $site->newsletterText() }}</p>
+                @endif
                 <form action="#" class="flex gap-2">
-                    <input type="email" placeholder="Your email" class="flex-1 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50">
-                    <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-sm font-medium hover:bg-brand-500 transition-colors">Join</button>
+                    <input type="email" placeholder="{{ $site->newsletterPlaceholder() }}" class="flex-1 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50">
+                    <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-sm font-medium hover:bg-brand-500 transition-colors">{{ $site->newsletterButtonText() }}</button>
                 </form>
             </div>
+            @endif
         </div>
 
         <div class="mt-12 pt-8 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-zinc-500">
-            <p>&copy; {{ date('Y') }} {{ $site->siteName() }}. All rights reserved.</p>
+            <p>{{ $site->footerCopyright() }}</p>
             @if (count($legalLinks) > 0)
             <div class="flex gap-6">
                 @foreach ($legalLinks as $link)
