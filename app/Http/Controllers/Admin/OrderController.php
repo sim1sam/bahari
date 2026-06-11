@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\OrderPayment;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -25,6 +27,226 @@ class OrderController extends Controller
             'order' => $order->load(['items', 'payments.recorder']),
             'banks' => config('payment.banks', []),
         ]);
+    }
+
+    public function edit(Order $order): View
+    {
+        return view('admin.orders.edit', [
+            'order' => $order->load(['items', 'payments']),
+            'banks' => config('payment.banks', []),
+        ]);
+    }
+
+    public function update(Request $request, Order $order, MediaStorageService $media): RedirectResponse
+    {
+        $banks = array_keys(config('payment.banks', []));
+
+        $validated = $request->validate([
+            'customer_name' => 'required|string|max:200',
+            'customer_email' => 'required|email|max:150',
+            'customer_phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'zip' => 'nullable|string|max:20',
+            'status' => 'required|in:pending,processing,shipped,completed,cancelled',
+            'payment_method' => 'required|string|max:50',
+            'reference_code' => 'nullable|string|max:100',
+            'bank_name' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:2000',
+            'coupon_code' => 'nullable|string|max:30',
+            'subtotal' => 'required|numeric|min:0',
+            'discount' => 'required|numeric|min:0',
+            'shipping' => 'required|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'payment_status' => 'nullable|in:pending,paid,partial,due',
+            'payment_screenshot' => 'nullable|image|max:5120',
+            'remove_payment_screenshot' => 'nullable|boolean',
+            'items' => 'nullable|array',
+            'items.*.product_name' => 'required_with:items|string|max:255',
+            'items.*.product_slug' => 'nullable|string|max:255',
+            'items.*.product_link' => 'nullable|string|max:500',
+            'items.*.image' => 'nullable|string|max:500',
+            'items.*.size' => 'nullable|string|max:50',
+            'items.*.color' => 'nullable|string|max:50',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.price' => 'required_with:items|numeric|min:0',
+            'new_items' => 'nullable|array',
+            'new_items.*.product_name' => 'required_with:new_items|string|max:255',
+            'new_items.*.product_slug' => 'nullable|string|max:255',
+            'new_items.*.product_link' => 'nullable|string|max:500',
+            'new_items.*.image' => 'nullable|string|max:500',
+            'new_items.*.size' => 'nullable|string|max:50',
+            'new_items.*.color' => 'nullable|string|max:50',
+            'new_items.*.quantity' => 'required_with:new_items|integer|min:1',
+            'new_items.*.price' => 'required_with:new_items|numeric|min:0',
+            'delete_items' => 'nullable|array',
+            'delete_items.*' => 'integer|exists:order_items,id',
+            'payments' => 'nullable|array',
+            'payments.*.amount' => 'required_with:payments|numeric|min:0',
+            'payments.*.payment_method' => 'required_with:payments|in:cod,cash,bank_transfer',
+            'payments.*.bank_name' => 'nullable|string|max:100',
+            'payments.*.notes' => 'nullable|string|max:500',
+            'delete_payments' => 'nullable|array',
+            'delete_payments.*' => 'integer|exists:order_payments,id',
+            'new_payments' => 'nullable|array',
+            'new_payments.*.amount' => 'required_with:new_payments|numeric|min:0.01',
+            'new_payments.*.payment_method' => 'required_with:new_payments|in:cod,cash,bank_transfer',
+            'new_payments.*.bank_name' => 'nullable|string|max:100',
+            'new_payments.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($request, $order, $media, $validated, $banks) {
+            $order->load(['items', 'payments']);
+
+            foreach ($validated['delete_items'] ?? [] as $itemId) {
+                $item = $order->items->firstWhere('id', $itemId);
+                if ($item) {
+                    if ($item->image && ! str_starts_with($item->image, 'http')) {
+                        $media->delete($item->image);
+                    }
+                    $item->delete();
+                }
+            }
+
+            foreach ($validated['items'] ?? [] as $itemId => $itemData) {
+                $item = $order->items->firstWhere('id', (int) $itemId);
+                if (! $item) {
+                    continue;
+                }
+
+                $item->update([
+                    'product_name' => $itemData['product_name'],
+                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_link' => $itemData['product_link'] ?? null,
+                    'image' => $itemData['image'] ?? null,
+                    'size' => $itemData['size'] ?? null,
+                    'color' => $itemData['color'] ?? null,
+                    'quantity' => (int) $itemData['quantity'],
+                    'price' => round((float) $itemData['price'], 2),
+                ]);
+            }
+
+            foreach ($validated['new_items'] ?? [] as $itemData) {
+                if (empty($itemData['product_name'])) {
+                    continue;
+                }
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_name' => $itemData['product_name'],
+                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_link' => $itemData['product_link'] ?? null,
+                    'image' => $itemData['image'] ?? null,
+                    'size' => $itemData['size'] ?? null,
+                    'color' => $itemData['color'] ?? null,
+                    'quantity' => (int) $itemData['quantity'],
+                    'price' => round((float) $itemData['price'], 2),
+                ]);
+            }
+
+            foreach ($validated['delete_payments'] ?? [] as $paymentId) {
+                $payment = $order->payments->firstWhere('id', $paymentId);
+                if ($payment) {
+                    $media->delete($payment->screenshot);
+                    $payment->delete();
+                }
+            }
+
+            foreach ($validated['payments'] ?? [] as $paymentId => $paymentData) {
+                $payment = $order->payments->firstWhere('id', (int) $paymentId);
+                if (! $payment) {
+                    continue;
+                }
+
+                $bankLabel = ! empty($paymentData['bank_name'])
+                    ? (config('payment.banks')[$paymentData['bank_name']] ?? $paymentData['bank_name'])
+                    : null;
+
+                $payment->update([
+                    'amount' => round((float) $paymentData['amount'], 2),
+                    'payment_method' => $paymentData['payment_method'],
+                    'bank_name' => $bankLabel,
+                    'notes' => $paymentData['notes'] ?? null,
+                ]);
+            }
+
+            foreach ($validated['new_payments'] ?? [] as $paymentData) {
+                if (empty($paymentData['amount']) || (float) $paymentData['amount'] <= 0) {
+                    continue;
+                }
+
+                $bankLabel = ! empty($paymentData['bank_name'])
+                    ? (config('payment.banks')[$paymentData['bank_name']] ?? $paymentData['bank_name'])
+                    : null;
+
+                OrderPayment::create([
+                    'order_id' => $order->id,
+                    'recorded_by' => auth()->id(),
+                    'amount' => round((float) $paymentData['amount'], 2),
+                    'payment_method' => $paymentData['payment_method'],
+                    'bank_name' => $bankLabel,
+                    'notes' => $paymentData['notes'] ?? null,
+                ]);
+            }
+
+            $screenshotPath = $order->payment_screenshot;
+            if ($request->boolean('remove_payment_screenshot')) {
+                $media->delete($screenshotPath);
+                $screenshotPath = null;
+            }
+            if ($request->hasFile('payment_screenshot')) {
+                $media->delete($screenshotPath);
+                $screenshotPath = $media->storeUpload(
+                    $request->file('payment_screenshot'),
+                    'orders/payments',
+                    field: 'payment_screenshot'
+                );
+            }
+
+            $order->update([
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'],
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'zip' => $validated['zip'] ?? null,
+                'status' => $validated['status'],
+                'payment_method' => $validated['payment_method'],
+                'reference_code' => $validated['reference_code'] ?? null,
+                'bank_name' => $validated['bank_name'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'coupon_code' => $validated['coupon_code'] ?? null,
+                'subtotal' => round((float) $validated['subtotal'], 2),
+                'discount' => round((float) $validated['discount'], 2),
+                'shipping' => round((float) $validated['shipping'], 2),
+                'total' => round((float) $validated['total'], 2),
+                'payment_screenshot' => $screenshotPath,
+            ]);
+
+            $order->refresh()->load('payments');
+
+            if ($order->payments->isNotEmpty()) {
+                $order->amount_paid = round((float) $order->payments->sum('amount'), 2);
+                $order->recalculatePaymentStatus();
+            } else {
+                $paymentStatus = $validated['payment_status'] ?? $order->payment_status;
+                $amountPaid = min(round((float) ($validated['amount_paid'] ?? $order->amount_paid), 2), (float) $validated['total']);
+                $order->amount_paid = $amountPaid;
+                $order->payment_status = $paymentStatus;
+                if ($paymentStatus === 'paid') {
+                    $order->amount_paid = (float) $validated['total'];
+                } elseif ($paymentStatus === 'due') {
+                    $order->amount_paid = 0;
+                }
+            }
+
+            $order->save();
+        });
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('success', 'Order updated successfully.');
     }
 
     public function updateStatus(Request $request, Order $order): RedirectResponse

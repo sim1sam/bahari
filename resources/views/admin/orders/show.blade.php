@@ -4,6 +4,11 @@
 @section('page_title', 'Order '.$order->number)
 
 @section('content')
+    <div class="mb-3">
+        <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-info btn-sm">Edit Order</a>
+        <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-sm">Back to Orders</a>
+    </div>
+
     <div class="row">
         <div class="col-md-8">
             <div class="card">
