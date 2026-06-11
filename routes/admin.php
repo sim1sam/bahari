@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +62,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:roles')->group(function () {
             Route::resource('roles', RoleController::class)->except(['show']);
             Route::patch('roles/{role}/status', [RoleController::class, 'toggleStatus'])->name('roles.status');
+        });
+
+        Route::middleware('admin.feature:transactions')->group(function () {
+            Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+            Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
+            Route::post('transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('transactions.approve');
+            Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
         });
 
         Route::middleware('admin.feature:orders')->group(function () {

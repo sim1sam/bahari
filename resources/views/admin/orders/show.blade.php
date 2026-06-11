@@ -7,6 +7,10 @@
     <div class="mb-3">
         <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-info btn-sm">Edit Order</a>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-sm">Back to Orders</a>
+        @php $pendingTxn = $order->paymentTransactions->first(fn ($t) => $t->isPending()); @endphp
+        @if ($pendingTxn)
+            <a href="{{ route('admin.transactions.show', $pendingTxn) }}" class="btn btn-warning btn-sm">Review Payment Screenshot</a>
+        @endif
     </div>
 
     <div class="row">

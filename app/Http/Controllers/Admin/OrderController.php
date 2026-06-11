@@ -24,7 +24,7 @@ class OrderController extends Controller
     public function show(Order $order): View
     {
         return view('admin.orders.show', [
-            'order' => $order->load(['items', 'payments.recorder']),
+            'order' => $order->load(['items', 'payments.recorder', 'paymentTransactions']),
             'banks' => config('payment.banks', []),
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\PaymentTransaction;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class AccountController extends Controller
             abort(403);
         }
 
-        $order->load(['items', 'payments']);
+        $order->load(['items', 'payments', 'paymentTransactions']);
 
         return view('pages.account.order-show', compact('order'));
     }
@@ -64,12 +65,16 @@ class AccountController extends Controller
 
     public function transactions(): View
     {
-        $query = $this->userOrders();
+        $orderIds = $this->userOrders()->pluck('id');
+
+        $baseQuery = PaymentTransaction::query()
+            ->with('order')
+            ->whereIn('order_id', $orderIds);
 
         return view('pages.account.transactions', [
-            'orders' => (clone $query)->latest()->simplePaginate(15),
-            'transactionsCount' => $query->count(),
-            'totalSpent' => (clone $query)->sum('total'),
+            'transactions' => (clone $baseQuery)->latest()->simplePaginate(15),
+            'transactionsCount' => (clone $baseQuery)->count(),
+            'totalSpent' => (clone $baseQuery)->where('status', PaymentTransaction::STATUS_APPROVED)->sum('amount'),
         ]);
     }
 

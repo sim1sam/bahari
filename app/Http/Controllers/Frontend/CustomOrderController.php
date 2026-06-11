@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentTransaction;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,8 @@ class CustomOrderController extends Controller
             : null;
 
         $order = DB::transaction(function () use ($validated, $items, $subtotal, $total, $screenshotPath, $user, $orderNumber, $bankLabel) {
+            $isManual = $validated['payment_mode'] === 'manual';
+
             $order = Order::create([
                 'user_id' => $user->id,
                 'number' => $orderNumber,
@@ -94,7 +97,7 @@ class CustomOrderController extends Controller
                 'customer_name' => $user->name,
                 'customer_email' => $user->email,
                 'customer_phone' => $user->phone ?? null,
-                'payment_method' => $validated['payment_mode'] === 'manual' ? 'bank_transfer' : 'cod',
+                'payment_method' => $isManual ? 'bank_transfer' : 'cod',
                 'bank_name' => $bankLabel,
                 'payment_screenshot' => $screenshotPath,
                 'notes' => $validated['notes'] ?? null,
@@ -103,6 +106,8 @@ class CustomOrderController extends Controller
                 'shipping' => 0,
                 'total' => $total,
                 'status' => 'pending',
+                'payment_status' => $isManual ? 'pending' : 'due',
+                'amount_paid' => 0,
             ]);
 
             foreach ($items as $index => $item) {
@@ -117,11 +122,26 @@ class CustomOrderController extends Controller
                 ]);
             }
 
+            if ($isManual && $screenshotPath) {
+                PaymentTransaction::create([
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'amount' => $total,
+                    'bank_name' => $bankLabel,
+                    'screenshot' => $screenshotPath,
+                    'status' => PaymentTransaction::STATUS_PENDING,
+                ]);
+            }
+
             return $order;
         });
 
+        $message = $validated['payment_mode'] === 'manual'
+            ? 'Custom order submitted! Your payment screenshot is pending admin review. Order #'.$orderNumber
+            : 'Custom order submitted successfully! Order #'.$orderNumber;
+
         return redirect()
             ->route('account.orders.show', $order)
-            ->with('success', 'Custom order submitted successfully! Order #'.$orderNumber);
+            ->with('success', $message);
     }
 }

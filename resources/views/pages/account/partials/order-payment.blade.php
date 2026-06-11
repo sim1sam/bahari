@@ -41,6 +41,18 @@
                     </a>
                 </div>
             @endif
+            @php $paymentTxn = $order->latestPaymentTransaction(); @endphp
+            @if ($paymentTxn)
+                <div class="flex justify-between items-center pt-2 border-t border-border">
+                    <span class="text-ink-muted">Screenshot Review</span>
+                    <span class="px-2.5 py-1 rounded-md text-xs font-semibold {{ $paymentTxn->statusColor() }}">{{ $paymentTxn->statusLabel() }}</span>
+                </div>
+                @if ($paymentTxn->isRejected() && $paymentTxn->admin_notes)
+                    <p class="text-xs text-red-600 bg-red-50 rounded-lg p-3">{{ $paymentTxn->admin_notes }}</p>
+                @elseif ($paymentTxn->isPending())
+                    <p class="text-xs text-amber-700 bg-amber-50 rounded-lg p-3">Your payment screenshot is awaiting admin approval.</p>
+                @endif
+            @endif
         @endif
 
         @if ($order->payments->isNotEmpty())

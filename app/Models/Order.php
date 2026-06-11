@@ -41,6 +41,16 @@ class Order extends Model
         return $this->hasMany(OrderPayment::class)->latest();
     }
 
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class)->latest();
+    }
+
+    public function latestPaymentTransaction(): ?PaymentTransaction
+    {
+        return $this->paymentTransactions()->first();
+    }
+
     public function amountDue(): float
     {
         return max(0, (float) $this->total - (float) $this->amount_paid);

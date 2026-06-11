@@ -49,6 +49,12 @@ return [
         'route' => 'admin.orders.index',
         'active' => 'admin.orders.*',
     ],
+    'transactions' => [
+        'label' => 'Transactions',
+        'icon' => 'fas fa-money-check-alt',
+        'route' => 'admin.transactions.index',
+        'active' => 'admin.transactions.*',
+    ],
     'settings' => [
         'label' => 'Site Settings',
         'icon' => 'fas fa-cog',
