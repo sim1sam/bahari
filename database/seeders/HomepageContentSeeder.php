@@ -96,6 +96,8 @@ class HomepageContentSeeder extends Seeder
             'newsletter_text' => 'Get exclusive deals and new arrivals in your inbox.',
             'newsletter_placeholder' => 'Your email',
             'newsletter_button_text' => 'Join',
+            'newsletter_enabled' => true,
+            'newsletter_success_message' => 'Thanks for subscribing! Check your inbox for updates.',
             'footer_shop_title' => 'Shop',
             'footer_support_title' => 'Support',
             'footer_copyright' => '© {year} {site}. All rights reserved.',

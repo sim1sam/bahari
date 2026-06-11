@@ -7,6 +7,7 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CategoryController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
 use Illuminate\Support\Facades\Route;
@@ -55,4 +56,5 @@ Route::get('/order/success', [CheckoutController::class, 'success'])->name('orde
 Route::middleware('throttle:20,1')->group(function () {
     Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('order.track');
     Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('order.track.lookup');
+    Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 });

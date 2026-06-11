@@ -130,6 +130,16 @@ class SiteSettingsService
         return $this->get()->newsletter_text ?: 'Get exclusive deals and new arrivals in your inbox.';
     }
 
+    public function newsletterEnabled(): bool
+    {
+        return (bool) ($this->get()->newsletter_enabled ?? true);
+    }
+
+    public function newsletterSuccessMessage(): string
+    {
+        return $this->get()->newsletter_success_message ?: 'Thanks for subscribing! Check your inbox for updates.';
+    }
+
     public function logoInitial(): string
     {
         return strtoupper(substr($this->siteName(), 0, 1));

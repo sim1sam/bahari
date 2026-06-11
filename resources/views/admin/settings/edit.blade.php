@@ -133,6 +133,12 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="newsletter_enabled" name="newsletter_enabled" value="1" @checked(old('newsletter_enabled', $settings->newsletter_enabled ?? true))>
+                                        <label class="custom-control-label" for="newsletter_enabled">Show newsletter in footer</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label>Newsletter Title</label>
                                     <input type="text" name="newsletter_title" class="form-control" value="{{ old('newsletter_title', $settings->newsletter_title) }}" placeholder="Stay Updated">
                                 </div>
@@ -154,7 +160,14 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-muted small mb-0">Footer menu links are managed in <a href="{{ route('admin.homepage.footer-links.index') }}">Homepage → Footer Links</a>.</p>
+                                <div class="form-group">
+                                    <label>Success Message</label>
+                                    <input type="text" name="newsletter_success_message" class="form-control" value="{{ old('newsletter_success_message', $settings->newsletter_success_message) }}" placeholder="Thanks for subscribing! Check your inbox for updates.">
+                                </div>
+                                <p class="text-muted small mb-0">
+                                    Footer menu links: <a href="{{ route('admin.homepage.footer-links.index') }}">Homepage → Footer Links</a>.
+                                    Subscribers: <a href="{{ route('admin.newsletter.index') }}">Newsletter Subscribers</a>.
+                                </p>
                             </div>
                         </div>
                     </div>

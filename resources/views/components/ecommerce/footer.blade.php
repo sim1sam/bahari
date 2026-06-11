@@ -71,7 +71,7 @@
             </div>
             @endif
 
-            @if ($site->newsletterTitle() || $site->newsletterText())
+            @if ($site->newsletterEnabled() && ($site->newsletterTitle() || $site->newsletterText()))
             <div>
                 @if ($site->newsletterTitle())
                     <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->newsletterTitle() }}</h3>
@@ -79,9 +79,22 @@
                 @if ($site->newsletterText())
                     <p class="text-sm text-zinc-400 mb-4">{{ $site->newsletterText() }}</p>
                 @endif
-                <form action="#" class="flex gap-2">
-                    <input type="email" placeholder="{{ $site->newsletterPlaceholder() }}" class="flex-1 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50">
-                    <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-sm font-medium hover:bg-brand-500 transition-colors">{{ $site->newsletterButtonText() }}</button>
+                <form action="{{ route('newsletter.subscribe') }}" method="POST" class="space-y-2">
+                    @csrf
+                    <div class="flex gap-2">
+                        <input
+                            type="email"
+                            name="email"
+                            value="{{ old('email') }}"
+                            required
+                            placeholder="{{ $site->newsletterPlaceholder() }}"
+                            class="flex-1 rounded-lg bg-zinc-800 border px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 @error('email') border-red-500 @else border-zinc-700 @enderror"
+                        >
+                        <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-sm font-medium hover:bg-brand-500 transition-colors">{{ $site->newsletterButtonText() }}</button>
+                    </div>
+                    @error('email')
+                        <p class="text-xs text-red-400">{{ $message }}</p>
+                    @enderror
                 </form>
             </div>
             @endif

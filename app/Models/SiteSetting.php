@@ -15,9 +15,17 @@ class SiteSetting extends Model
         'top_bar_text', 'top_bar_text_mobile',
         'top_bar_bg_color', 'top_bar_text_color', 'top_bar_link_color',
         'newsletter_title', 'newsletter_text', 'newsletter_placeholder', 'newsletter_button_text',
+        'newsletter_enabled', 'newsletter_success_message',
         'footer_shop_title', 'footer_support_title', 'footer_copyright',
         'theme_primary', 'theme_primary_dark', 'theme_footer_bg', 'theme_text', 'theme_background',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'newsletter_enabled' => 'boolean',
+        ];
+    }
 
     public static function current(): self
     {

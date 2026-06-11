@@ -45,10 +45,20 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-envelope fa-2x text-success mb-3"></i>
+                    <h5>Newsletter</h5>
+                    <p class="text-muted">{{ $subscriberCount }} subscriber(s)</p>
+                    <a href="{{ route('admin.newsletter.index') }}" class="btn btn-success btn-sm">View Subscribers</a>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card mt-3">
         <div class="card-body">
-            <p class="mb-0 text-muted">Top bar text, newsletter, and footer description are managed in <a href="{{ route('admin.settings.edit') }}">Site Settings</a>.</p>
+            <p class="mb-0 text-muted">Newsletter text and footer description are managed in <a href="{{ route('admin.settings.edit') }}">Site Settings</a>.</p>
         </div>
     </div>
 @endsection

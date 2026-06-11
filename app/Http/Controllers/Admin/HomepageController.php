@@ -7,6 +7,7 @@ use App\Models\FooterLink;
 use App\Models\HomeBanner;
 use App\Models\HomeFeature;
 use App\Models\HomeSlider;
+use App\Models\NewsletterSubscriber;
 use Illuminate\View\View;
 
 class HomepageController extends Controller
@@ -18,6 +19,7 @@ class HomepageController extends Controller
             'bannerCount' => HomeBanner::count(),
             'featureCount' => HomeFeature::count(),
             'footerLinkCount' => FooterLink::count(),
+            'subscriberCount' => NewsletterSubscriber::active()->count(),
         ]);
     }
 }

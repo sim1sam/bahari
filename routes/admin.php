@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\HomeBannerController;
 use App\Http\Controllers\Admin\HomeFeatureController;
 use App\Http\Controllers\Admin\HomepageController;
 use App\Http\Controllers\Admin\HomeSliderController;
+use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
@@ -36,6 +37,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('homepage/banners', HomeBannerController::class)->except(['show'])->names('homepage.banners')->parameters(['banners' => 'banner']);
             Route::resource('homepage/features', HomeFeatureController::class)->except(['show'])->names('homepage.features')->parameters(['features' => 'feature']);
             Route::resource('homepage/footer-links', FooterLinkController::class)->except(['show'])->names('homepage.footer-links')->parameters(['footer-links' => 'footerLink']);
+            Route::get('newsletter', [NewsletterSubscriberController::class, 'index'])->name('newsletter.index');
+            Route::delete('newsletter/{newsletterSubscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('newsletter.destroy');
         });
 
         Route::middleware('admin.feature:products')->group(function () {

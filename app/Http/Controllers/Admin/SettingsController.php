@@ -57,6 +57,8 @@ class SettingsController extends Controller
             'newsletter_text' => 'nullable|string|max:255',
             'newsletter_placeholder' => 'nullable|string|max:100',
             'newsletter_button_text' => 'nullable|string|max:50',
+            'newsletter_enabled' => 'boolean',
+            'newsletter_success_message' => 'nullable|string|max:255',
             'footer_shop_title' => 'nullable|string|max:100',
             'footer_support_title' => 'nullable|string|max:100',
             'footer_copyright' => 'nullable|string|max:255',
@@ -72,6 +74,8 @@ class SettingsController extends Controller
         $data = collect($validated)->except([
             'logo', 'favicon', 'logo_url', 'favicon_url', 'remove_logo', 'remove_favicon',
         ])->all();
+
+        $data['newsletter_enabled'] = $request->boolean('newsletter_enabled');
 
         if ($request->boolean('remove_logo')) {
             $this->media->delete($settings->logo);
