@@ -74,11 +74,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:api_received')->group(function () {
             Route::get('api-received', [ApiReceivedController::class, 'index'])->name('api-received.index');
-            Route::put('api-received/webhook', [ApiReceivedController::class, 'updateWebhook'])->name('api-received.webhook');
+            Route::put('api-received/settings', [ApiReceivedController::class, 'updateSettings'])->name('api-received.settings');
+            Route::post('api-received/logo', [ApiReceivedController::class, 'uploadLogo'])->name('api-received.logo');
             Route::post('api-received/sources', [ApiReceivedController::class, 'storeSource'])->name('api-received.sources.store');
             Route::post('api-received/sources/generate', [ApiReceivedController::class, 'generateSource'])->name('api-received.sources.generate');
             Route::delete('api-received/sources/{source}', [ApiReceivedController::class, 'destroySource'])->name('api-received.sources.destroy');
-            Route::post('api-received/{item}/approve', [ApiReceivedController::class, 'approve'])->name('api-received.approve');
+            Route::get('api-received/{item}', [ApiReceivedController::class, 'show'])->name('api-received.show');
+            Route::put('api-received/{item}', [ApiReceivedController::class, 'updateItem'])->name('api-received.update');
+            Route::post('api-received/{item}/process', [ApiReceivedController::class, 'process'])->name('api-received.process');
+            Route::post('api-received/{item}/publish', [ApiReceivedController::class, 'publish'])->name('api-received.publish');
             Route::post('api-received/{item}/reject', [ApiReceivedController::class, 'reject'])->name('api-received.reject');
         });
 

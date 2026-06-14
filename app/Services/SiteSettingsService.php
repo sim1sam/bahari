@@ -197,4 +197,9 @@ class SiteSettingsService
             || str_ends_with($host, '.local')
             || str_ends_with($host, '.localhost');
     }
+
+    public function apiLogoUrl(): ?string
+    {
+        return $this->assetUrl($this->get()->api_logo);
+    }
 }

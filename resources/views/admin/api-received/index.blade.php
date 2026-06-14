@@ -135,7 +135,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('admin.api-received.webhook') }}" method="POST" class="mb-3">
+            <form action="{{ route('admin.api-received.settings') }}" method="POST" class="mb-3">
                 @csrf
                 @method('PUT')
                 <div class="form-group mb-2">
@@ -151,7 +151,51 @@
 
             <p class="mb-1 text-muted small">Method: <strong>POST</strong></p>
             <p class="mb-1 text-muted small">Headers: <code>X-API-Key: {api_key}</code> and <code>Authorization: Bearer {api_token}</code></p>
-            <p class="mb-0 text-muted small">Or query: <code>?api_key=...&amp;api_token=...</code></p>
+            <p class="mb-2 text-muted small">Or query: <code>?api_key=...&amp;api_token=...</code></p>
+            <details class="small text-muted">
+                <summary class="font-weight-bold text-dark" style="cursor:pointer">API payload fields</summary>
+                <pre class="bg-light p-2 mt-2 mb-0 rounded"><code>{
+  "source_id": "2800",
+  "sku": "SKU2606130179",
+  "slug": "wardrobe-shirt",
+  "title": "Wardrobe",
+  "price": 3250,
+  "original_price": 3900,
+  "image_url": "https://...",
+  "images": ["https://..."],
+  "description": "Full product description",
+  "category_name": "New In",
+  "sizes": ["S", "M", "L", "XL"],
+  "colors": ["Black", "White"],
+  "badge": "New",
+  "badge_variant": "new",
+  "rating": 4.8
+}</code></pre>
+            </details>
+        </div>
+    </div>
+
+    {{-- Site logo --}}
+    <div class="card card-outline card-secondary">
+        <div class="card-header"><h3 class="card-title">Site Logo for API Products</h3></div>
+        <div class="card-body">
+            <p class="text-muted small">Upload your logo once. It will be placed on product images when you <strong>Process</strong> received items.</p>
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    @if ($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="Logo" class="img-thumbnail" style="max-height:72px">
+                    @else
+                        <span class="text-muted">No logo uploaded</span>
+                    @endif
+                </div>
+                <div class="col-md-9">
+                    <form action="{{ route('admin.api-received.logo') }}" method="POST" enctype="multipart/form-data" class="form-inline">
+                        @csrf
+                        <input type="file" name="logo" class="form-control-file mr-2" accept="image/*" required>
+                        <button type="submit" class="btn btn-secondary btn-sm">Upload Logo</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -164,7 +208,13 @@
                     <span class="badge badge-light ml-1">{{ $pendingCount }}</span>
                 @endif
             </a>
-            <a href="{{ route('admin.api-received.index', ['status' => 'imported', 'date' => $date]) }}" class="btn btn-sm {{ $status === 'imported' ? 'btn-success' : 'btn-outline-success' }}">Imported</a>
+            <a href="{{ route('admin.api-received.index', ['status' => 'processed', 'date' => $date]) }}" class="btn btn-sm {{ $status === 'processed' ? 'btn-info' : 'btn-outline-info' }}">
+                Processed
+                @if ($processedCount > 0)
+                    <span class="badge badge-light ml-1">{{ $processedCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.api-received.index', ['status' => 'imported', 'date' => $date]) }}" class="btn btn-sm {{ $status === 'imported' ? 'btn-success' : 'btn-outline-success' }}">Published</a>
             <a href="{{ route('admin.api-received.index', ['status' => 'rejected', 'date' => $date]) }}" class="btn btn-sm {{ $status === 'rejected' ? 'btn-danger' : 'btn-outline-danger' }}">Rejected</a>
             <a href="{{ route('admin.api-received.index', ['status' => 'all', 'date' => $date]) }}" class="btn btn-sm {{ $status === 'all' ? 'btn-primary' : 'btn-outline-primary' }}">All</a>
         </div>
@@ -196,9 +246,9 @@
                     @forelse ($items as $item)
                         <tr>
                             <td>
-                                @if ($item->imageUrl())
-                                    <a href="{{ $item->imageUrl() }}" target="_blank" rel="noopener">
-                                        <img src="{{ $item->imageUrl() }}" alt="" class="rounded border" style="max-height:48px">
+                                @if ($item->displayImageUrl())
+                                    <a href="{{ $item->displayImageUrl() }}" target="_blank" rel="noopener">
+                                        <img src="{{ $item->displayImageUrl() }}" alt="" class="rounded border" style="max-height:48px">
                                     </a>
                                 @else — @endif
                             </td>
@@ -213,44 +263,17 @@
                             <td class="text-nowrap">{{ $item->created_at->format('d M Y') }}</td>
                             <td><span class="badge {{ $item->statusBadgeClass() }}">{{ $item->statusLabel() }}</span></td>
                             <td class="text-nowrap">
-                                @if ($item->isPending())
-                                    <form action="{{ route('admin.api-received.approve', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Import as product?')">
+                                <a href="{{ route('admin.api-received.show', $item) }}" class="btn btn-xs btn-primary">Process</a>
+                                @if ($item->canPublish())
+                                    <form action="{{ route('admin.api-received.publish', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Publish on site?')">
                                         @csrf
-                                        <button type="submit" class="btn btn-xs btn-success">Import</button>
+                                        <button type="submit" class="btn btn-xs btn-success">Publish</button>
                                     </form>
-                                    <button type="button" class="btn btn-xs btn-danger" data-toggle="modal" data-target="#reject-{{ $item->id }}">Reject</button>
-                                @elseif ($item->product_id)
-                                    <a href="{{ route('admin.products.edit', $item->product_id) }}" class="btn btn-xs btn-info">View Product</a>
+                                @elseif ($item->isImported() && $item->product_id)
+                                    <a href="{{ route('products.show', $item->product->slug) }}" class="btn btn-xs btn-info" target="_blank">View Site</a>
                                 @endif
                             </td>
                         </tr>
-
-                        @if ($item->isPending())
-                            <div class="modal fade" id="reject-{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form action="{{ route('admin.api-received.reject', $item) }}" method="POST">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Reject Item</h5>
-                                                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>Reject <strong>{{ $item->title }}</strong>?</p>
-                                                <div class="form-group mb-0">
-                                                    <label>Notes (optional)</label>
-                                                    <textarea name="admin_notes" class="form-control" rows="2"></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-danger">Reject</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
                     @empty
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">No items received yet. Configure a source site and push from the sender.</td>
