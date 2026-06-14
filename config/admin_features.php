@@ -55,11 +55,23 @@ return [
         'route' => 'admin.transactions.index',
         'active' => 'admin.transactions.*',
     ],
-    'api_received' => [
-        'label' => 'API Received',
-        'icon' => 'fas fa-cloud-download-alt',
-        'route' => 'admin.api-received.index',
-        'active' => 'admin.api-received.*',
+    'api_settings' => [
+        'label' => 'API Settings',
+        'icon' => 'fas fa-plug',
+        'route' => 'admin.api-settings.index',
+        'active' => 'admin.api-settings.*',
+    ],
+    'api_content' => [
+        'label' => 'Content',
+        'icon' => 'fas fa-images',
+        'route' => 'admin.content.index',
+        'active' => 'admin.content.*',
+    ],
+    'api_processed' => [
+        'label' => 'Processed',
+        'icon' => 'fas fa-check-circle',
+        'route' => 'admin.processed.index',
+        'active' => 'admin.processed.*',
     ],
     'settings' => [
         'label' => 'Site Settings',

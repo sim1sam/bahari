@@ -179,25 +179,6 @@ class SiteSettingsService
         return rtrim(config('app.url'), '/').'/api/content/receive';
     }
 
-    public function apiWebhookUsesLocalHost(): bool
-    {
-        return $this->isLocalOnlyUrl($this->apiReceiveUrl());
-    }
-
-    public function isLocalOnlyUrl(string $url): bool
-    {
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-
-        if ($host === '') {
-            return true;
-        }
-
-        return in_array($host, ['localhost', '127.0.0.1', '::1'], true)
-            || str_ends_with($host, '.test')
-            || str_ends_with($host, '.local')
-            || str_ends_with($host, '.localhost');
-    }
-
     public function apiLogoUrl(): ?string
     {
         return $this->assetUrl($this->get()->api_logo);

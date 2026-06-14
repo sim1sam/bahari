@@ -1,6 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\ApiReceivedController;
+use App\Http\Controllers\Admin\ApiContentController;
+use App\Http\Controllers\Admin\ApiProcessedController;
+use App\Http\Controllers\Admin\ApiSettingsController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -72,18 +74,31 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
         });
 
-        Route::middleware('admin.feature:api_received')->group(function () {
-            Route::get('api-received', [ApiReceivedController::class, 'index'])->name('api-received.index');
-            Route::put('api-received/settings', [ApiReceivedController::class, 'updateSettings'])->name('api-received.settings');
-            Route::post('api-received/logo', [ApiReceivedController::class, 'uploadLogo'])->name('api-received.logo');
-            Route::post('api-received/sources', [ApiReceivedController::class, 'storeSource'])->name('api-received.sources.store');
-            Route::post('api-received/sources/generate', [ApiReceivedController::class, 'generateSource'])->name('api-received.sources.generate');
-            Route::delete('api-received/sources/{source}', [ApiReceivedController::class, 'destroySource'])->name('api-received.sources.destroy');
-            Route::get('api-received/{item}', [ApiReceivedController::class, 'show'])->name('api-received.show');
-            Route::put('api-received/{item}', [ApiReceivedController::class, 'updateItem'])->name('api-received.update');
-            Route::post('api-received/{item}/process', [ApiReceivedController::class, 'process'])->name('api-received.process');
-            Route::post('api-received/{item}/publish', [ApiReceivedController::class, 'publish'])->name('api-received.publish');
-            Route::post('api-received/{item}/reject', [ApiReceivedController::class, 'reject'])->name('api-received.reject');
+        Route::middleware('admin.feature:api_settings')->group(function () {
+            Route::get('api-settings', [ApiSettingsController::class, 'index'])->name('api-settings.index');
+            Route::put('api-settings/webhook', [ApiSettingsController::class, 'updateWebhook'])->name('api-settings.webhook');
+            Route::post('api-settings/sources', [ApiSettingsController::class, 'storeSource'])->name('api-settings.sources.store');
+            Route::post('api-settings/sources/generate', [ApiSettingsController::class, 'generateSource'])->name('api-settings.sources.generate');
+            Route::delete('api-settings/sources/{source}', [ApiSettingsController::class, 'destroySource'])->name('api-settings.sources.destroy');
+        });
+
+        Route::middleware('admin.feature:api_content')->group(function () {
+            Route::get('content', [ApiContentController::class, 'index'])->name('content.index');
+            Route::post('content/logo', [ApiContentController::class, 'uploadLogo'])->name('content.logo');
+            Route::post('content/process-batch', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
+            Route::get('content/{item}', [ApiContentController::class, 'show'])->name('content.show');
+            Route::put('content/{item}', [ApiContentController::class, 'update'])->name('content.update');
+            Route::post('content/{item}/process', [ApiContentController::class, 'process'])->name('content.process');
+            Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->name('content.reject');
+        });
+
+        Route::middleware('admin.feature:api_processed')->group(function () {
+            Route::get('processed', [ApiProcessedController::class, 'index'])->name('processed.index');
+            Route::get('processed/live/all', [ApiProcessedController::class, 'liveIndex'])->name('processed.live');
+            Route::post('processed/live-batch', [ApiProcessedController::class, 'liveBatch'])->name('processed.live-batch');
+            Route::get('processed/{item}', [ApiProcessedController::class, 'show'])->name('processed.show');
+            Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->name('processed.update');
+            Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->name('processed.live-item');
         });
 
         Route::middleware('admin.feature:orders')->group(function () {
