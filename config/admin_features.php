@@ -55,6 +55,12 @@ return [
         'route' => 'admin.transactions.index',
         'active' => 'admin.transactions.*',
     ],
+    'api_received' => [
+        'label' => 'API Received',
+        'icon' => 'fas fa-cloud-download-alt',
+        'route' => 'admin.api-received.index',
+        'active' => 'admin.api-received.*',
+    ],
     'settings' => [
         'label' => 'Site Settings',
         'icon' => 'fas fa-cog',

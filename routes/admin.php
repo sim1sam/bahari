@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiReceivedController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -69,6 +70,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
             Route::post('transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('transactions.approve');
             Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
+        });
+
+        Route::middleware('admin.feature:api_received')->group(function () {
+            Route::get('api-received', [ApiReceivedController::class, 'index'])->name('api-received.index');
+            Route::put('api-received/webhook', [ApiReceivedController::class, 'updateWebhook'])->name('api-received.webhook');
+            Route::post('api-received/sources', [ApiReceivedController::class, 'storeSource'])->name('api-received.sources.store');
+            Route::post('api-received/sources/generate', [ApiReceivedController::class, 'generateSource'])->name('api-received.sources.generate');
+            Route::delete('api-received/sources/{source}', [ApiReceivedController::class, 'destroySource'])->name('api-received.sources.destroy');
+            Route::post('api-received/{item}/approve', [ApiReceivedController::class, 'approve'])->name('api-received.approve');
+            Route::post('api-received/{item}/reject', [ApiReceivedController::class, 'reject'])->name('api-received.reject');
         });
 
         Route::middleware('admin.feature:orders')->group(function () {

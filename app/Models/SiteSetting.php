@@ -18,6 +18,7 @@ class SiteSetting extends Model
         'newsletter_enabled', 'newsletter_success_message',
         'footer_shop_title', 'footer_support_title', 'footer_copyright',
         'theme_primary', 'theme_primary_dark', 'theme_footer_bg', 'theme_text', 'theme_background',
+        'api_webhook_url',
     ];
 
     protected function casts(): array
