@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\SiteSetting;
 use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
+use App\Services\ApiReceivedPriceService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,12 +67,13 @@ class ApiContentController extends Controller
         return back()->with('success', 'Logo uploaded. Select images and click Process.');
     }
 
-    public function repairImages(ApiReceivedImageService $images): RedirectResponse
+    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices): RedirectResponse
     {
         $fixed = 0;
         $failed = 0;
+        $pricesSynced = 0;
 
-        $items = ApiReceivedItem::with('source')
+        $items = ApiReceivedItem::with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_PENDING)
             ->get();
 
@@ -83,12 +85,29 @@ class ApiContentController extends Controller
             }
         }
 
+        $priceItems = ApiReceivedItem::with('product')
+            ->whereIn('status', [
+                ApiReceivedItem::STATUS_PENDING,
+                ApiReceivedItem::STATUS_PROCESSED,
+                ApiReceivedItem::STATUS_IMPORTED,
+            ])
+            ->get();
+
+        foreach ($priceItems as $item) {
+            if ($prices->syncItem($item)) {
+                $pricesSynced++;
+            }
+        }
+
         $message = "{$fixed} image(s) re-downloaded.";
+        if ($pricesSynced > 0) {
+            $message .= " {$pricesSynced} price(s) synced from API payload.";
+        }
         if ($failed > 0) {
             $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
         }
 
-        return back()->with($fixed > 0 ? 'success' : 'warning', $message);
+        return back()->with($fixed > 0 || $pricesSynced > 0 ? 'success' : 'warning', $message);
     }
 
     public function update(Request $request, ApiReceivedItem $item): RedirectResponse

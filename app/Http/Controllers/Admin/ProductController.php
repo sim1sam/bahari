@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ApiProductImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,7 +15,11 @@ class ProductController extends Controller
     public function index(): View
     {
         return view('admin.products.index', [
-            'products' => Product::with('category')->latest()->paginate(15),
+            'products' => Product::query()
+                ->liveFromApi()
+                ->with(['category', 'apiReceivedItem'])
+                ->latest()
+                ->paginate(15),
         ]);
     }
 
@@ -49,11 +54,15 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product updated.');
     }
 
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(Product $product, ApiProductImportService $importer): RedirectResponse
     {
-        $product->delete();
+        if ($product->isLiveFromApi()) {
+            $importer->unpublish($product);
+        } else {
+            $product->delete();
+        }
 
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
+        return redirect()->route('admin.products.index')->with('success', 'Product removed from storefront.');
     }
 
     private function validateProduct(Request $request, ?Product $product = null): array

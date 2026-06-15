@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Services\ApiReceivedImageService;
+use App\Services\ApiReceivedPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ContentReceiveController extends Controller
 {
-    public function receive(Request $request, ApiReceivedImageService $images): JsonResponse
+    public function receive(Request $request, ApiReceivedImageService $images, ApiReceivedPriceService $prices): JsonResponse
     {
+        $this->preprocessIncomingPrices($request, $prices);
+
         $source = $request->attributes->get('api_source');
 
         $itemRules = [
@@ -21,7 +24,10 @@ class ContentReceiveController extends Controller
             'title' => 'required_with:items|string|max:255',
             'name' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',
+            'converted_price' => 'nullable|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
+            'converted_original_price' => 'nullable|numeric|min:0',
+            'converted_mrp' => 'nullable|numeric|min:0',
             'image' => 'nullable',
             'image_url' => 'nullable',
             'images' => 'nullable|array',
@@ -49,7 +55,10 @@ class ContentReceiveController extends Controller
             'title' => 'required_without:items|string|max:255',
             'name' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',
+            'converted_price' => 'nullable|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
+            'converted_original_price' => 'nullable|numeric|min:0',
+            'converted_mrp' => 'nullable|numeric|min:0',
             'image' => 'nullable',
             'image_url' => 'nullable',
             'images' => 'nullable|array',
@@ -73,7 +82,7 @@ class ContentReceiveController extends Controller
         $updated = [];
 
         foreach ($items as $itemData) {
-            $normalized = $this->normalizeItemData($itemData, $images, $source->base_url);
+            $normalized = $this->normalizeItemData($itemData, $images, $prices, $source->base_url);
             if (! $normalized['title']) {
                 continue;
             }
@@ -115,18 +124,36 @@ class ContentReceiveController extends Controller
         ]);
     }
 
-    private function normalizeItemData(array $data, ApiReceivedImageService $images, ?string $sourceBaseUrl): array
+    private function preprocessIncomingPrices(Request $request, ApiReceivedPriceService $prices): void
+    {
+        $payload = $request->all();
+
+        if (isset($payload['items']) && is_array($payload['items'])) {
+            $payload['items'] = array_map(
+                fn (array $item) => $prices->mergeIntoItem($item),
+                $payload['items']
+            );
+            $request->merge(['items' => $payload['items']]);
+
+            return;
+        }
+
+        $request->merge($prices->mergeIntoItem($payload));
+    }
+
+    private function normalizeItemData(array $data, ApiReceivedImageService $images, ApiReceivedPriceService $prices, ?string $sourceBaseUrl): array
     {
         $title = $data['title'] ?? $data['name'] ?? null;
         $imageData = $images->ingestFromItemData($data, $sourceBaseUrl);
+        $priceData = $prices->extract($data);
 
         return [
             'source_id' => $data['source_id'] ?? null,
             'sku' => $data['sku'] ?? null,
             'slug' => $data['slug'] ?? null,
             'title' => $title,
-            'price' => round((float) ($data['price'] ?? 0), 2),
-            'original_price' => isset($data['original_price']) ? round((float) $data['original_price'], 2) : null,
+            'price' => $priceData['price'],
+            'original_price' => $priceData['original_price'],
             'image' => $imageData['image'],
             'images' => $imageData['images'],
             'description' => $data['description'] ?? null,

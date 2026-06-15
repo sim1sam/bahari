@@ -43,6 +43,11 @@
                                 <div class="form-group">
                                     <label>Price (BDT) *</label>
                                     <input type="number" name="price" class="form-control" step="0.01" value="{{ old('price', $item->price) }}" required>
+                                    @if ((float) $item->price <= 0)
+                                        <small class="text-warning d-block mt-1">
+                                            Price is 0 — sender may use another field name. Click <strong>Re-download Images & Sync Prices</strong> on Content, or enter price manually.
+                                        </small>
+                                    @endif
                                 </div>
                             </div>
                         </div>

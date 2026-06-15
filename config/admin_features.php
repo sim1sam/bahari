@@ -14,7 +14,7 @@ return [
         'active' => 'admin.homepage.*',
     ],
     'products' => [
-        'label' => 'Products',
+        'label' => 'Live Products',
         'icon' => 'fas fa-tshirt',
         'route' => 'admin.products.index',
         'active' => 'admin.products.*',

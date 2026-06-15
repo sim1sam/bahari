@@ -99,6 +99,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:api_processed')->group(function () {
             Route::get('processed', [ApiProcessedController::class, 'index'])->name('processed.index');
             Route::get('processed/live/all', [ApiProcessedController::class, 'liveIndex'])->name('processed.live');
+            Route::delete('processed/live/{item}', [ApiProcessedController::class, 'destroyLive'])->name('processed.destroy-live');
             Route::post('processed/live-batch', [ApiProcessedController::class, 'liveBatch'])->name('processed.live-batch');
             Route::delete('processed/batch', [ApiProcessedController::class, 'destroyBatch'])->name('processed.destroy-batch');
             Route::post('processed/purge-manual-products', [ApiProcessedController::class, 'purgeManualProducts'])->name('processed.purge-manual-products');

@@ -164,6 +164,19 @@ class ApiProcessedController extends Controller
             ->with('success', "{$published} product(s) are now live under {$categoryName}.");
     }
 
+    public function destroyLive(ApiReceivedItem $item, ApiProductImportService $importer): RedirectResponse
+    {
+        if (! $item->isImported() || ! $item->product) {
+            return back()->with('error', 'Only live storefront products can be removed here.');
+        }
+
+        $importer->unpublish($item->product);
+
+        return redirect()
+            ->route('admin.processed.live')
+            ->with('success', 'Product removed from storefront. It is back in Processed and can be published again.');
+    }
+
     public function destroy(ApiReceivedItem $item, MediaStorageService $media): RedirectResponse
     {
         if (! $item->isProcessed()) {

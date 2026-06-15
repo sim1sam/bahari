@@ -23,10 +23,10 @@
         <div class="col-md-8">
             <a href="{{ route('admin.processed.index') }}" class="btn btn-info btn-sm">Processed</a>
             <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">API Settings</a>
-            <form action="{{ route('admin.content.repair-images') }}" method="POST" class="d-inline" onsubmit="return confirm('Re-download images from sender site for all pending items?')">
+            <form action="{{ route('admin.content.repair-images') }}" method="POST" class="d-inline" onsubmit="return confirm('Re-download images and sync prices from API payload for pending items?')">
                 @csrf
                 <button type="submit" class="btn btn-outline-warning btn-sm">
-                    <i class="fas fa-sync"></i> Re-download Images
+                    <i class="fas fa-sync"></i> Re-download Images & Sync Prices
                 </button>
             </form>
         </div>

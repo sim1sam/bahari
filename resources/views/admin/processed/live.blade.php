@@ -19,7 +19,7 @@
                         <th>Product</th>
                         <th>Price</th>
                         <th>Published</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,6 +40,10 @@
                                 @if ($item->product)
                                     <a href="{{ route('products.show', $item->product->slug) }}" class="btn btn-xs btn-success" target="_blank">Storefront</a>
                                     <a href="{{ route('admin.products.edit', $item->product_id) }}" class="btn btn-xs btn-info">Edit</a>
+                                    <form action="{{ route('admin.processed.destroy-live', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this product from the storefront?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-xs btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                                    </form>
                                 @endif
                             </td>
                         </tr>

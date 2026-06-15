@@ -81,6 +81,22 @@ class ApiProductImportService
         return $product->fresh();
     }
 
+    public function unpublish(Product $product): void
+    {
+        $item = $product->apiReceivedItem;
+
+        $product->delete();
+
+        if ($item?->isImported()) {
+            $item->update([
+                'status' => ApiReceivedItem::STATUS_PROCESSED,
+                'product_id' => null,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+            ]);
+        }
+    }
+
     public function publishProcessedImage(?string $image): ?string
     {
         $path = $this->copyImageToProducts($image);
