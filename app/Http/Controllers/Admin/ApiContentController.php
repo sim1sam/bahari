@@ -149,10 +149,21 @@ class ApiContentController extends Controller
         return back()->with('success', 'Content updated.');
     }
 
-    public function process(ApiReceivedItem $item, ProductLogoService $logoService, ApiReceivedImageService $images): RedirectResponse
+    public function process(ApiReceivedItem $item, ProductLogoService $logoService, ApiReceivedImageService $images, ApiReceivedPriceService $prices): RedirectResponse
     {
         if (! $item->canProcess()) {
             return back()->with('error', 'This item cannot be processed.');
+        }
+
+        if (! function_exists('imagecreatetruecolor')) {
+            return back()->with('error', 'PHP GD extension is required for logo processing. Enable GD on the server.');
+        }
+
+        try {
+            $prices->applyToItem($item);
+            $item->refresh();
+        } catch (\Throwable) {
+            // Price sync should not block image processing.
         }
 
         if (! SiteSetting::current()->api_logo) {
@@ -186,8 +197,14 @@ class ApiContentController extends Controller
             ->with('success', 'Logo applied. Review in Processed and click Go Live.');
     }
 
-    public function processBatch(Request $request, ProductLogoService $logoService, ApiReceivedImageService $images): RedirectResponse
+    public function processBatch(Request $request, ProductLogoService $logoService, ApiReceivedImageService $images, ApiReceivedPriceService $prices): RedirectResponse
     {
+        if (! function_exists('imagecreatetruecolor')) {
+            return redirect()
+                ->route('admin.content.index')
+                ->with('error', 'PHP GD extension is required for logo processing. Enable GD on the server.');
+        }
+
         if (! SiteSetting::current()->api_logo) {
             return redirect()
                 ->route('admin.content.index')
@@ -199,30 +216,39 @@ class ApiContentController extends Controller
             'items.*' => 'integer|exists:api_received_items,id',
         ]);
 
+        @set_time_limit(300);
+
         $processed = 0;
         $missingImage = 0;
         $failed = 0;
 
         foreach ($validated['items'] as $id) {
-            $item = ApiReceivedItem::with('source')->find($id);
-
-            if (! $item || ! $item->isPending()) {
-                $failed++;
-
-                continue;
-            }
-
-            $imagePath = $images->resolveProcessableImagePath($item);
-
-            if (! $imagePath) {
-                $missingImage++;
-
-                continue;
-            }
-
-            $images->persistLocalImage($item, $imagePath);
-
             try {
+                $item = ApiReceivedItem::with('source')->find($id);
+
+                if (! $item || ! $item->isPending()) {
+                    $failed++;
+
+                    continue;
+                }
+
+                try {
+                    $prices->applyToItem($item);
+                    $item->refresh();
+                } catch (\Throwable) {
+                    // Price sync should not block image processing.
+                }
+
+                $imagePath = $images->resolveProcessableImagePath($item);
+
+                if (! $imagePath) {
+                    $missingImage++;
+
+                    continue;
+                }
+
+                $images->persistLocalImage($item, $imagePath);
+
                 $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
                 $item->update([
                     'processed_image' => $processedPath,

@@ -10,7 +10,10 @@ use Illuminate\Support\Str;
 
 class ApiProductImportService
 {
-    public function __construct(private MediaStorageService $media) {}
+    public function __construct(
+        private MediaStorageService $media,
+        private ApiReceivedPriceService $prices,
+    ) {}
 
     public function import(ApiReceivedItem $item, ?int $categoryId = null): Product
     {
@@ -20,13 +23,14 @@ class ApiProductImportService
 
         $slug = $this->uniqueSlug($item->slug ?: $item->sku ?: $item->title);
         $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
+        $pricing = $this->prices->resolve($item);
 
         $product = Product::create([
             'category_id' => $this->resolveCategoryId($categoryId, $item->category_name),
             'slug' => $slug,
             'name' => $item->title,
-            'price' => $item->price,
-            'original_price' => $item->original_price,
+            'price' => $pricing['price'],
+            'original_price' => $pricing['original_price'],
             'image' => $imageUrl,
             'images' => $imageUrl ? [$imageUrl] : [],
             'description' => $item->description ?: 'Imported via API.',
@@ -43,6 +47,8 @@ class ApiProductImportService
         $item->update([
             'status' => ApiReceivedItem::STATUS_IMPORTED,
             'product_id' => $product->id,
+            'price' => $pricing['price'],
+            'original_price' => $pricing['original_price'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
@@ -53,11 +59,12 @@ class ApiProductImportService
     public function syncProduct(ApiReceivedItem $item, Product $product, ?int $categoryId = null): Product
     {
         $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
+        $pricing = $this->prices->resolve($item);
 
         $product->update([
             'name' => $item->title,
-            'price' => $item->price,
-            'original_price' => $item->original_price,
+            'price' => $pricing['price'],
+            'original_price' => $pricing['original_price'],
             'image' => $imageUrl ?: $product->image,
             'images' => $imageUrl ? [$imageUrl] : $product->images,
             'description' => $item->description ?: $product->description,
@@ -74,6 +81,8 @@ class ApiProductImportService
         $item->update([
             'status' => ApiReceivedItem::STATUS_IMPORTED,
             'product_id' => $product->id,
+            'price' => $pricing['price'],
+            'original_price' => $pricing['original_price'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);

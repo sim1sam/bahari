@@ -7,6 +7,7 @@ use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\ApiProductImportService;
+use App\Services\ApiReceivedPriceService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,8 +50,13 @@ class ApiProcessedController extends Controller
         ]);
     }
 
-    public function show(ApiReceivedItem $item): View|RedirectResponse
+    public function show(ApiReceivedItem $item, ApiReceivedPriceService $prices): View|RedirectResponse
     {
+        if ((float) $item->price <= 0) {
+            $prices->applyToItem($item);
+            $item->refresh();
+        }
+
         if ($item->isImported()) {
             $item->load(['source', 'product']);
 
@@ -110,13 +116,28 @@ class ApiProcessedController extends Controller
             'rating' => $validated['rating'],
         ]);
 
+        if ($item->product_id && $item->product) {
+            $item->product->update([
+                'name' => $validated['title'],
+                'price' => $validated['price'],
+                'original_price' => $validated['original_price'],
+            ]);
+        }
+
         return back()->with('success', 'Product information updated.');
     }
 
-    public function live(Request $request, ApiReceivedItem $item, ApiProductImportService $importer): RedirectResponse
+    public function live(Request $request, ApiReceivedItem $item, ApiProductImportService $importer, ApiReceivedPriceService $prices): RedirectResponse
     {
         if (! $item->canPublish()) {
             return back()->with('error', 'This item is not ready to go live.');
+        }
+
+        $prices->applyToItem($item);
+        $item->refresh();
+
+        if ((float) $item->price <= 0) {
+            return back()->with('error', 'Price is 0. Enter price in the form or sync from API (converted_price) before Go Live. The price on the image is part of the photo only.');
         }
 
         $validated = $request->validate([
@@ -132,7 +153,7 @@ class ApiProcessedController extends Controller
             ->with('success', 'Product is now live under '.$product->category?->name.'.');
     }
 
-    public function liveBatch(Request $request, ApiProductImportService $importer): RedirectResponse
+    public function liveBatch(Request $request, ApiProductImportService $importer, ApiReceivedPriceService $prices): RedirectResponse
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
@@ -148,6 +169,9 @@ class ApiProcessedController extends Controller
             if (! $item || ! $item->canPublish()) {
                 continue;
             }
+
+            $prices->applyToItem($item);
+            $item->refresh();
 
             if ($item->product_id) {
                 $importer->syncProduct($item, $item->product, $categoryId);

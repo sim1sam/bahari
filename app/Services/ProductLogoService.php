@@ -135,12 +135,26 @@ class ProductLogoService
 
     private function loadImage(string $path)
     {
-        $type = @exif_imagetype($path);
+        $type = function_exists('exif_imagetype')
+            ? @exif_imagetype($path)
+            : $this->guessImageType($path);
 
         return match ($type) {
-            IMAGETYPE_JPEG => imagecreatefromjpeg($path),
-            IMAGETYPE_PNG => imagecreatefrompng($path),
-            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? imagecreatefromwebp($path) : false,
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($path),
+            IMAGETYPE_PNG => @imagecreatefrompng($path),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : false,
+            default => false,
+        };
+    }
+
+    private function guessImageType(string $path): int|false
+    {
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'jpg', 'jpeg' => IMAGETYPE_JPEG,
+            'png' => IMAGETYPE_PNG,
+            'webp' => defined('IMAGETYPE_WEBP') ? IMAGETYPE_WEBP : false,
             default => false,
         };
     }

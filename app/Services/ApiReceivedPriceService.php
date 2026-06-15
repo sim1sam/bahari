@@ -9,25 +9,44 @@ class ApiReceivedPriceService
     /** @var array<int, string> */
     private const SALE_KEYS = [
         'converted_price',
+        'convertedPrice',
         'price',
         'selling_price',
+        'sellingPrice',
         'sale_price',
+        'salePrice',
         'unit_price',
+        'unitPrice',
         'amount',
         'final_price',
+        'finalPrice',
         'current_price',
+        'currentPrice',
         'discounted_price',
         'discount_price',
         'product_price',
+        'productPrice',
         'retail_price',
+        'retailPrice',
+        'display_price',
+        'displayPrice',
+        'price_text',
+        'priceText',
+        'price_label',
+        'priceLabel',
+        'formatted_price',
+        'formattedPrice',
         'cost',
     ];
 
     /** @var array<int, string> */
     private const ORIGINAL_KEYS = [
         'converted_original_price',
+        'convertedOriginalPrice',
         'converted_mrp',
+        'convertedMrp',
         'original_price',
+        'originalPrice',
         'regular_price',
         'mrp',
         'compare_at_price',
@@ -38,8 +57,14 @@ class ApiReceivedPriceService
     ];
 
     /** @return array{price: float, original_price: ?float} */
-    public function extract(array $data): array
+    public function extract(mixed $data): array
     {
+        if (! is_array($data)) {
+            return ['price' => 0, 'original_price' => null];
+        }
+
+        $data = $this->normalizeKeys($data);
+
         $sale = $this->firstAmount($data, self::SALE_KEYS, ignoreZero: true);
         $original = $this->firstAmount($data, self::ORIGINAL_KEYS, ignoreZero: true);
 
@@ -83,8 +108,10 @@ class ApiReceivedPriceService
     /** @return array<string, mixed> */
     public function mergeIntoItem(array $item): array
     {
+        $item = $this->normalizeKeys($item);
         $prices = $this->extract($item);
         $item['price'] = $prices['price'];
+        $item['converted_price'] = $prices['price'];
 
         if ($prices['original_price'] !== null) {
             $item['original_price'] = $prices['original_price'];
@@ -93,11 +120,33 @@ class ApiReceivedPriceService
         return $item;
     }
 
+    /** @return array{price: float, original_price: ?float} */
+    public function resolve(ApiReceivedItem $item): array
+    {
+        $fromPayload = $this->extract($item->payloadData());
+        $manualPrice = (float) $item->price;
+        $manualOriginal = $item->original_price !== null ? (float) $item->original_price : null;
+
+        if ($manualPrice > 0) {
+            return [
+                'price' => round($manualPrice, 2),
+                'original_price' => $manualOriginal,
+            ];
+        }
+
+        return $fromPayload;
+    }
+
+    public function applyToItem(ApiReceivedItem $item): bool
+    {
+        return $this->syncItem($item);
+    }
+
     public function syncItem(ApiReceivedItem $item): bool
     {
         $item->loadMissing('product');
 
-        $payload = $item->payload ?? [];
+        $payload = $item->payloadData();
 
         if ($payload === []) {
             return false;
@@ -173,5 +222,29 @@ class ApiReceivedPriceService
         }
 
         return (float) $normalized;
+    }
+
+    /** @return array<string, mixed> */
+    private function normalizeKeys(array $data): array
+    {
+        $aliases = [
+            'convertedPrice' => 'converted_price',
+            'convertedOriginalPrice' => 'converted_original_price',
+            'convertedMrp' => 'converted_mrp',
+            'originalPrice' => 'original_price',
+            'sellingPrice' => 'selling_price',
+            'salePrice' => 'sale_price',
+            'displayPrice' => 'display_price',
+            'priceText' => 'price_text',
+            'formattedPrice' => 'formatted_price',
+        ];
+
+        foreach ($aliases as $from => $to) {
+            if (array_key_exists($from, $data) && ! array_key_exists($to, $data)) {
+                $data[$to] = $data[$from];
+            }
+        }
+
+        return $data;
     }
 }

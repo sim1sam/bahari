@@ -36,6 +36,11 @@ class ApiReceivedItem extends Model
         ];
     }
 
+    public function payloadData(): array
+    {
+        return is_array($this->payload) ? $this->payload : [];
+    }
+
     public function source(): BelongsTo
     {
         return $this->belongsTo(ApiSource::class, 'api_source_id');

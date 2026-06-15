@@ -21,6 +21,17 @@
         <div class="form-group">
             <label>Price (BDT) *</label>
             <input type="number" name="price" class="form-control" step="0.01" value="{{ old('price', $item->price) }}" required>
+            @if ((float) $item->price <= 0)
+                <small class="text-warning d-block mt-1">
+                    Price is 0 in database. The price on the image comes from the transfer site.
+                    @php($payloadPrice = app(\App\Services\ApiReceivedPriceService::class)->extract($item->payloadData())['price'] ?? 0)
+                    @if ($payloadPrice > 0)
+                        API payload has <strong>{{ money($payloadPrice) }}</strong> — save or click Go Live to apply.
+                    @else
+                        Enter price manually or re-send from transfer site with <code>converted_price</code>.
+                    @endif
+                </small>
+            @endif
         </div>
     </div>
     <div class="col-md-6">

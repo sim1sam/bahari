@@ -40,7 +40,7 @@ class ApiReceivedImageService
         }
 
         $baseUrl = $item->source?->base_url;
-        $payload = $item->payload ?? [];
+        $payload = $item->payloadData();
 
         foreach ($this->collectImageCandidates($payload) as $candidate) {
             $absolute = $this->toAbsoluteUrl($candidate, $baseUrl, $payload);
@@ -55,7 +55,7 @@ class ApiReceivedImageService
 
     public function repairItem(ApiReceivedItem $item): bool
     {
-        $payload = $item->payload ?? [];
+        $payload = $item->payloadData();
 
         if ($payload === []) {
             return false;
@@ -85,7 +85,7 @@ class ApiReceivedImageService
             }
         }
 
-        if (($item->payload ?? []) !== [] && $this->repairItem($item)) {
+        if ($item->payloadData() !== [] && $this->repairItem($item)) {
             $item->refresh();
 
             foreach ($this->storedPaths($item) as $path) {
@@ -244,7 +244,7 @@ class ApiReceivedImageService
             }
         }
 
-        $absolute = $this->toAbsoluteUrl($path, $item->source?->base_url, $item->payload ?? []);
+        $absolute = $this->toAbsoluteUrl($path, $item->source?->base_url, $item->payloadData());
 
         if ($absolute && $this->media->isExternal($absolute)) {
             try {
