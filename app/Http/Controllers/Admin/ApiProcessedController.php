@@ -53,8 +53,12 @@ class ApiProcessedController extends Controller
     public function show(ApiReceivedItem $item, ApiReceivedPriceService $prices): View|RedirectResponse
     {
         if ((float) $item->price <= 0) {
-            $prices->applyToItem($item);
-            $item->refresh();
+            try {
+                $prices->applyToItem($item);
+                $item->refresh();
+            } catch (\Throwable) {
+                // Price sync should not block viewing the item.
+            }
         }
 
         if ($item->isImported()) {
@@ -103,24 +107,26 @@ class ApiProcessedController extends Controller
 
         $item->update([
             'title' => $validated['title'],
-            'sku' => $validated['sku'],
-            'slug' => $validated['slug'],
+            'sku' => $validated['sku'] ?? null,
+            'slug' => $validated['slug'] ?? null,
             'price' => $validated['price'],
-            'original_price' => $validated['original_price'],
-            'description' => $validated['description'],
-            'category_name' => $validated['category_name'],
+            'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
+            'description' => $validated['description'] ?? null,
+            'category_name' => $validated['category_name'] ?? null,
             'sizes' => $this->listFromString($validated['sizes'] ?? ''),
             'colors' => $this->listFromString($validated['colors'] ?? ''),
-            'badge' => $validated['badge'],
-            'badge_variant' => $validated['badge_variant'],
-            'rating' => $validated['rating'],
+            'badge' => filled($validated['badge'] ?? null) ? $validated['badge'] : null,
+            'badge_variant' => filled($validated['badge_variant'] ?? null) ? $validated['badge_variant'] : null,
+            'rating' => filled($validated['rating'] ?? null) ? $validated['rating'] : null,
         ]);
+
+        $item->loadMissing('product');
 
         if ($item->product_id && $item->product) {
             $item->product->update([
                 'name' => $validated['title'],
                 'price' => $validated['price'],
-                'original_price' => $validated['original_price'],
+                'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
             ]);
         }
 

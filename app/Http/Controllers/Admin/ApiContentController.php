@@ -133,17 +133,17 @@ class ApiContentController extends Controller
 
         $item->update([
             'title' => $validated['title'],
-            'sku' => $validated['sku'],
-            'slug' => $validated['slug'],
+            'sku' => $validated['sku'] ?? null,
+            'slug' => $validated['slug'] ?? null,
             'price' => $validated['price'],
-            'original_price' => $validated['original_price'],
-            'description' => $validated['description'],
-            'category_name' => $validated['category_name'],
+            'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
+            'description' => $validated['description'] ?? null,
+            'category_name' => $validated['category_name'] ?? null,
             'sizes' => $this->listFromString($validated['sizes'] ?? ''),
             'colors' => $this->listFromString($validated['colors'] ?? ''),
-            'badge' => $validated['badge'],
-            'badge_variant' => $validated['badge_variant'],
-            'rating' => $validated['rating'],
+            'badge' => filled($validated['badge'] ?? null) ? $validated['badge'] : null,
+            'badge_variant' => filled($validated['badge_variant'] ?? null) ? $validated['badge_variant'] : null,
+            'rating' => filled($validated['rating'] ?? null) ? $validated['rating'] : null,
         ]);
 
         return back()->with('success', 'Content updated.');
