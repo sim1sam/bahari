@@ -14,10 +14,12 @@ use App\Http\Controllers\Admin\HomepageController;
 use App\Http\Controllers\Admin\HomeSliderController;
 use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
+use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StorageLinkController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -79,12 +81,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('api-settings/webhook', [ApiSettingsController::class, 'updateWebhook'])->name('api-settings.webhook');
             Route::post('api-settings/sources', [ApiSettingsController::class, 'storeSource'])->name('api-settings.sources.store');
             Route::post('api-settings/sources/generate', [ApiSettingsController::class, 'generateSource'])->name('api-settings.sources.generate');
+            Route::put('api-settings/sources/{source}', [ApiSettingsController::class, 'updateSource'])->name('api-settings.sources.update');
             Route::delete('api-settings/sources/{source}', [ApiSettingsController::class, 'destroySource'])->name('api-settings.sources.destroy');
         });
 
         Route::middleware('admin.feature:api_content')->group(function () {
             Route::get('content', [ApiContentController::class, 'index'])->name('content.index');
             Route::post('content/logo', [ApiContentController::class, 'uploadLogo'])->name('content.logo');
+            Route::post('content/repair-images', [ApiContentController::class, 'repairImages'])->name('content.repair-images');
             Route::post('content/process-batch', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
             Route::get('content/{item}', [ApiContentController::class, 'show'])->name('content.show');
             Route::put('content/{item}', [ApiContentController::class, 'update'])->name('content.update');
@@ -115,6 +119,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:settings')->group(function () {
             Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
             Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        });
+
+        Route::middleware('admin.feature:storage_link')->group(function () {
+            Route::get('storage-link', [StorageLinkController::class, 'index'])->name('storage-link.index');
+            Route::post('storage-link', [StorageLinkController::class, 'store'])->name('storage-link.store');
+        });
+
+        Route::middleware('admin.feature:database_migration')->group(function () {
+            Route::get('migration', [MigrationController::class, 'index'])->name('migration.index');
+            Route::post('migration', [MigrationController::class, 'store'])->name('migration.store');
         });
     });
 });

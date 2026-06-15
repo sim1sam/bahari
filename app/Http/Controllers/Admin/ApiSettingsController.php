@@ -45,10 +45,12 @@ class ApiSettingsController extends Controller
             'name' => 'required|string|max:100',
             'api_key' => 'required|string|max:64',
             'api_token' => 'required|string|max:128',
+            'base_url' => 'nullable|url|max:500',
         ]);
 
         ApiSource::create([
             'name' => $validated['name'],
+            'base_url' => $validated['base_url'] ?? null,
             'api_key' => $validated['api_key'],
             'api_token' => $validated['api_token'],
             'is_active' => true,
@@ -76,6 +78,23 @@ class ApiSettingsController extends Controller
             'success' => 'API credentials generated for "'.$validated['name'].'".',
             'generated_credentials' => $credentials,
         ]);
+    }
+
+    public function updateSource(Request $request, ApiSource $source): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'base_url' => 'nullable|url|max:500',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $source->update([
+            'name' => $validated['name'],
+            'base_url' => $validated['base_url'] ?? null,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'API source updated.');
     }
 
     public function destroySource(ApiSource $source): RedirectResponse

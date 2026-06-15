@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class ApiSource extends Model
 {
-    protected $fillable = ['name', 'api_key', 'api_token', 'is_active'];
+    protected $fillable = ['name', 'base_url', 'api_key', 'api_token', 'is_active'];
 
     protected function casts(): array
     {

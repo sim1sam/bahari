@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Services\ProductLogoService;
+use App\Services\ApiReceivedImageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,6 +62,31 @@ class ApiContentController extends Controller
         $this->settings->clearCache();
 
         return back()->with('success', 'Logo uploaded. Select images and click Process.');
+    }
+
+    public function repairImages(ApiReceivedImageService $images): RedirectResponse
+    {
+        $fixed = 0;
+        $failed = 0;
+
+        $items = ApiReceivedItem::with('source')
+            ->where('status', ApiReceivedItem::STATUS_PENDING)
+            ->get();
+
+        foreach ($items as $item) {
+            if ($images->repairItem($item)) {
+                $fixed++;
+            } else {
+                $failed++;
+            }
+        }
+
+        $message = "{$fixed} image(s) re-downloaded.";
+        if ($failed > 0) {
+            $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
+        }
+
+        return back()->with($fixed > 0 ? 'success' : 'warning', $message);
     }
 
     public function update(Request $request, ApiReceivedItem $item): RedirectResponse

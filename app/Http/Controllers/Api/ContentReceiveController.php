@@ -4,14 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
+use App\Services\ApiReceivedImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Services\MediaStorageService;
-use Illuminate\Support\Facades\Storage;
 
 class ContentReceiveController extends Controller
 {
-    public function receive(Request $request, MediaStorageService $media): JsonResponse
+    public function receive(Request $request, ApiReceivedImageService $images): JsonResponse
     {
         $source = $request->attributes->get('api_source');
 
@@ -23,10 +22,12 @@ class ContentReceiveController extends Controller
             'name' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'image' => 'nullable|string|max:1000',
-            'image_url' => 'nullable|string|max:1000',
+            'image' => 'nullable',
+            'image_url' => 'nullable',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|string|max:1000',
+            'images.*' => 'nullable',
+            'thumbnail' => 'nullable',
+            'photo' => 'nullable',
             'description' => 'nullable|string|max:5000',
             'category' => 'nullable|string|max:100',
             'category_name' => 'nullable|string|max:100',
@@ -35,6 +36,8 @@ class ContentReceiveController extends Controller
             'badge' => 'nullable|string|max:30',
             'badge_variant' => 'nullable|string|max:30',
             'rating' => 'nullable|numeric|min:0|max:5',
+            'base_url' => 'nullable|string|max:500',
+            'site_url' => 'nullable|string|max:500',
         ];
 
         $validated = $request->validate(array_merge([
@@ -47,10 +50,12 @@ class ContentReceiveController extends Controller
             'name' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'image' => 'nullable|string|max:1000',
-            'image_url' => 'nullable|string|max:1000',
+            'image' => 'nullable',
+            'image_url' => 'nullable',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|string|max:1000',
+            'images.*' => 'nullable',
+            'thumbnail' => 'nullable',
+            'photo' => 'nullable',
             'description' => 'nullable|string|max:5000',
             'category' => 'nullable|string|max:100',
             'category_name' => 'nullable|string|max:100',
@@ -59,6 +64,8 @@ class ContentReceiveController extends Controller
             'badge' => 'nullable|string|max:30',
             'badge_variant' => 'nullable|string|max:30',
             'rating' => 'nullable|numeric|min:0|max:5',
+            'base_url' => 'nullable|string|max:500',
+            'site_url' => 'nullable|string|max:500',
         ]));
 
         $items = $validated['items'] ?? [$validated];
@@ -66,7 +73,7 @@ class ContentReceiveController extends Controller
         $updated = [];
 
         foreach ($items as $itemData) {
-            $normalized = $this->normalizeItemData($itemData, $media);
+            $normalized = $this->normalizeItemData($itemData, $images, $source->base_url);
             if (! $normalized['title']) {
                 continue;
             }
@@ -108,19 +115,10 @@ class ContentReceiveController extends Controller
         ]);
     }
 
-    private function normalizeItemData(array $data, MediaStorageService $media): array
+    private function normalizeItemData(array $data, ApiReceivedImageService $images, ?string $sourceBaseUrl): array
     {
         $title = $data['title'] ?? $data['name'] ?? null;
-        $imageUrl = $data['image_url'] ?? $data['image'] ?? null;
-        $imagePath = $this->storeImage($imageUrl, $media);
-
-        $gallery = collect($data['images'] ?? [])
-            ->map(fn ($url) => $this->storeImage($url, $media))
-            ->filter()
-            ->values()
-            ->all();
-
-        $primaryImage = $imagePath ?: ($gallery[0] ?? null);
+        $imageData = $images->ingestFromItemData($data, $sourceBaseUrl);
 
         return [
             'source_id' => $data['source_id'] ?? null,
@@ -129,8 +127,8 @@ class ContentReceiveController extends Controller
             'title' => $title,
             'price' => round((float) ($data['price'] ?? 0), 2),
             'original_price' => isset($data['original_price']) ? round((float) $data['original_price'], 2) : null,
-            'image' => $primaryImage,
-            'images' => $gallery ?: ($primaryImage ? [$primaryImage] : []),
+            'image' => $imageData['image'],
+            'images' => $imageData['images'],
             'description' => $data['description'] ?? null,
             'category_name' => $data['category_name'] ?? $data['category'] ?? null,
             'sizes' => $this->normalizeList($data['sizes'] ?? null, ['XS', 'S', 'M', 'L', 'XL']),
@@ -139,39 +137,6 @@ class ContentReceiveController extends Controller
             'badge_variant' => $data['badge_variant'] ?? null,
             'rating' => isset($data['rating']) ? round((float) $data['rating'], 1) : null,
         ];
-    }
-
-    private function storeImage(?string $imageUrl, MediaStorageService $media): ?string
-    {
-        if (! $imageUrl) {
-            return null;
-        }
-
-        $imageUrl = trim($imageUrl);
-
-        if (str_starts_with($imageUrl, 'data:image/')) {
-            try {
-                return $media->storeFromDataUri($imageUrl, 'api-received');
-            } catch (\Throwable) {
-                return null;
-            }
-        }
-
-        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
-            try {
-                return $media->storeFromUrl($imageUrl, 'api-received');
-            } catch (\Throwable) {
-                return $imageUrl;
-            }
-        }
-
-        $stored = $media->storedPath($imageUrl);
-
-        if ($stored && Storage::disk('public')->exists($stored)) {
-            return $stored;
-        }
-
-        return $imageUrl;
     }
 
     private function normalizeList(mixed $value, array $default): array

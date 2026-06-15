@@ -49,6 +49,12 @@
                                         <input type="text" name="api_token" class="form-control @error('api_token') is-invalid @enderror" placeholder="at_..." required value="{{ old('api_token') }}">
                                         @error('api_token')<span class="invalid-feedback">{{ $message }}</span>@enderror
                                     </div>
+                                    <div class="form-group mb-0">
+                                        <label>Sender site URL</label>
+                                        <input type="url" name="base_url" class="form-control @error('base_url') is-invalid @enderror" placeholder="https://kolkata2dhaka.com" value="{{ old('base_url') }}">
+                                        @error('base_url')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                                        <small class="text-muted">Required when sender sends relative image paths like <code>/storage/...</code></small>
+                                    </div>
                                 </div>
                                 <div class="card-footer">
                                     <button type="submit" class="btn btn-primary">Save API Key & Token</button>
@@ -84,6 +90,7 @@
                     <thead>
                         <tr>
                             <th>Site</th>
+                            <th>Sender URL</th>
                             <th>API Key</th>
                             <th>API Token</th>
                             <th>Status</th>
@@ -95,6 +102,16 @@
                         @foreach ($sources as $source)
                             <tr>
                                 <td><strong>{{ $source->name }}</strong></td>
+                                <td>
+                                    <form action="{{ route('admin.api-settings.sources.update', $source) }}" method="POST" class="form-inline">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="name" value="{{ $source->name }}">
+                                        <input type="hidden" name="is_active" value="{{ $source->is_active ? '1' : '0' }}">
+                                        <input type="url" name="base_url" class="form-control form-control-sm" style="min-width:200px"
+                                            placeholder="https://sender-site.com" value="{{ old('base_url', $source->base_url) }}">
+                                        <button type="submit" class="btn btn-xs btn-outline-primary ml-1">Save</button>
+                                    </form>
+                                </td>
                                 <td><code class="small">{{ $source->api_key }}</code></td>
                                 <td><code class="small text-muted">{{ Str::limit($source->api_token, 20) }}…</code></td>
                                 <td>

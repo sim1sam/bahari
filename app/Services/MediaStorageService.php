@@ -114,7 +114,10 @@ class MediaStorageService
         $url = trim($url);
 
         try {
-            $response = Http::timeout(15)->withOptions(['allow_redirects' => true])->get($url);
+            $response = Http::timeout(20)
+                ->withHeaders(['User-Agent' => 'LuxeWear-API-Receiver/1.0'])
+                ->withOptions(['allow_redirects' => true, 'verify' => true])
+                ->get($url);
         } catch (\Throwable) {
             throw ValidationException::withMessages([
                 $field => 'Could not download the image from that URL.',

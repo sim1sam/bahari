@@ -98,17 +98,7 @@ class ApiReceivedItem extends Model
 
     public function imageUrl(): ?string
     {
-        if ($url = $this->resolveMediaUrl($this->image)) {
-            return $url;
-        }
-
-        foreach ($this->images ?? [] as $image) {
-            if ($url = $this->resolveMediaUrl($image)) {
-                return $url;
-            }
-        }
-
-        return null;
+        return app(\App\Services\ApiReceivedImageService::class)->displayUrl($this);
     }
 
     public function processedImageUrl(): ?string

@@ -73,6 +73,18 @@ return [
         'route' => 'admin.processed.index',
         'active' => 'admin.processed.*',
     ],
+    'storage_link' => [
+        'label' => 'Storage Link',
+        'icon' => 'fas fa-link',
+        'route' => 'admin.storage-link.index',
+        'active' => 'admin.storage-link.*',
+    ],
+    'database_migration' => [
+        'label' => 'Migration',
+        'icon' => 'fas fa-database',
+        'route' => 'admin.migration.index',
+        'active' => 'admin.migration.*',
+    ],
     'settings' => [
         'label' => 'Site Settings',
         'icon' => 'fas fa-cog',
