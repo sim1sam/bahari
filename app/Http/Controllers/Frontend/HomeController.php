@@ -33,13 +33,7 @@ class HomeController extends Controller
     /** @return array<int, array<string, mixed>> */
     private function productCards(callable $fetcher, int $limit): array
     {
-        $items = $fetcher();
-
-        if (empty($items)) {
-            $items = array_slice(array_values($this->catalog->all()), 0, $limit);
-        }
-
-        return collect($items)
+        return collect($fetcher())
             ->take($limit)
             ->map(fn ($p) => $this->catalog->toCard($p))
             ->values()

@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Services\MediaStorageService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -34,8 +36,35 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function apiReceivedItem(): HasOne
+    {
+        return $this->hasOne(ApiReceivedItem::class);
+    }
+
+    public function scopeLiveFromApi(Builder $query): Builder
+    {
+        return $query->whereHas('apiReceivedItem', function (Builder $relation) {
+            $relation->where('status', ApiReceivedItem::STATUS_IMPORTED);
+        });
+    }
+
+    public function isLiveFromApi(): bool
+    {
+        return $this->apiReceivedItem()
+            ->where('status', ApiReceivedItem::STATUS_IMPORTED)
+            ->exists();
+    }
+
     public function imageUrl(): ?string
     {
+        if (! $this->image) {
+            return null;
+        }
+
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+            return $this->image;
+        }
+
         return app(MediaStorageService::class)->url($this->image);
     }
 
@@ -45,7 +74,13 @@ class Product extends Model
         $images = $this->images ?? ($this->image ? [$this->image] : []);
 
         return collect($images)
-            ->map(fn ($img) => app(MediaStorageService::class)->url($img))
+            ->map(function ($img) {
+                if (str_starts_with((string) $img, 'http://') || str_starts_with((string) $img, 'https://')) {
+                    return $img;
+                }
+
+                return app(MediaStorageService::class)->url($img);
+            })
             ->filter()
             ->values()
             ->all();

@@ -58,7 +58,7 @@
                         <p><strong>Title:</strong> {{ $item->title }}</p>
                         <p><strong>SKU:</strong> {{ $item->sku ?: '—' }}</p>
                         <p><strong>Price:</strong> {{ money($item->price) }}</p>
-                        <p><strong>Category:</strong> {{ $item->category_name ?: '—' }}</p>
+                        <p><strong>Category:</strong> {{ $item->product?->category?->name ?? $item->category_name ?: '—' }}</p>
                         <p><strong>Sizes:</strong> {{ implode(', ', $item->sizes ?? []) ?: '—' }}</p>
                         <p><strong>Colors:</strong> {{ implode(', ', $item->colors ?? []) ?: '—' }}</p>
                         @if ($item->description)
@@ -71,10 +71,22 @@
             @if (! $isLive)
                 <div class="card card-success">
                     <div class="card-header"><h3 class="card-title">Go Live on Storefront</h3></div>
-                    <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" onsubmit="return confirm('Publish this product on the storefront?')">
+                    <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" onsubmit="return confirm('Publish this product in the selected category?')">
                         @csrf
                         <div class="card-body">
-                            <p class="text-muted small mb-0">This will create the product on your shop — homepage, categories, and product page.</p>
+                            <div class="form-group">
+                                <label>Category *</label>
+                                <select name="category_id" class="form-control" required>
+                                    <option value="">Select category</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Product will appear in this category on the storefront.</small>
+                            </div>
+                            <p class="text-muted small mb-0">The processed image with logo will be used on the product list and product page.</p>
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-success btn-block btn-lg">

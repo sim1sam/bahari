@@ -5,30 +5,30 @@ namespace App\Services;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ApiProductImportService
 {
     public function __construct(private MediaStorageService $media) {}
 
-    public function import(ApiReceivedItem $item): Product
+    public function import(ApiReceivedItem $item, ?int $categoryId = null): Product
     {
         if ($item->product_id && $item->product) {
-            return $this->syncProduct($item, $item->product);
+            return $this->syncProduct($item, $item->product, $categoryId);
         }
 
         $slug = $this->uniqueSlug($item->slug ?: $item->sku ?: $item->title);
-        $imageUrl = $this->resolveImageForProduct($item->processed_image ?: $item->image);
-        $images = $this->resolveImagesForProduct($item, $imageUrl);
+        $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
 
         $product = Product::create([
-            'category_id' => $this->resolveCategoryId($item->category_name),
+            'category_id' => $this->resolveCategoryId($categoryId, $item->category_name),
             'slug' => $slug,
             'name' => $item->title,
             'price' => $item->price,
             'original_price' => $item->original_price,
             'image' => $imageUrl,
-            'images' => $images,
+            'images' => $imageUrl ? [$imageUrl] : [],
             'description' => $item->description ?: 'Imported via API.',
             'sizes' => $item->sizes ?: ['XS', 'S', 'M', 'L', 'XL'],
             'colors' => $item->colors ?: ['Black', 'White', 'Rose'],
@@ -50,23 +50,23 @@ class ApiProductImportService
         return $product;
     }
 
-    public function syncProduct(ApiReceivedItem $item, Product $product): Product
+    public function syncProduct(ApiReceivedItem $item, Product $product, ?int $categoryId = null): Product
     {
-        $imageUrl = $this->resolveImageForProduct($item->processed_image ?: $item->image);
+        $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
 
         $product->update([
             'name' => $item->title,
             'price' => $item->price,
             'original_price' => $item->original_price,
             'image' => $imageUrl ?: $product->image,
-            'images' => $this->resolveImagesForProduct($item, $imageUrl) ?: $product->images,
+            'images' => $imageUrl ? [$imageUrl] : $product->images,
             'description' => $item->description ?: $product->description,
             'sizes' => $item->sizes ?: $product->sizes,
             'colors' => $item->colors ?: $product->colors,
             'badge' => $item->badge ?: $product->badge,
             'badge_variant' => $item->badge_variant ?: $product->badge_variant,
             'rating' => $item->rating ?? $product->rating,
-            'category_id' => $this->resolveCategoryId($item->category_name) ?: $product->category_id,
+            'category_id' => $this->resolveCategoryId($categoryId, $item->category_name) ?: $product->category_id,
             'is_active' => true,
             'is_new_arrival' => true,
         ]);
@@ -81,43 +81,66 @@ class ApiProductImportService
         return $product->fresh();
     }
 
-    public function resolveImageForProduct(?string $image): ?string
+    public function publishProcessedImage(?string $image): ?string
+    {
+        $path = $this->copyImageToProducts($image);
+
+        if (! $path) {
+            return null;
+        }
+
+        $relative = $this->media->url($path);
+
+        return $relative ? url($relative) : null;
+    }
+
+    private function copyImageToProducts(?string $image): ?string
     {
         if (! $image) {
             return null;
         }
 
+        $stored = $this->media->storedPath($image);
+
+        if ($stored && Storage::disk('public')->exists($stored)) {
+            if (str_starts_with($stored, 'products/')) {
+                return $stored;
+            }
+
+            $extension = strtolower(pathinfo($stored, PATHINFO_EXTENSION)) ?: 'jpg';
+            $extension = in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)
+                ? ($extension === 'jpeg' ? 'jpg' : $extension)
+                : 'jpg';
+            $destination = 'products/'.Str::uuid().'.'.$extension;
+
+            Storage::disk('public')->put(
+                $destination,
+                Storage::disk('public')->get($stored)
+            );
+
+            return $destination;
+        }
+
         if ($this->media->isExternal($image)) {
             try {
-                $path = $this->media->storeFromUrl($image, 'products');
-
-                return $this->media->url($path);
+                return $this->media->storeFromUrl($image, 'products');
             } catch (\Throwable) {
-                return $image;
+                return null;
             }
         }
 
-        return $this->media->url($image) ?? $image;
+        return null;
     }
 
-    /** @return array<int, string|null> */
-    private function resolveImagesForProduct(ApiReceivedItem $item, ?string $primary): array
+    private function resolveCategoryId(?int $categoryId, ?string $name): ?int
     {
-        $images = collect($item->images ?? [])
-            ->map(fn ($img) => $this->resolveImageForProduct($img))
-            ->filter()
-            ->values()
-            ->all();
-
-        if ($primary && ! in_array($primary, $images, true)) {
-            array_unshift($images, $primary);
+        if ($categoryId) {
+            return Category::query()
+                ->where('is_active', true)
+                ->where('id', $categoryId)
+                ->value('id');
         }
 
-        return $images ?: ($primary ? [$primary] : []);
-    }
-
-    private function resolveCategoryId(?string $name): ?int
-    {
         if (! $name) {
             return $this->defaultCategoryId();
         }

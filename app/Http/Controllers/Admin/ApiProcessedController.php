@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
+use App\Models\Product;
 use App\Services\ApiProductImportService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class ApiProcessedController extends Controller
             'date' => $request->query('date'),
             'processedCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)->count(),
             'liveCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_IMPORTED)->count(),
+            'categories' => Category::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -111,19 +113,23 @@ class ApiProcessedController extends Controller
         return back()->with('success', 'Product information updated.');
     }
 
-    public function live(ApiReceivedItem $item, ApiProductImportService $importer): RedirectResponse
+    public function live(Request $request, ApiReceivedItem $item, ApiProductImportService $importer): RedirectResponse
     {
         if (! $item->canPublish()) {
             return back()->with('error', 'This item is not ready to go live.');
         }
 
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+        ]);
+
         $product = $item->product_id
-            ? $importer->syncProduct($item, $item->product)
-            : $importer->import($item);
+            ? $importer->syncProduct($item, $item->product, (int) $validated['category_id'])
+            : $importer->import($item, (int) $validated['category_id']);
 
         return redirect()
             ->route('admin.processed.show', $item)
-            ->with('success', 'Product is now live on the storefront: '.$product->name);
+            ->with('success', 'Product is now live under '.$product->category?->name.'.');
     }
 
     public function liveBatch(Request $request, ApiProductImportService $importer): RedirectResponse
@@ -131,9 +137,11 @@ class ApiProcessedController extends Controller
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
         $published = 0;
+        $categoryId = (int) $validated['category_id'];
 
         foreach ($validated['items'] as $id) {
             $item = ApiReceivedItem::find($id);
@@ -142,16 +150,18 @@ class ApiProcessedController extends Controller
             }
 
             if ($item->product_id) {
-                $importer->syncProduct($item, $item->product);
+                $importer->syncProduct($item, $item->product, $categoryId);
             } else {
-                $importer->import($item);
+                $importer->import($item, $categoryId);
             }
             $published++;
         }
 
+        $categoryName = Category::find($categoryId)?->name ?? 'selected category';
+
         return redirect()
             ->route('admin.processed.live')
-            ->with('success', "{$published} product(s) are now live on the storefront.");
+            ->with('success', "{$published} product(s) are now live under {$categoryName}.");
     }
 
     public function destroy(ApiReceivedItem $item, MediaStorageService $media): RedirectResponse
@@ -190,6 +200,19 @@ class ApiProcessedController extends Controller
         return redirect()
             ->route('admin.processed.index')
             ->with('success', "{$deleted} processed item(s) deleted.");
+    }
+
+    public function purgeManualProducts(): RedirectResponse
+    {
+        $deleted = Product::query()
+            ->whereDoesntHave('apiReceivedItem', function ($query) {
+                $query->where('status', ApiReceivedItem::STATUS_IMPORTED);
+            })
+            ->delete();
+
+        return redirect()
+            ->route('admin.processed.index')
+            ->with('success', "{$deleted} old product(s) removed. Only API processed products will show on the storefront.");
     }
 
     private function deleteProcessedItem(ApiReceivedItem $item, MediaStorageService $media): void
