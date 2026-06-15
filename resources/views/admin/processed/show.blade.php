@@ -84,6 +84,16 @@
                     </form>
                 </div>
             @endif
+
+            @if (! $isLive)
+                <form action="{{ route('admin.processed.destroy', $item) }}" method="POST" onsubmit="return confirm('Delete this processed item permanently?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 @endsection

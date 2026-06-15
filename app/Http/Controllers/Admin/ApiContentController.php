@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
+use App\Models\SiteSetting;
 use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ApiContentController extends Controller
@@ -128,17 +130,32 @@ class ApiContentController extends Controller
         return back()->with('success', 'Content updated.');
     }
 
-    public function process(ApiReceivedItem $item, ProductLogoService $logoService): RedirectResponse
+    public function process(ApiReceivedItem $item, ProductLogoService $logoService, ApiReceivedImageService $images): RedirectResponse
     {
         if (! $item->canProcess()) {
             return back()->with('error', 'This item cannot be processed.');
         }
 
-        if (! $item->image) {
-            return back()->with('error', 'No image to process.');
+        if (! SiteSetting::current()->api_logo) {
+            return back()->with('error', 'Upload a logo on the Content page before processing.');
         }
 
-        $processedPath = $logoService->applyLogoToReceivedItem($item->image);
+        $item->load('source');
+        $imagePath = $images->resolveProcessableImagePath($item);
+
+        if (! $imagePath) {
+            return back()->with('error', 'Could not load product image. Set sender Site URL in API Settings, then click Re-download Images.');
+        }
+
+        $images->persistLocalImage($item, $imagePath);
+
+        try {
+            $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first() ?: 'Failed to apply logo.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage() ?: 'Failed to apply logo to this image.');
+        }
 
         $item->update([
             'processed_image' => $processedPath,
@@ -150,44 +167,76 @@ class ApiContentController extends Controller
             ->with('success', 'Logo applied. Review in Processed and click Go Live.');
     }
 
-    public function processBatch(Request $request, ProductLogoService $logoService): RedirectResponse
+    public function processBatch(Request $request, ProductLogoService $logoService, ApiReceivedImageService $images): RedirectResponse
     {
+        if (! SiteSetting::current()->api_logo) {
+            return redirect()
+                ->route('admin.content.index')
+                ->with('error', 'Upload a logo on the Content page before processing selected images.');
+        }
+
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
         ]);
 
         $processed = 0;
-        $errors = [];
+        $missingImage = 0;
+        $failed = 0;
 
         foreach ($validated['items'] as $id) {
-            $item = ApiReceivedItem::find($id);
-            if (! $item || ! $item->isPending() || ! $item->image) {
-                $errors[] = $id;
+            $item = ApiReceivedItem::with('source')->find($id);
+
+            if (! $item || ! $item->isPending()) {
+                $failed++;
 
                 continue;
             }
 
+            $imagePath = $images->resolveProcessableImagePath($item);
+
+            if (! $imagePath) {
+                $missingImage++;
+
+                continue;
+            }
+
+            $images->persistLocalImage($item, $imagePath);
+
             try {
-                $processedPath = $logoService->applyLogoToReceivedItem($item->image);
+                $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
                 $item->update([
                     'processed_image' => $processedPath,
                     'status' => ApiReceivedItem::STATUS_PROCESSED,
                 ]);
                 $processed++;
             } catch (\Throwable) {
-                $errors[] = $id;
+                $failed++;
             }
         }
 
-        $message = "{$processed} item(s) processed.";
-        if ($errors) {
-            $message .= ' Some items failed — upload logo or open item to process individually.';
+        if ($processed > 0) {
+            $message = "{$processed} item(s) processed.";
+            if ($missingImage > 0 || $failed > 0) {
+                $message .= " {$missingImage} missing image(s), {$failed} failed.";
+            }
+
+            return redirect()
+                ->route('admin.processed.index')
+                ->with('success', $message);
+        }
+
+        $message = 'No items were processed.';
+        if ($missingImage > 0) {
+            $message .= " {$missingImage} item(s) have no downloadable image — set sender Site URL in API Settings and click Re-download Images.";
+        }
+        if ($failed > 0) {
+            $message .= " {$failed} item(s) failed during logo processing.";
         }
 
         return redirect()
-            ->route('admin.processed.index')
-            ->with($processed ? 'success' : 'error', $message);
+            ->route('admin.content.index')
+            ->with('error', $message);
     }
 
     public function reject(Request $request, ApiReceivedItem $item): RedirectResponse

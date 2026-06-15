@@ -100,9 +100,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('processed', [ApiProcessedController::class, 'index'])->name('processed.index');
             Route::get('processed/live/all', [ApiProcessedController::class, 'liveIndex'])->name('processed.live');
             Route::post('processed/live-batch', [ApiProcessedController::class, 'liveBatch'])->name('processed.live-batch');
+            Route::delete('processed/batch', [ApiProcessedController::class, 'destroyBatch'])->name('processed.destroy-batch');
             Route::get('processed/{item}', [ApiProcessedController::class, 'show'])->name('processed.show');
             Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->name('processed.update');
             Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->name('processed.live-item');
+            Route::delete('processed/{item}', [ApiProcessedController::class, 'destroy'])->name('processed.destroy');
         });
 
         Route::middleware('admin.feature:orders')->group(function () {

@@ -75,6 +75,36 @@ class ApiReceivedImageService
         return true;
     }
 
+    public function resolveProcessableImagePath(ApiReceivedItem $item): ?string
+    {
+        $item->loadMissing('source');
+
+        foreach ($this->storedPaths($item) as $path) {
+            if ($local = $this->resolveToLocalPath($path, $item)) {
+                return $local;
+            }
+        }
+
+        if (($item->payload ?? []) !== [] && $this->repairItem($item)) {
+            $item->refresh();
+
+            foreach ($this->storedPaths($item) as $path) {
+                if ($local = $this->resolveToLocalPath($path, $item)) {
+                    return $local;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function persistLocalImage(ApiReceivedItem $item, string $localPath): void
+    {
+        if ($item->image !== $localPath) {
+            $item->update(['image' => $localPath]);
+        }
+    }
+
     /** @return array<int, string> */
     private function collectImageCandidates(array $data): array
     {
@@ -196,6 +226,35 @@ class ApiReceivedImageService
         }
 
         return $candidate;
+    }
+
+    private function resolveToLocalPath(string $path, ApiReceivedItem $item): ?string
+    {
+        $stored = $this->media->storedPath($path);
+
+        if ($stored && \Illuminate\Support\Facades\Storage::disk('public')->exists($stored)) {
+            return $stored;
+        }
+
+        if ($this->media->isExternal($path)) {
+            try {
+                return $this->media->storeFromUrl($path, 'api-received');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        $absolute = $this->toAbsoluteUrl($path, $item->source?->base_url, $item->payload ?? []);
+
+        if ($absolute && $this->media->isExternal($absolute)) {
+            try {
+                return $this->media->storeFromUrl($absolute, 'api-received');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /** @return array<int, string> */

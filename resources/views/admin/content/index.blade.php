@@ -13,6 +13,12 @@
         </div>
     @endif
 
+    @unless ($logoUrl)
+        <div class="alert alert-warning">
+            <strong>Logo required.</strong> Upload a logo below before clicking Process Selected.
+        </div>
+    @endunless
+
     <div class="row mb-3">
         <div class="col-md-8">
             <a href="{{ route('admin.processed.index') }}" class="btn btn-info btn-sm">Processed</a>

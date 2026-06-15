@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Services\ApiProductImportService;
+use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -151,6 +152,50 @@ class ApiProcessedController extends Controller
         return redirect()
             ->route('admin.processed.live')
             ->with('success', "{$published} product(s) are now live on the storefront.");
+    }
+
+    public function destroy(ApiReceivedItem $item, MediaStorageService $media): RedirectResponse
+    {
+        if (! $item->isProcessed()) {
+            return back()->with('error', 'Only processed items awaiting go live can be deleted.');
+        }
+
+        $this->deleteProcessedItem($item, $media);
+
+        return redirect()
+            ->route('admin.processed.index')
+            ->with('success', 'Processed item deleted.');
+    }
+
+    public function destroyBatch(Request $request, MediaStorageService $media): RedirectResponse
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*' => 'integer|exists:api_received_items,id',
+        ]);
+
+        $deleted = 0;
+
+        foreach ($validated['items'] as $id) {
+            $item = ApiReceivedItem::find($id);
+
+            if (! $item || ! $item->isProcessed()) {
+                continue;
+            }
+
+            $this->deleteProcessedItem($item, $media);
+            $deleted++;
+        }
+
+        return redirect()
+            ->route('admin.processed.index')
+            ->with('success', "{$deleted} processed item(s) deleted.");
+    }
+
+    private function deleteProcessedItem(ApiReceivedItem $item, MediaStorageService $media): void
+    {
+        $media->delete($item->processed_image);
+        $item->delete();
     }
 
     /** @return array<int, string> */
