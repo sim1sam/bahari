@@ -21,13 +21,18 @@ class ApiContentController extends Controller
             ->where('status', ApiReceivedItem::STATUS_PENDING)
             ->latest();
 
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         return view('admin.content.index', [
             'items' => $query->paginate(24)->withQueryString(),
-            'date' => $request->query('date'),
+            'dateFrom' => $request->query('date_from'),
+            'dateTo' => $request->query('date_to'),
             'pendingCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PENDING)->count(),
             'logoUrl' => $this->settings->apiLogoUrl(),
         ]);

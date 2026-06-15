@@ -22,15 +22,45 @@ class MediaStorageService
             return $path;
         }
 
-        if (str_starts_with($path, 'storage/')) {
-            return '/'.ltrim($path, '/');
-        }
-
         if (! Storage::disk('public')->exists($path)) {
             return null;
         }
 
-        return asset('storage/'.$path);
+        return $this->publicUrl($path);
+    }
+
+    public function storeFromDataUri(string $dataUri, string $directory, ?string $current = null, string $field = 'image'): string
+    {
+        if (! preg_match('#^data:image/(\w+);base64,(.+)$#s', $dataUri, $matches)) {
+            throw ValidationException::withMessages([
+                $field => 'Invalid base64 image data.',
+            ]);
+        }
+
+        $extension = strtolower($matches[1]);
+        $extension = $extension === 'jpeg' ? 'jpg' : $extension;
+        $extension = in_array($extension, ['jpg', 'png', 'webp', 'gif', 'svg'], true) ? $extension : 'jpg';
+
+        $content = base64_decode(str_replace(' ', '+', $matches[2]), true);
+
+        if ($content === false || strlen($content) < 100) {
+            throw ValidationException::withMessages([
+                $field => 'Invalid base64 image data.',
+            ]);
+        }
+
+        Storage::disk('public')->makeDirectory($directory);
+        $this->delete($current);
+
+        $path = trim($directory, '/').'/'.Str::uuid().'.'.$extension;
+
+        if (! Storage::disk('public')->put($path, $content)) {
+            throw ValidationException::withMessages([
+                $field => 'Failed to save image to storage.',
+            ]);
+        }
+
+        return $path;
     }
 
     public function storedPath(?string $path): ?string
@@ -199,8 +229,21 @@ class MediaStorageService
             : 'jpg';
     }
 
+    private function publicUrl(string $path): string
+    {
+        return '/storage/'.ltrim($path, '/');
+    }
+
     private function normalizePath(?string $path): string
     {
-        return trim((string) $path);
+        $path = trim((string) $path);
+
+        if (str_starts_with($path, '/storage/')) {
+            $path = Str::after($path, '/storage/');
+        } elseif (str_starts_with($path, 'storage/')) {
+            $path = Str::after($path, 'storage/');
+        }
+
+        return $path;
     }
 }

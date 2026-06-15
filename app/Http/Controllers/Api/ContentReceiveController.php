@@ -7,6 +7,7 @@ use App\Models\ApiReceivedItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Services\MediaStorageService;
+use Illuminate\Support\Facades\Storage;
 
 class ContentReceiveController extends Controller
 {
@@ -119,6 +120,8 @@ class ContentReceiveController extends Controller
             ->values()
             ->all();
 
+        $primaryImage = $imagePath ?: ($gallery[0] ?? null);
+
         return [
             'source_id' => $data['source_id'] ?? null,
             'sku' => $data['sku'] ?? null,
@@ -126,8 +129,8 @@ class ContentReceiveController extends Controller
             'title' => $title,
             'price' => round((float) ($data['price'] ?? 0), 2),
             'original_price' => isset($data['original_price']) ? round((float) $data['original_price'], 2) : null,
-            'image' => $imagePath,
-            'images' => $gallery ?: ($imagePath ? [$imagePath] : []),
+            'image' => $primaryImage,
+            'images' => $gallery ?: ($primaryImage ? [$primaryImage] : []),
             'description' => $data['description'] ?? null,
             'category_name' => $data['category_name'] ?? $data['category'] ?? null,
             'sizes' => $this->normalizeList($data['sizes'] ?? null, ['XS', 'S', 'M', 'L', 'XL']),
@@ -144,12 +147,28 @@ class ContentReceiveController extends Controller
             return null;
         }
 
-        if (str_starts_with($imageUrl, 'http')) {
+        $imageUrl = trim($imageUrl);
+
+        if (str_starts_with($imageUrl, 'data:image/')) {
+            try {
+                return $media->storeFromDataUri($imageUrl, 'api-received');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
             try {
                 return $media->storeFromUrl($imageUrl, 'api-received');
             } catch (\Throwable) {
                 return $imageUrl;
             }
+        }
+
+        $stored = $media->storedPath($imageUrl);
+
+        if ($stored && Storage::disk('public')->exists($stored)) {
+            return $stored;
         }
 
         return $imageUrl;

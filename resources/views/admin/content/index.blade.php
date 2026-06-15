@@ -51,20 +51,26 @@
         </div>
     </div>
 
-    <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
-        @csrf
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0">Received Images</h3>
-                <div class="d-flex align-items-center">
-                    <form action="{{ route('admin.content.index') }}" method="GET" class="form-inline mr-3">
-                        <input type="date" name="date" class="form-control form-control-sm" value="{{ $date }}" onchange="this.form.submit()">
-                    </form>
-                    <label class="mb-0">
-                        <input type="checkbox" id="select-all"> Select all
-                    </label>
-                </div>
+    <div class="card">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+            <h3 class="card-title mb-0">Received Images</h3>
+            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0">
+                <form action="{{ route('admin.content.index') }}" method="GET" class="form-inline mr-3 mb-2 mb-md-0">
+                    <input type="date" name="date_from" class="form-control form-control-sm mr-1" value="{{ $dateFrom }}" aria-label="From date">
+                    <span class="text-muted mx-1">to</span>
+                    <input type="date" name="date_to" class="form-control form-control-sm mr-1" value="{{ $dateTo }}" aria-label="To date">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary mr-1">Filter</button>
+                    @if ($dateFrom || $dateTo)
+                        <a href="{{ route('admin.content.index') }}" class="btn btn-sm btn-link">Clear</a>
+                    @endif
+                </form>
+                <label class="mb-0">
+                    <input type="checkbox" id="select-all"> Select all
+                </label>
             </div>
+        </div>
+        <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
+            @csrf
             <div class="card-body">
                 @if ($items->isEmpty())
                     <p class="text-center text-muted py-5 mb-0">No received images. Items from API will appear here.</p>
@@ -72,7 +78,7 @@
                     <div class="row">
                         @foreach ($items as $item)
                             <div class="col-6 col-md-3 col-lg-2 mb-4">
-                                <div class="card h-100 border {{ $item->image ? '' : 'border-danger' }}">
+                                <div class="card h-100 border {{ $item->imageUrl() ? '' : 'border-danger' }}">
                                     <div class="card-header p-2 text-center">
                                         <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
                                     </div>
@@ -102,8 +108,8 @@
             @if ($items->hasPages())
                 <div class="card-footer">{{ $items->links() }}</div>
             @endif
-        </div>
-    </form>
+        </form>
+    </div>
 
 @endsection
 

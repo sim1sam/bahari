@@ -161,7 +161,7 @@ class SiteSettingsService
             return null;
         }
 
-        return asset('storage/'.$path);
+        return '/storage/'.ltrim($path, '/');
     }
 
     public function apiReceiveUrl(): string
