@@ -60,22 +60,17 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            @if (! empty($item['sizes']) || ! empty($item['size']))
-                                                <div class="flex items-center gap-2">
-                                                    <label class="text-sm text-ink-muted">Size</label>
-                                                    @if (! empty($item['sizes']))
-                                                        <select
-                                                            name="size"
-                                                            onchange="$el.form.requestSubmit()"
-                                                            class="rounded-lg border border-border bg-surface py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                                                        >
-                                                            @foreach ($item['sizes'] as $size)
-                                                                <option value="{{ $size }}" @selected($item['size'] === $size)>{{ $size }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    @else
-                                                        <span class="text-sm text-ink">{{ $item['size'] }}</span>
-                                                    @endif
+                                            @if (! empty($item['size']) || ! empty($item['size_hint']))
+                                                <div class="flex items-center gap-2 min-w-[180px]">
+                                                    <label class="text-sm text-ink-muted shrink-0">Size</label>
+                                                    <input
+                                                        type="text"
+                                                        name="size"
+                                                        value="{{ $item['size'] }}"
+                                                        placeholder="{{ $item['size_hint'] }}"
+                                                        onchange="this.form.requestSubmit()"
+                                                        class="flex-1 min-w-[120px] rounded-lg border border-border bg-surface py-1.5 px-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                                    >
                                                 </div>
                                             @endif
 

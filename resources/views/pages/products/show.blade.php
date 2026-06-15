@@ -55,7 +55,7 @@
                 </div>
 
                 {{-- Details --}}
-                <div class="flex flex-col" x-data="{ qty: 1 }">
+                <div class="flex flex-col" x-data="{}">
                     <div class="flex items-start gap-3">
                         @if ($product['badge'] ?? null)
                             <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
@@ -86,41 +86,40 @@
                         @endif
                     </div>
 
-                    {{-- Qty + Size (from database / API) --}}
-                    <div class="mt-8 flex flex-wrap items-end gap-4">
-                        <div class="shrink-0">
-                            <label for="product-qty" class="block text-sm font-medium text-ink-muted mb-1.5">Qty:</label>
-                            <input
-                                id="product-qty"
-                                type="number"
-                                x-model.number="qty"
-                                min="1"
-                                max="10"
-                                class="w-16 rounded-lg border border-border bg-surface-elevated py-2.5 px-2 text-center text-sm font-semibold text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                            >
-                        </div>
-                        @if ($sizeText !== '')
-                            <div class="flex-1 min-w-[200px]">
-                                <label for="product-size" class="sr-only">Size</label>
-                                <input
-                                    id="product-size"
-                                    type="text"
-                                    value="{{ $sizeText }}"
-                                    readonly
-                                    class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink-muted focus:outline-none"
-                                >
-                            </div>
-                        @endif
-                    </div>
-
                     {{-- Add to cart --}}
-                    <form action="{{ route('cart.add') }}" method="POST" class="mt-8 flex flex-col sm:flex-row gap-3">
+                    <form action="{{ route('cart.add') }}" method="POST" class="mt-8" x-data="{ qty: 1 }">
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
-                        @if ($sizeText !== '')
-                            <input type="hidden" name="size" value="{{ $sizeText }}">
-                        @endif
-                        <input type="hidden" name="quantity" :value="qty">
+
+                        <div class="flex flex-wrap items-end gap-4 mb-8">
+                            <div class="shrink-0">
+                                <label for="product-qty" class="block text-sm font-medium text-ink-muted mb-1.5">Qty:</label>
+                                <input
+                                    id="product-qty"
+                                    type="number"
+                                    name="quantity"
+                                    x-model.number="qty"
+                                    min="1"
+                                    max="10"
+                                    class="w-16 rounded-lg border border-border bg-surface-elevated py-2.5 px-2 text-center text-sm font-semibold text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                >
+                            </div>
+                            @if ($sizeText !== '')
+                                <div class="flex-1 min-w-[200px]">
+                                    <label for="product-size" class="sr-only">Your size</label>
+                                    <input
+                                        id="product-size"
+                                        type="text"
+                                        name="size"
+                                        placeholder="{{ $sizeText }}"
+                                        required
+                                        class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                    >
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
                         <x-ui.button type="submit" size="lg" class="flex-1">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -128,6 +127,7 @@
                             Add to Cart
                         </x-ui.button>
                         <x-ui.button :href="route('cart.index')" variant="secondary" size="lg">View Cart</x-ui.button>
+                        </div>
                     </form>
 
                     <div class="mt-8 grid grid-cols-2 gap-4 pt-8 border-t border-border">

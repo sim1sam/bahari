@@ -20,7 +20,7 @@ class CartController extends Controller
     {
         $items = collect($this->cart->items())->map(function ($item) {
             $product = $this->catalog->find($item['slug']);
-            $item['sizes'] = $product['sizes'] ?? [];
+            $item['size_hint'] = implode(', ', $product['sizes'] ?? []);
 
             return $item;
         })->all();
