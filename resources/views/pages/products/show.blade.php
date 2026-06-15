@@ -21,7 +21,9 @@
 
     @php
         $productSizes = array_values(array_filter($product['sizes'] ?? [], fn ($value) => trim((string) $value) !== ''));
-        $productColors = array_values(array_filter($product['colors'] ?? [], fn ($value) => trim((string) $value) !== ''));
+        $sizeText = $productSizes === []
+            ? ''
+            : (count($productSizes) === 1 ? $productSizes[0] : implode(', ', $productSizes));
     @endphp
 
     <section class="py-10 lg:py-16">
@@ -53,7 +55,7 @@
                 </div>
 
                 {{-- Details --}}
-                <div class="flex flex-col" x-data="{ size: @js($productSizes[0] ?? ''), color: @js($productColors[0] ?? ''), qty: 1 }">
+                <div class="flex flex-col" x-data="{ qty: 1 }">
                     <div class="flex items-start gap-3">
                         @if ($product['badge'] ?? null)
                             <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
@@ -84,58 +86,39 @@
                         @endif
                     </div>
 
-                    {{-- Size --}}
-                    @if (! empty($productSizes))
-                        <div class="mt-8">
-                            <label for="product-size" class="text-sm font-medium text-ink">Size</label>
-                            <select
-                                id="product-size"
-                                x-model="size"
-                                class="mt-2 block w-full sm:w-auto min-w-[220px] rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                    {{-- Qty + Size (from database / API) --}}
+                    <div class="mt-8 flex flex-wrap items-end gap-4">
+                        <div class="shrink-0">
+                            <label for="product-qty" class="block text-sm font-medium text-ink-muted mb-1.5">Qty:</label>
+                            <input
+                                id="product-qty"
+                                type="number"
+                                x-model.number="qty"
+                                min="1"
+                                max="10"
+                                class="w-16 rounded-lg border border-border bg-surface-elevated py-2.5 px-2 text-center text-sm font-semibold text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                             >
-                                @foreach ($productSizes as $s)
-                                    <option value="{{ $s }}">{{ $s }}</option>
-                                @endforeach
-                            </select>
                         </div>
-                    @endif
-
-                    {{-- Color --}}
-                    @if (! empty($productColors))
-                        <div class="mt-6">
-                            <label class="text-sm font-medium text-ink">Color: <span class="text-ink-muted font-normal" x-text="color"></span></label>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                @foreach ($productColors as $c)
-                                    <button
-                                        type="button"
-                                        @click="color = '{{ $c }}'"
-                                        :class="color === '{{ $c }}' ? 'ring-2 ring-brand-600 ring-offset-2' : ''"
-                                        class="px-4 py-2 rounded-lg border border-border bg-surface-elevated text-sm transition-all hover:border-brand-300"
-                                    >{{ $c }}</button>
-                                @endforeach
+                        @if ($sizeText !== '')
+                            <div class="flex-1 min-w-[200px]">
+                                <label for="product-size" class="sr-only">Size</label>
+                                <input
+                                    id="product-size"
+                                    type="text"
+                                    value="{{ $sizeText }}"
+                                    readonly
+                                    class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink-muted focus:outline-none"
+                                >
                             </div>
-                        </div>
-                    @endif
-
-                    {{-- Quantity --}}
-                    <div class="mt-6">
-                        <label class="text-sm font-medium text-ink">Quantity</label>
-                        <div class="flex items-center gap-3 mt-2">
-                            <button type="button" @click="qty = Math.max(1, qty - 1)" class="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-surface transition-colors">−</button>
-                            <span class="w-8 text-center font-medium" x-text="qty"></span>
-                            <button type="button" @click="qty = Math.min(10, qty + 1)" class="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-surface transition-colors">+</button>
-                        </div>
+                        @endif
                     </div>
 
                     {{-- Add to cart --}}
                     <form action="{{ route('cart.add') }}" method="POST" class="mt-8 flex flex-col sm:flex-row gap-3">
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
-                        @if (! empty($productSizes))
-                            <input type="hidden" name="size" :value="size">
-                        @endif
-                        @if (! empty($productColors))
-                            <input type="hidden" name="color" :value="color">
+                        @if ($sizeText !== '')
+                            <input type="hidden" name="size" value="{{ $sizeText }}">
                         @endif
                         <input type="hidden" name="quantity" :value="qty">
                         <x-ui.button type="submit" size="lg" class="flex-1">
