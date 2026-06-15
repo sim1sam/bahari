@@ -110,7 +110,7 @@ class CartService
                 'price' => $product['price'],
                 'image' => $product['image'],
                 'size' => $size ?? 'M',
-                'color' => $color ?? ($product['colors'][0] ?? 'Default'),
+                'color' => $color ?: ($product['colors'][0] ?? null),
                 'quantity' => max(1, $quantity),
             ];
         }

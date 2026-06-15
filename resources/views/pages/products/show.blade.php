@@ -48,7 +48,7 @@
                 </div>
 
                 {{-- Details --}}
-                <div class="flex flex-col" x-data="{ size: '{{ $product['sizes'][2] ?? 'M' }}', color: '{{ $product['colors'][0] ?? 'Default' }}', qty: 1 }">
+                <div class="flex flex-col" x-data="{ size: '{{ $product['sizes'][2] ?? ($product['sizes'][0] ?? 'M') }}', color: '{{ $product['colors'][0] ?? '' }}', qty: 1 }">
                     <div class="flex items-start gap-3">
                         @if ($product['badge'] ?? null)
                             <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
@@ -95,19 +95,21 @@
                     </div>
 
                     {{-- Color --}}
-                    <div class="mt-6">
-                        <label class="text-sm font-medium text-ink">Color: <span class="text-ink-muted font-normal" x-text="color"></span></label>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            @foreach ($product['colors'] as $c)
-                                <button
-                                    type="button"
-                                    @click="color = '{{ $c }}'"
-                                    :class="color === '{{ $c }}' ? 'ring-2 ring-brand-600 ring-offset-2' : ''"
-                                    class="px-4 py-2 rounded-lg border border-border bg-surface-elevated text-sm transition-all hover:border-brand-300"
-                                >{{ $c }}</button>
-                            @endforeach
+                    @if (! empty($product['colors']))
+                        <div class="mt-6">
+                            <label class="text-sm font-medium text-ink">Color: <span class="text-ink-muted font-normal" x-text="color"></span></label>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                @foreach ($product['colors'] as $c)
+                                    <button
+                                        type="button"
+                                        @click="color = '{{ $c }}'"
+                                        :class="color === '{{ $c }}' ? 'ring-2 ring-brand-600 ring-offset-2' : ''"
+                                        class="px-4 py-2 rounded-lg border border-border bg-surface-elevated text-sm transition-all hover:border-brand-300"
+                                    >{{ $c }}</button>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
                     {{-- Quantity --}}
                     <div class="mt-6">
@@ -124,7 +126,9 @@
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
                         <input type="hidden" name="size" :value="size">
-                        <input type="hidden" name="color" :value="color">
+                        @if (! empty($product['colors']))
+                            <input type="hidden" name="color" :value="color">
+                        @endif
                         <input type="hidden" name="quantity" :value="qty">
                         <x-ui.button type="submit" size="lg" class="flex-1">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

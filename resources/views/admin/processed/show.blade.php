@@ -64,7 +64,7 @@
                         <p><strong>Price:</strong> {{ money($item->price) }}</p>
                         <p><strong>Category:</strong> {{ $item->product?->category?->name ?? $item->category_name ?: '—' }}</p>
                         <p><strong>Sizes:</strong> {{ implode(', ', $item->sizes ?? []) ?: '—' }}</p>
-                        <p><strong>Colors:</strong> {{ implode(', ', $item->colors ?? []) ?: '—' }}</p>
+                        <p><strong>Colors:</strong> {{ ! empty($item->colors) ? implode(', ', $item->colors) : '—' }}</p>
                         @if ($item->description)
                             <p><strong>Description:</strong><br>{{ $item->description }}</p>
                         @endif

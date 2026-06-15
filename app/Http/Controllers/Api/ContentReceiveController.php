@@ -159,7 +159,7 @@ class ContentReceiveController extends Controller
             'description' => $data['description'] ?? null,
             'category_name' => $data['category_name'] ?? $data['category'] ?? null,
             'sizes' => $this->normalizeList($data['sizes'] ?? null, ['XS', 'S', 'M', 'L', 'XL']),
-            'colors' => $this->normalizeList($data['colors'] ?? null, ['Black', 'White', 'Rose']),
+            'colors' => $this->normalizeColors($data),
             'badge' => $data['badge'] ?? null,
             'badge_variant' => $data['badge_variant'] ?? null,
             'rating' => isset($data['rating']) ? round((float) $data['rating'], 1) : null,
@@ -177,5 +177,23 @@ class ContentReceiveController extends Controller
         }
 
         return $default;
+    }
+
+    /** @return array<int, string> */
+    private function normalizeColors(array $data): array
+    {
+        foreach (['colors', 'color', 'colour', 'colours', 'color_name', 'colorName'] as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeList($data[$key], []);
+
+            if ($normalized !== []) {
+                return $normalized;
+            }
+        }
+
+        return [];
     }
 }

@@ -43,7 +43,9 @@
                                     <div class="flex justify-between gap-4">
                                         <div>
                                             <a href="{{ route('products.show', $item['slug']) }}" class="font-medium text-ink hover:text-brand-600 transition-colors line-clamp-2">{{ $item['name'] }}</a>
-                                            <p class="mt-1 text-sm text-ink-muted">Color: {{ $item['color'] }}</p>
+                                            @if (! empty($item['color']))
+                                                <p class="mt-1 text-sm text-ink-muted">Color: {{ $item['color'] }}</p>
+                                            @endif
                                         </div>
                                         <p class="font-semibold text-ink shrink-0">{{ money($item['price'] * $item['quantity']) }}</p>
                                     </div>

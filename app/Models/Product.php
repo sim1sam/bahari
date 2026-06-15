@@ -103,7 +103,7 @@ class Product extends Model
             'category' => $this->category?->name ?? 'Dresses',
             'description' => $this->description,
             'sizes' => $this->sizes ?? ['XS', 'S', 'M', 'L', 'XL'],
-            'colors' => $this->colors ?? ['Black', 'White', 'Rose'],
+            'colors' => $this->colors ?? [],
         ];
     }
 }
