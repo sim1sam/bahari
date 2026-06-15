@@ -17,8 +17,8 @@
             <div class="card">
                 <div class="card-header"><h3 class="card-title">Processed Image (with logo)</h3></div>
                 <div class="card-body text-center">
-                    @if ($item->processedImageUrl())
-                        <img src="{{ $item->processedImageUrl() }}" alt="" class="img-fluid rounded border" style="max-height:440px">
+                    @if ($url = $item->displayImageUrl())
+                        <img src="{{ $url }}" alt="" class="img-fluid rounded border" style="max-height:440px">
                     @else
                         <p class="text-muted">No processed image</p>
                     @endif

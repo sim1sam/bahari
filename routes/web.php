@@ -10,7 +10,12 @@ use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
+use App\Http\Controllers\PublicStorageController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/media/{path}', [PublicStorageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('storage.file');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 

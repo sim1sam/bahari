@@ -51,8 +51,8 @@
                             <tr>
                                 <td><input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form"></td>
                                 <td>
-                                    @if ($item->processedImageUrl())
-                                        <img src="{{ $item->processedImageUrl() }}" alt="" class="rounded border" style="height:56px;width:56px;object-fit:cover">
+                                    @if ($url = $item->displayImageUrl())
+                                        <img src="{{ $url }}" alt="" class="rounded border" style="height:56px;width:56px;object-fit:cover">
                                     @endif
                                 </td>
                                 <td>

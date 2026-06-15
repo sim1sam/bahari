@@ -26,8 +26,8 @@
                     @forelse ($items as $item)
                         <tr>
                             <td>
-                                @if ($item->processedImageUrl())
-                                    <img src="{{ $item->processedImageUrl() }}" alt="" class="rounded border" style="height:48px;width:48px;object-fit:cover">
+                                @if ($url = $item->displayImageUrl())
+                                    <img src="{{ $url }}" alt="" class="rounded border" style="height:48px;width:48px;object-fit:cover">
                                 @endif
                             </td>
                             <td>

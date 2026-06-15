@@ -147,21 +147,7 @@ class SiteSettingsService
 
     private function assetUrl(?string $path): ?string
     {
-        $path = trim((string) $path);
-
-        if ($path === '') {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        if (! Storage::disk('public')->exists($path)) {
-            return null;
-        }
-
-        return '/storage/'.ltrim($path, '/');
+        return app(MediaStorageService::class)->url($path);
     }
 
     public function apiReceiveUrl(): string

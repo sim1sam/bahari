@@ -56,11 +56,16 @@
 
                     @if (! $status['is_valid'])
                         <div class="alert alert-warning">
-                            Images may not show until the storage link is created. Click the button below — no SSH or terminal needed.
+                            @if ($status['blocking_path'])
+                                <strong>Old folder detected.</strong> <code>public/storage</code> exists as a regular folder.
+                                Click the button below — it will be renamed automatically and the correct link will be created.
+                            @else
+                                Images may not show until the storage link is created. Click the button below — no SSH or terminal needed.
+                            @endif
                         </div>
                     @endif
 
-                    <form action="{{ route('admin.storage-link.store') }}" method="POST" onsubmit="return confirm('Create storage link on this server?')">
+                    <form action="{{ route('admin.storage-link.store') }}" method="POST" onsubmit="return confirm('{{ $status['blocking_path'] ? 'Rename old public/storage folder and create storage link?' : 'Create storage link on this server?' }}')">
                         @csrf
                         <button type="submit" class="btn btn-primary btn-lg" @disabled($status['is_valid'])>
                             <i class="fas fa-link"></i>

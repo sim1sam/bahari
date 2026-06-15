@@ -234,7 +234,30 @@ class MediaStorageService
 
     private function publicUrl(string $path): string
     {
+        if (! $this->storageSymlinkIsValid()) {
+            return route('storage.file', ['path' => $path], false);
+        }
+
         return '/storage/'.ltrim($path, '/');
+    }
+
+    public function storageSymlinkIsValid(): bool
+    {
+        $link = public_path('storage');
+        $target = storage_path('app/public');
+
+        if (! file_exists($link) || ! is_dir($target)) {
+            return false;
+        }
+
+        if (is_link($link)) {
+            $resolvedLink = realpath($link);
+            $resolvedTarget = realpath($target);
+
+            return $resolvedLink && $resolvedTarget && $resolvedLink === $resolvedTarget;
+        }
+
+        return realpath($link) === realpath($target);
     }
 
     private function normalizePath(?string $path): string
