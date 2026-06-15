@@ -69,9 +69,8 @@ class ProductLogoService
         imagefill($resizedLogo, 0, 0, $transparent);
         imagecopyresampled($resizedLogo, $logo, 0, 0, 0, 0, $targetLogoW, $targetLogoH, $logoW, $logoH);
 
-        $padding = max(12, (int) round($baseW * 0.03));
-        $destX = $baseW - $targetLogoW - $padding;
-        $destY = $baseH - $targetLogoH - $padding;
+        $destX = (int) round(($baseW - $targetLogoW) / 2);
+        $destY = (int) round(($baseH - $targetLogoH) / 2);
 
         imagealphablending($base, true);
         imagesavealpha($base, true);
