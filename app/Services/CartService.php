@@ -109,7 +109,7 @@ class CartService
                 'name' => $product['name'],
                 'price' => $product['price'],
                 'image' => $product['image'],
-                'size' => $size ?? 'M',
+                'size' => $size ?: ($product['sizes'][0] ?? null),
                 'color' => $color ?: ($product['colors'][0] ?? null),
                 'quantity' => max(1, $quantity),
             ];
@@ -178,6 +178,6 @@ class CartService
 
     private function itemKey(string $slug, ?string $size): string
     {
-        return $slug.'|'.($size ?? 'M');
+        return $slug.'|'.($size ?? '');
     }
 }

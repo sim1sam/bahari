@@ -20,7 +20,7 @@ class CartController extends Controller
     {
         $items = collect($this->cart->items())->map(function ($item) {
             $product = $this->catalog->find($item['slug']);
-            $item['sizes'] = $product['sizes'] ?? ['XS', 'S', 'M', 'L', 'XL'];
+            $item['sizes'] = $product['sizes'] ?? [];
 
             return $item;
         })->all();
@@ -38,8 +38,8 @@ class CartController extends Controller
         $validated = $request->validate([
             'slug' => 'required|string',
             'quantity' => 'nullable|integer|min:1|max:10',
-            'size' => 'nullable|string|max:10',
-            'color' => 'nullable|string|max:30',
+            'size' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:255',
         ]);
 
         if (! $this->cart->add(
@@ -58,7 +58,7 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1|max:10',
-            'size' => 'nullable|string|max:10',
+            'size' => 'nullable|string|max:255',
         ]);
 
         $this->cart->update($key, $validated['quantity'], $validated['size'] ?? null);

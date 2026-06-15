@@ -158,7 +158,7 @@ class ContentReceiveController extends Controller
             'images' => $imageData['images'],
             'description' => $data['description'] ?? null,
             'category_name' => $data['category_name'] ?? $data['category'] ?? null,
-            'sizes' => $this->normalizeList($data['sizes'] ?? null, ['XS', 'S', 'M', 'L', 'XL']),
+            'sizes' => $this->normalizeSizes($data),
             'colors' => $this->normalizeColors($data),
             'badge' => $data['badge'] ?? null,
             'badge_variant' => $data['badge_variant'] ?? null,
@@ -177,6 +177,24 @@ class ContentReceiveController extends Controller
         }
 
         return $default;
+    }
+
+    /** @return array<int, string> */
+    private function normalizeSizes(array $data): array
+    {
+        foreach (['sizes', 'size', 'size_range', 'size_text', 'sizeText', 'available_sizes', 'availableSizes'] as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeList($data[$key], []);
+
+            if ($normalized !== []) {
+                return $normalized;
+            }
+        }
+
+        return [];
     }
 
     /** @return array<int, string> */

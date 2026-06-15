@@ -102,8 +102,17 @@ class Product extends Model
             'rating' => (float) $this->rating,
             'category' => $this->category?->name ?? 'Dresses',
             'description' => $this->description,
-            'sizes' => $this->sizes ?? ['XS', 'S', 'M', 'L', 'XL'],
-            'colors' => $this->colors ?? [],
+            'sizes' => $this->normalizedList($this->sizes),
+            'colors' => $this->normalizedList($this->colors),
         ];
+    }
+
+    /** @return array<int, string> */
+    private function normalizedList(?array $values): array
+    {
+        return array_values(array_filter(
+            $values ?? [],
+            fn ($value) => trim((string) $value) !== ''
+        ));
     }
 }

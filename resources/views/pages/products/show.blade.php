@@ -19,6 +19,11 @@
         </div>
     </div>
 
+    @php
+        $productSizes = array_values(array_filter($product['sizes'] ?? [], fn ($value) => trim((string) $value) !== ''));
+        $productColors = array_values(array_filter($product['colors'] ?? [], fn ($value) => trim((string) $value) !== ''));
+    @endphp
+
     <section class="py-10 lg:py-16">
         <div class="container-store">
             <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
@@ -48,7 +53,7 @@
                 </div>
 
                 {{-- Details --}}
-                <div class="flex flex-col" x-data="{ size: '{{ $product['sizes'][2] ?? ($product['sizes'][0] ?? 'M') }}', color: '{{ $product['colors'][0] ?? '' }}', qty: 1 }">
+                <div class="flex flex-col" x-data="{ size: @js($productSizes[0] ?? ''), color: @js($productColors[0] ?? ''), qty: 1 }">
                     <div class="flex items-start gap-3">
                         @if ($product['badge'] ?? null)
                             <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
@@ -80,26 +85,27 @@
                     </div>
 
                     {{-- Size --}}
-                    <div class="mt-8">
-                        <label class="text-sm font-medium text-ink">Size</label>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            @foreach ($product['sizes'] as $s)
-                                <button
-                                    type="button"
-                                    @click="size = '{{ $s }}'"
-                                    :class="size === '{{ $s }}' ? 'bg-brand-600 text-white border-brand-600' : 'bg-surface-elevated text-ink border-border hover:border-brand-300'"
-                                    class="min-w-11 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
-                                >{{ $s }}</button>
-                            @endforeach
+                    @if (! empty($productSizes))
+                        <div class="mt-8">
+                            <label for="product-size" class="text-sm font-medium text-ink">Size</label>
+                            <select
+                                id="product-size"
+                                x-model="size"
+                                class="mt-2 block w-full sm:w-auto min-w-[220px] rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            >
+                                @foreach ($productSizes as $s)
+                                    <option value="{{ $s }}">{{ $s }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                    </div>
+                    @endif
 
                     {{-- Color --}}
-                    @if (! empty($product['colors']))
+                    @if (! empty($productColors))
                         <div class="mt-6">
                             <label class="text-sm font-medium text-ink">Color: <span class="text-ink-muted font-normal" x-text="color"></span></label>
                             <div class="flex flex-wrap gap-2 mt-2">
-                                @foreach ($product['colors'] as $c)
+                                @foreach ($productColors as $c)
                                     <button
                                         type="button"
                                         @click="color = '{{ $c }}'"
@@ -125,8 +131,10 @@
                     <form action="{{ route('cart.add') }}" method="POST" class="mt-8 flex flex-col sm:flex-row gap-3">
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
-                        <input type="hidden" name="size" :value="size">
-                        @if (! empty($product['colors']))
+                        @if (! empty($productSizes))
+                            <input type="hidden" name="size" :value="size">
+                        @endif
+                        @if (! empty($productColors))
                             <input type="hidden" name="color" :value="color">
                         @endif
                         <input type="hidden" name="quantity" :value="qty">

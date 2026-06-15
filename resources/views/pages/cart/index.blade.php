@@ -60,18 +60,24 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <div class="flex items-center gap-2">
-                                                <label class="text-sm text-ink-muted">Size</label>
-                                                <select
-                                                    name="size"
-                                                    onchange="$el.form.requestSubmit()"
-                                                    class="rounded-lg border border-border bg-surface py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                                                >
-                                                    @foreach ($item['sizes'] as $size)
-                                                        <option value="{{ $size }}" @selected($item['size'] === $size)>{{ $size }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                            @if (! empty($item['sizes']) || ! empty($item['size']))
+                                                <div class="flex items-center gap-2">
+                                                    <label class="text-sm text-ink-muted">Size</label>
+                                                    @if (! empty($item['sizes']))
+                                                        <select
+                                                            name="size"
+                                                            onchange="$el.form.requestSubmit()"
+                                                            class="rounded-lg border border-border bg-surface py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                                        >
+                                                            @foreach ($item['sizes'] as $size)
+                                                                <option value="{{ $size }}" @selected($item['size'] === $size)>{{ $size }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    @else
+                                                        <span class="text-sm text-ink">{{ $item['size'] }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
 
                                             <div class="flex items-center gap-2">
                                                 <label class="text-sm text-ink-muted">Qty</label>
