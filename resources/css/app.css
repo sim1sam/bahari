@@ -126,6 +126,40 @@
         box-shadow: 0 -4px 24px rgb(0 0 0 / 0.06);
     }
 
+    .storefront-body {
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
+    }
+
+    @media (max-width: 1023px) {
+        .storefront-body {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        .storefront-tab-bar {
+            position: fixed !important;
+            top: auto !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            z-index: 9999 !important;
+            display: block !important;
+            width: 100%;
+            box-shadow: 0 -4px 24px rgb(0 0 0 / 0.06);
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .storefront-body {
+            padding-bottom: 0;
+        }
+
+        .storefront-tab-bar {
+            display: none !important;
+        }
+    }
+
     .account-content {
         @apply min-h-0 w-full flex-1;
     }
