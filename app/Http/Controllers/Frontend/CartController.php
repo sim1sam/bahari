@@ -7,6 +7,7 @@ use App\Services\CartService;
 use App\Services\ProductCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class CartController extends Controller
@@ -35,6 +36,22 @@ class CartController extends Controller
 
     public function add(Request $request): RedirectResponse
     {
+        if (! Auth::check()) {
+            session()->put('url.intended', url()->previous() ?: route('home'));
+
+            return redirect()->route('login')->with('error', 'Please sign in before adding items to your cart.');
+        }
+
+        if (! Auth::user()->hasActiveRole()) {
+            Auth::logout();
+
+            return redirect()->route('login')->with('error', 'Your account role has been deactivated.');
+        }
+
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('home')->with('error', 'Please sign in with a customer account to add items to your cart.');
+        }
+
         $validated = $request->validate([
             'slug' => 'required|string',
             'quantity' => 'nullable|integer|min:1|max:10',

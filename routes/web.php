@@ -47,10 +47,13 @@ Route::get('/deals', fn () => redirect()->route('categories.show', 'sale'))->nam
 
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::patch('/cart/{key}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{key}', [CartController::class, 'remove'])->name('cart.remove');
+
+Route::middleware(['auth', 'customer'])->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::patch('/cart/{key}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{key}', [CartController::class, 'remove'])->name('cart.remove');
+});
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
