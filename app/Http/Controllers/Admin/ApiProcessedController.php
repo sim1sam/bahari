@@ -143,7 +143,7 @@ class ApiProcessedController extends Controller
         $item->refresh();
 
         if ((float) $item->price <= 0) {
-            return back()->with('error', 'Price is 0. Enter price in the form or sync from API (converted_price) before Go Live. The price on the image is part of the photo only.');
+            return back()->with('error', 'Price is 0. Enter price in the form or sync from API (price_bdt) before Go Live. The price on the image is part of the photo only.');
         }
 
         $validated = $request->validate([

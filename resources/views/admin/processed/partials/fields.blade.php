@@ -28,7 +28,7 @@
                     @if ($payloadPrice > 0)
                         API payload has <strong>{{ money($payloadPrice) }}</strong> — save or click Go Live to apply.
                     @else
-                        Enter price manually or re-send from transfer site with <code>converted_price</code>.
+                        Enter price manually or re-send from transfer site with <code>price_bdt</code>.
                     @endif
                 </small>
             @endif

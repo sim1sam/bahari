@@ -8,6 +8,8 @@ class ApiReceivedPriceService
 {
     /** @var array<int, string> */
     private const SALE_KEYS = [
+        'price_bdt',
+        'priceBdt',
         'converted_price',
         'convertedPrice',
         'price',
@@ -228,6 +230,7 @@ class ApiReceivedPriceService
     private function normalizeKeys(array $data): array
     {
         $aliases = [
+            'priceBdt' => 'price_bdt',
             'convertedPrice' => 'converted_price',
             'convertedOriginalPrice' => 'converted_original_price',
             'convertedMrp' => 'converted_mrp',
