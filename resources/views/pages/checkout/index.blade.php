@@ -58,6 +58,17 @@
                     selectedBankId: @js((string) old('bank_id', '')),
                     banks: @js($bankPayload),
                     screenshotPreview: null,
+                    selectPayment(method) {
+                        this.payment = method;
+                        if (method === 'bank_transfer') {
+                            this.ensureBankSelected();
+                        }
+                    },
+                    ensureBankSelected() {
+                        if (! this.selectedBankId && this.banks.length > 0) {
+                            this.selectedBankId = String(this.banks[0].id);
+                        }
+                    },
                     get selectedBank() {
                         return this.banks.find((bank) => String(bank.id) === String(this.selectedBankId)) || null;
                     },
@@ -83,6 +94,9 @@
                     },
                     openPaymentModal() {
                         this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.total;
+                        if (this.payment === 'bank_transfer') {
+                            this.ensureBankSelected();
+                        }
                         this.showPaymentModal = true;
                     },
                     closePaymentModal() {
@@ -248,14 +262,14 @@
                             <h2 class="text-lg font-semibold text-ink">Payment Method</h2>
                             <div class="mt-6 space-y-3">
                                 <label class="flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer hover:border-brand-300 transition-colors has-checked:border-brand-600 has-checked:bg-brand-50">
-                                    <input type="radio" name="payment" value="cod" x-model="payment" class="text-brand-600 focus:ring-brand-500">
+                                    <input type="radio" name="payment" value="cod" x-model="payment" @change="selectPayment('cod')" class="text-brand-600 focus:ring-brand-500">
                                     <div>
                                         <p class="font-medium text-ink">Cash on Delivery</p>
                                         <p class="text-sm text-ink-muted">Confirm payable amount, then pay when your order arrives</p>
                                     </div>
                                 </label>
                                 <label class="flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer hover:border-brand-300 transition-colors has-checked:border-brand-600 has-checked:bg-brand-50">
-                                    <input type="radio" name="payment" value="bank_transfer" x-model="payment" class="text-brand-600 focus:ring-brand-500" @disabled($banks->isEmpty())>
+                                    <input type="radio" name="payment" value="bank_transfer" x-model="payment" @change="selectPayment('bank_transfer')" class="text-brand-600 focus:ring-brand-500" @disabled($banks->isEmpty())>
                                     <div>
                                         <p class="font-medium text-ink">Bank / Mobile Payment</p>
                                         <p class="text-sm text-ink-muted">
@@ -301,26 +315,22 @@
                                             <p class="text-sm font-semibold text-brand-700">{{ $coupon['code'] }}</p>
                                             <p class="text-xs text-brand-600 mt-0.5">{{ $coupon['label'] }}</p>
                                         </div>
-                                        <form action="{{ route('checkout.coupon.remove') }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs text-ink-muted hover:text-red-600 transition-colors">Remove</button>
-                                        </form>
+                                        <button type="submit" form="checkout-coupon-remove-form" class="text-xs text-ink-muted hover:text-red-600 transition-colors">Remove</button>
                                     </div>
                                 @else
-                                    <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="flex gap-2">
-                                        @csrf
+                                    <div class="flex gap-2">
                                         <input
                                             type="text"
                                             name="code"
+                                            form="checkout-coupon-apply-form"
                                             value="{{ old('code') }}"
                                             placeholder="e.g. LUXE10"
                                             class="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                                         >
-                                        <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors">
+                                        <button type="submit" form="checkout-coupon-apply-form" class="shrink-0 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors">
                                             Apply
                                         </button>
-                                    </form>
+                                    </div>
                                     <p class="mt-2 text-xs text-ink-muted">Try LUXE10, LUXE20, SAVE15, or FASHION</p>
                                 @endif
                             </div>
@@ -346,9 +356,9 @@
                                 </div>
                             </dl>
 
-                            <x-ui.button type="submit" size="lg" class="w-full mt-6">
+                            <button type="submit" class="w-full mt-6 inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
                                 Place Order
-                            </x-ui.button>
+                            </button>
 
                             <a href="{{ route('cart.index') }}" class="block text-center mt-4 text-sm text-brand-600 hover:text-brand-700 transition-colors">
                                 Back to Cart
@@ -359,18 +369,29 @@
 
                 <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-10000 flex items-end sm:items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/50" @click="closePaymentModal()"></div>
-                    <div class="relative w-full max-w-lg rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden" @click.stop>
-                        <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+                    <div class="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden" @click.stop>
+                        <div class="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
                             <div>
-                                <h3 class="font-semibold text-ink" x-text="payment === 'bank_transfer' ? 'Bank Payment Details' : 'Confirm Cash on Delivery'"></h3>
-                                <p class="text-xs text-ink-muted mt-0.5">Order total: {{ money($total) }}</p>
+                                <h3 class="font-semibold text-ink" x-show="payment === 'bank_transfer'">Bank Payment Details</h3>
+                                <h3 class="font-semibold text-ink" x-show="payment === 'cod'">Amount</h3>
                             </div>
                             <button type="button" class="p-1 text-ink-muted hover:text-ink" @click="closePaymentModal()">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
 
-                        <div class="p-5 space-y-4">
+                        <div class="p-5 space-y-4 overflow-y-auto">
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold cursor-pointer has-checked:border-brand-600 has-checked:bg-brand-50">
+                                    <input type="radio" name="popup_payment_choice" value="cod" x-model="payment" @change="selectPayment('cod')" class="text-brand-600 focus:ring-brand-500">
+                                    COD
+                                </label>
+                                <label class="flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold has-checked:border-brand-600 has-checked:bg-brand-50 @if ($banks->isEmpty()) opacity-50 @endif">
+                                    <input type="radio" name="popup_payment_choice" value="bank_transfer" x-model="payment" @change="selectPayment('bank_transfer')" class="text-brand-600 focus:ring-brand-500" @disabled($banks->isEmpty())>
+                                    Bank / Mobile
+                                </label>
+                            </div>
+
                             <div>
                                 <label for="payment_amount_visible" class="block text-sm font-medium text-ink mb-1.5">Amount</label>
                                 <input
@@ -381,42 +402,53 @@
                                     step="0.01"
                                     class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                                 >
-                                <p class="mt-1 text-xs text-ink-muted">Enter the amount customer will pay.</p>
+                                <p class="mt-1 text-xs text-ink-muted" x-show="payment === 'bank_transfer'">Enter the amount customer paid.</p>
                             </div>
 
                             <div x-show="payment === 'bank_transfer'" x-cloak class="space-y-4">
                                 <div>
-                                    <label for="bank_id" class="block text-sm font-medium text-ink mb-1.5">Select Bank / Wallet</label>
-                                    <select
-                                        name="bank_id"
-                                        id="bank_id"
-                                        x-model="selectedBankId"
-                                        class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
-                                    >
-                                        <option value="">Choose bank...</option>
+                                    <label class="block text-sm font-medium text-ink mb-2">Select Bank / Wallet</label>
+                                    <input type="hidden" name="bank_id" :value="selectedBankId">
+                                    <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
                                         @foreach ($banks as $bank)
-                                            <option value="{{ $bank->id }}">{{ $bank->displayName() }}</option>
+                                            <button
+                                                type="button"
+                                                class="w-full rounded-xl border p-4 text-left transition-colors"
+                                                :class="String(selectedBankId) === '{{ $bank->id }}' ? 'border-brand-600 bg-brand-50' : 'border-border bg-surface hover:border-brand-300'"
+                                                @click="selectedBankId = '{{ $bank->id }}'"
+                                            >
+                                                <div class="flex gap-4">
+                                                    @if ($bank->imageUrl())
+                                                        <img src="{{ $bank->imageUrl() }}" alt="{{ $bank->name }}" class="w-20 h-20 rounded-lg object-contain bg-white border border-border shrink-0">
+                                                    @else
+                                                        <span class="w-20 h-20 rounded-lg bg-brand-50 text-brand-600 border border-brand-100 shrink-0 flex items-center justify-center">
+                                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 21h18M4 10h16M6 10V7l6-4 6 4v3M7 21v-8m5 8v-8m5 8v-8"/></svg>
+                                                        </span>
+                                                    @endif
+                                                    <div class="min-w-0 flex-1 text-sm">
+                                                        <div class="flex items-start justify-between gap-3">
+                                                            <p class="font-semibold text-ink">{{ $bank->name }}</p>
+                                                            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide" :class="String(selectedBankId) === '{{ $bank->id }}' ? 'bg-brand-600 text-white' : 'bg-surface-elevated text-ink-muted'">Select</span>
+                                                        </div>
+                                                        @if ($bank->account_name)
+                                                            <p class="mt-1 text-ink-muted">Name: <span class="text-ink">{{ $bank->account_name }}</span></p>
+                                                        @endif
+                                                        @if ($bank->account_number)
+                                                            <p class="mt-1 text-ink-muted">Number: <span class="font-semibold text-ink">{{ $bank->account_number }}</span></p>
+                                                        @endif
+                                                        @if ($bank->branch)
+                                                            <p class="mt-1 text-ink-muted">Branch/Type: <span class="text-ink">{{ $bank->branch }}</span></p>
+                                                        @endif
+                                                        @if ($bank->instructions)
+                                                            <p class="mt-2 text-brand-700">{{ $bank->instructions }}</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </button>
                                         @endforeach
-                                    </select>
+                                    </div>
                                     @error('bank_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
-
-                                <template x-if="selectedBank">
-                                    <div class="rounded-xl border border-brand-100 bg-brand-50/60 p-4">
-                                        <div class="flex gap-4">
-                                            <template x-if="selectedBank.image_url">
-                                                <img :src="selectedBank.image_url" alt="" class="w-24 h-24 rounded-lg object-contain bg-white border border-border shrink-0">
-                                            </template>
-                                            <div class="min-w-0 text-sm">
-                                                <p class="font-semibold text-ink" x-text="selectedBank.name"></p>
-                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.account_name">Name: <span class="text-ink" x-text="selectedBank.account_name"></span></p>
-                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.account_number">Number: <span class="text-ink font-semibold" x-text="selectedBank.account_number"></span></p>
-                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.branch">Branch/Type: <span class="text-ink" x-text="selectedBank.branch"></span></p>
-                                                <p class="mt-2 text-brand-700" x-show="selectedBank.instructions" x-text="selectedBank.instructions"></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
 
                                 <div>
                                     <label for="payment_screenshot" class="block text-sm font-medium text-ink mb-1.5">Payment Screenshot</label>
@@ -430,18 +462,26 @@
                                     >
                                     @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                     <template x-if="screenshotPreview">
-                                        <img :src="screenshotPreview" alt="Payment screenshot preview" class="mt-3 max-h-44 w-full rounded-lg object-contain border border-border bg-surface">
+                                        <img :src="screenshotPreview" alt="Payment screenshot preview" class="mt-3 h-24 w-32 max-w-full rounded-lg object-contain border border-border bg-surface sm:h-28 sm:w-40">
                                     </template>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="px-5 py-4 border-t border-border flex gap-3">
+                        <div class="px-5 py-4 border-t border-border flex gap-3 shrink-0">
                             <button type="button" class="flex-1 rounded-xl border border-border py-2.5 text-sm font-semibold text-ink-muted hover:text-ink" @click="closePaymentModal()">Cancel</button>
                             <button type="button" class="flex-1 rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700" @click="confirmPayment()">Confirm & Place Order</button>
                         </div>
                     </div>
                 </div>
+            </form>
+
+            <form id="checkout-coupon-apply-form" action="{{ route('checkout.coupon.apply') }}" method="POST" class="hidden">
+                @csrf
+            </form>
+            <form id="checkout-coupon-remove-form" action="{{ route('checkout.coupon.remove') }}" method="POST" class="hidden">
+                @csrf
+                @method('DELETE')
             </form>
         </div>
     </section>
