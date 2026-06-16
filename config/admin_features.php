@@ -55,6 +55,12 @@ return [
         'route' => 'admin.transactions.index',
         'active' => 'admin.transactions.*',
     ],
+    'payment_banks' => [
+        'label' => 'Payment Banks',
+        'icon' => 'fas fa-university',
+        'route' => 'admin.payment-banks.index',
+        'active' => 'admin.payment-banks.*',
+    ],
     'api_settings' => [
         'label' => 'API Settings',
         'icon' => 'fas fa-plug',

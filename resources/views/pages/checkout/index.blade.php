@@ -21,11 +21,23 @@
                     'city' => $address->city,
                     'zip' => $address->zip,
                 ])->values();
+                $bankPayload = $banks->map(fn ($bank) => [
+                    'id' => $bank->id,
+                    'name' => $bank->name,
+                    'account_name' => $bank->account_name,
+                    'account_number' => $bank->account_number,
+                    'branch' => $bank->branch,
+                    'instructions' => $bank->instructions,
+                    'image_url' => $bank->imageUrl(),
+                ])->values();
             @endphp
 
             <form
+                id="checkout-form"
                 action="{{ route('checkout.store') }}"
                 method="POST"
+                enctype="multipart/form-data"
+                @submit="preparePaymentSubmit"
                 x-data="{
                     mode: @js(old('address_mode', $selectedAddress ? 'existing' : 'new')),
                     selectedId: @js((string) old('address_id', $selectedAddress?->id ?? '')),
@@ -37,6 +49,17 @@
                         address: @js(old('address', $checkoutDetails['address'])),
                         city: @js(old('city', $checkoutDetails['city'])),
                         zip: @js(old('zip', $checkoutDetails['zip'])),
+                    },
+                    payment: @js(old('payment', 'cod')),
+                    total: {{ (float) $total }},
+                    showPaymentModal: false,
+                    paymentConfirmed: false,
+                    paymentAmount: {{ old('payment_amount', (float) $total) }},
+                    selectedBankId: @js((string) old('bank_id', '')),
+                    banks: @js($bankPayload),
+                    screenshotPreview: null,
+                    get selectedBank() {
+                        return this.banks.find((bank) => String(bank.id) === String(this.selectedBankId)) || null;
                     },
                     useSavedAddress(id) {
                         this.mode = 'existing';
@@ -58,11 +81,49 @@
                         this.details.city = '';
                         this.details.zip = '';
                     },
+                    openPaymentModal() {
+                        this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.total;
+                        this.showPaymentModal = true;
+                    },
+                    closePaymentModal() {
+                        this.showPaymentModal = false;
+                    },
+                    onScreenshot(event) {
+                        const file = event.target.files[0];
+                        this.screenshotPreview = file ? URL.createObjectURL(file) : null;
+                    },
+                    confirmPayment() {
+                        if (Number(this.paymentAmount) <= 0) {
+                            alert('Please enter payment amount.');
+                            return;
+                        }
+                        if (this.payment === 'bank_transfer') {
+                            const fileInput = document.getElementById('payment_screenshot');
+                            if (! this.selectedBankId) {
+                                alert('Please select a bank.');
+                                return;
+                            }
+                            if (! fileInput?.files?.length) {
+                                alert('Please upload payment screenshot.');
+                                return;
+                            }
+                        }
+                        this.paymentConfirmed = true;
+                        this.showPaymentModal = false;
+                        this.$nextTick(() => document.getElementById('checkout-form').requestSubmit());
+                    },
+                    preparePaymentSubmit(event) {
+                        if (! this.paymentConfirmed) {
+                            event.preventDefault();
+                            this.openPaymentModal();
+                        }
+                    },
                 }"
             >
                 @csrf
                 <input type="hidden" name="address_mode" :value="mode">
                 <input type="hidden" name="address_id" :value="mode === 'existing' ? selectedId : ''">
+                <input type="hidden" name="payment_amount" :value="paymentAmount">
                 <div class="grid lg:grid-cols-3 gap-10">
                     {{-- Shipping form --}}
                     <div class="lg:col-span-2 space-y-8">
@@ -187,17 +248,23 @@
                             <h2 class="text-lg font-semibold text-ink">Payment Method</h2>
                             <div class="mt-6 space-y-3">
                                 <label class="flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer hover:border-brand-300 transition-colors has-checked:border-brand-600 has-checked:bg-brand-50">
-                                    <input type="radio" name="payment" value="card" {{ old('payment', 'card') === 'card' ? 'checked' : '' }} class="text-brand-600 focus:ring-brand-500">
+                                    <input type="radio" name="payment" value="cod" x-model="payment" class="text-brand-600 focus:ring-brand-500">
                                     <div>
-                                        <p class="font-medium text-ink">Credit / Debit Card</p>
-                                        <p class="text-sm text-ink-muted">Pay securely with your card</p>
+                                        <p class="font-medium text-ink">Cash on Delivery</p>
+                                        <p class="text-sm text-ink-muted">Confirm payable amount, then pay when your order arrives</p>
                                     </div>
                                 </label>
                                 <label class="flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer hover:border-brand-300 transition-colors has-checked:border-brand-600 has-checked:bg-brand-50">
-                                    <input type="radio" name="payment" value="cod" {{ old('payment') === 'cod' ? 'checked' : '' }} class="text-brand-600 focus:ring-brand-500">
+                                    <input type="radio" name="payment" value="bank_transfer" x-model="payment" class="text-brand-600 focus:ring-brand-500" @disabled($banks->isEmpty())>
                                     <div>
-                                        <p class="font-medium text-ink">Cash on Delivery</p>
-                                        <p class="text-sm text-ink-muted">Pay when your order arrives</p>
+                                        <p class="font-medium text-ink">Bank / Mobile Payment</p>
+                                        <p class="text-sm text-ink-muted">
+                                            @if ($banks->isEmpty())
+                                                No active bank details available. Please choose Cash on Delivery.
+                                            @else
+                                                Select bank details, enter amount, and upload payment screenshot
+                                            @endif
+                                        </p>
                                     </div>
                                 </label>
                             </div>
@@ -286,6 +353,92 @@
                             <a href="{{ route('cart.index') }}" class="block text-center mt-4 text-sm text-brand-600 hover:text-brand-700 transition-colors">
                                 Back to Cart
                             </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-10000 flex items-end sm:items-center justify-center p-4">
+                    <div class="absolute inset-0 bg-black/50" @click="closePaymentModal()"></div>
+                    <div class="relative w-full max-w-lg rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden" @click.stop>
+                        <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-ink" x-text="payment === 'bank_transfer' ? 'Bank Payment Details' : 'Confirm Cash on Delivery'"></h3>
+                                <p class="text-xs text-ink-muted mt-0.5">Order total: {{ money($total) }}</p>
+                            </div>
+                            <button type="button" class="p-1 text-ink-muted hover:text-ink" @click="closePaymentModal()">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="p-5 space-y-4">
+                            <div>
+                                <label for="payment_amount_visible" class="block text-sm font-medium text-ink mb-1.5">Amount</label>
+                                <input
+                                    type="number"
+                                    id="payment_amount_visible"
+                                    x-model.number="paymentAmount"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+                                >
+                                <p class="mt-1 text-xs text-ink-muted">Enter the amount customer will pay.</p>
+                            </div>
+
+                            <div x-show="payment === 'bank_transfer'" x-cloak class="space-y-4">
+                                <div>
+                                    <label for="bank_id" class="block text-sm font-medium text-ink mb-1.5">Select Bank / Wallet</label>
+                                    <select
+                                        name="bank_id"
+                                        id="bank_id"
+                                        x-model="selectedBankId"
+                                        class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+                                    >
+                                        <option value="">Choose bank...</option>
+                                        @foreach ($banks as $bank)
+                                            <option value="{{ $bank->id }}">{{ $bank->displayName() }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('bank_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                                </div>
+
+                                <template x-if="selectedBank">
+                                    <div class="rounded-xl border border-brand-100 bg-brand-50/60 p-4">
+                                        <div class="flex gap-4">
+                                            <template x-if="selectedBank.image_url">
+                                                <img :src="selectedBank.image_url" alt="" class="w-24 h-24 rounded-lg object-contain bg-white border border-border shrink-0">
+                                            </template>
+                                            <div class="min-w-0 text-sm">
+                                                <p class="font-semibold text-ink" x-text="selectedBank.name"></p>
+                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.account_name">Name: <span class="text-ink" x-text="selectedBank.account_name"></span></p>
+                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.account_number">Number: <span class="text-ink font-semibold" x-text="selectedBank.account_number"></span></p>
+                                                <p class="mt-1 text-ink-muted" x-show="selectedBank.branch">Branch/Type: <span class="text-ink" x-text="selectedBank.branch"></span></p>
+                                                <p class="mt-2 text-brand-700" x-show="selectedBank.instructions" x-text="selectedBank.instructions"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div>
+                                    <label for="payment_screenshot" class="block text-sm font-medium text-ink mb-1.5">Payment Screenshot</label>
+                                    <input
+                                        type="file"
+                                        name="payment_screenshot"
+                                        id="payment_screenshot"
+                                        accept="image/*"
+                                        @change="onScreenshot($event)"
+                                        class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                    >
+                                    @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                                    <template x-if="screenshotPreview">
+                                        <img :src="screenshotPreview" alt="Payment screenshot preview" class="mt-3 max-h-44 w-full rounded-lg object-contain border border-border bg-surface">
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-5 py-4 border-t border-border flex gap-3">
+                            <button type="button" class="flex-1 rounded-xl border border-border py-2.5 text-sm font-semibold text-ink-muted hover:text-ink" @click="closePaymentModal()">Cancel</button>
+                            <button type="button" class="flex-1 rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700" @click="confirmPayment()">Confirm & Place Order</button>
                         </div>
                     </div>
                 </div>

@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentBank;
+use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +19,10 @@ use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private CartService $cart) {}
+    public function __construct(
+        private CartService $cart,
+        private MediaStorageService $media,
+    ) {}
 
     public function index(): View|RedirectResponse
     {
@@ -40,6 +46,7 @@ class CheckoutController extends Controller
             'addresses' => $addresses,
             'selectedAddress' => $selectedAddress,
             'addressTypes' => CustomerAddress::types(),
+            'banks' => PaymentBank::activeForCheckout(),
             'checkoutDetails' => [
                 'name' => $selectedAddress?->recipient_name ?? $user->name,
                 'email' => $user->email,
@@ -88,7 +95,10 @@ class CheckoutController extends Controller
             'address' => 'required|string|max:255',
             'city' => 'required|string|max:100',
             'zip' => 'required|string|max:20',
-            'payment' => 'required|in:card,cod',
+            'payment' => 'required|in:cod,bank_transfer',
+            'payment_amount' => 'required|numeric|min:0',
+            'bank_id' => 'required_if:payment,bank_transfer|nullable|integer|exists:payment_banks,id',
+            'payment_screenshot' => 'required_if:payment,bank_transfer|nullable|image|max:5120',
             'address_mode' => 'nullable|in:existing,new',
             'address_id' => 'nullable|integer',
             'address_type' => 'nullable|in:home,office,other',
@@ -96,6 +106,23 @@ class CheckoutController extends Controller
             'save_address' => 'nullable|boolean',
             'make_default' => 'nullable|boolean',
         ]);
+
+        $bank = null;
+        $screenshotPath = null;
+
+        if ($validated['payment'] === 'bank_transfer') {
+            $bank = PaymentBank::query()
+                ->where('is_active', true)
+                ->findOrFail($validated['bank_id']);
+
+            if ($request->hasFile('payment_screenshot')) {
+                $screenshotPath = $this->media->storeUpload(
+                    $request->file('payment_screenshot'),
+                    'orders/payments',
+                    field: 'payment_screenshot'
+                );
+            }
+        }
 
         $user = $this->user();
         $selectedAddress = ! empty($validated['address_id'])
@@ -130,7 +157,10 @@ class CheckoutController extends Controller
         $coupon = $this->cart->coupon();
         $total = $this->cart->total();
 
-        DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total) {
+        DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total, $bank, $screenshotPath) {
+            $isBankTransfer = $validated['payment'] === 'bank_transfer';
+            $paymentAmount = round((float) $validated['payment_amount'], 2);
+
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'number' => $orderNumber,
@@ -141,12 +171,17 @@ class CheckoutController extends Controller
                 'city' => $validated['city'],
                 'zip' => $validated['zip'],
                 'payment_method' => $validated['payment'],
+                'bank_name' => $bank?->displayName(),
+                'payment_screenshot' => $screenshotPath,
+                'notes' => $isBankTransfer ? null : 'COD amount confirmed: '.money($paymentAmount),
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'shipping' => $shipping,
                 'total' => $total,
                 'coupon_code' => $coupon['code'] ?? null,
                 'status' => 'pending',
+                'payment_status' => $isBankTransfer ? 'pending' : 'due',
+                'amount_paid' => 0,
             ]);
 
             foreach ($items as $item) {
@@ -159,6 +194,17 @@ class CheckoutController extends Controller
                     'color' => $item['color'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
+                ]);
+            }
+
+            if ($isBankTransfer && $screenshotPath) {
+                PaymentTransaction::create([
+                    'order_id' => $order->id,
+                    'user_id' => Auth::id(),
+                    'amount' => $paymentAmount,
+                    'bank_name' => $bank?->displayName(),
+                    'screenshot' => $screenshotPath,
+                    'status' => PaymentTransaction::STATUS_PENDING,
                 ]);
             }
         });

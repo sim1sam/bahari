@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
 use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PaymentBankController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -74,6 +75,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
             Route::post('transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('transactions.approve');
             Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
+        });
+
+        Route::middleware('admin.feature:payment_banks')->group(function () {
+            Route::get('payment-banks', [PaymentBankController::class, 'index'])->name('payment-banks.index');
+            Route::post('payment-banks', [PaymentBankController::class, 'store'])->name('payment-banks.store');
+            Route::put('payment-banks/{paymentBank}', [PaymentBankController::class, 'update'])->name('payment-banks.update');
+            Route::delete('payment-banks/{paymentBank}', [PaymentBankController::class, 'destroy'])->name('payment-banks.destroy');
         });
 
         Route::middleware('admin.feature:api_settings')->group(function () {
