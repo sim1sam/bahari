@@ -19,10 +19,10 @@
             'active' => ['account.transactions'],
         ],
         [
-            'label' => 'Profile',
-            'route' => 'account.profile',
-            'icon' => 'profile',
-            'active' => ['account.profile'],
+            'label' => 'Address',
+            'route' => 'account.addresses.index',
+            'icon' => 'address',
+            'active' => ['account.addresses.*'],
         ],
         [
             'label' => 'Menu',
@@ -34,7 +34,7 @@
 @endphp
 
 <nav class="account-tab-bar fixed bottom-0 inset-x-0 z-50 lg:hidden bg-surface-elevated/95 backdrop-blur-lg border-t border-border safe-bottom" aria-label="Account navigation">
-    <div class="grid grid-cols-5 h-[4.25rem] max-w-lg mx-auto px-1">
+    <div class="grid grid-cols-5 h-17 max-w-lg mx-auto px-1">
         @foreach ($tabs as $tab)
             @php
                 $active = collect($tab['active'])->contains(fn ($name) => request()->routeIs($name));
@@ -50,8 +50,8 @@
                         <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     @elseif ($tab['icon'] === 'transaction')
                         <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                    @elseif ($tab['icon'] === 'profile')
-                        <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    @elseif ($tab['icon'] === 'address')
+                        <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19.5 9c0 7-7.5 12-7.5 12S4.5 16 4.5 9a7.5 7.5 0 1115 0z"/></svg>
                     @else
                         <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     @endif

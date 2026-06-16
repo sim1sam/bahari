@@ -8,7 +8,7 @@
 @section('content')
     {{-- ========== MOBILE APP LAYOUT ========== --}}
     <div class="lg:hidden px-4 pt-4 space-y-5">
-        <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20">
+        <div class="rounded-2xl bg-linear-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20">
             <div class="flex items-center gap-4">
                 @if ($user->avatarUrl())
                     <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-14 h-14 rounded-2xl object-cover border-2 border-white/30 shadow-sm shrink-0">
@@ -35,7 +35,7 @@
         </div>
 
         <div class="grid grid-cols-4 gap-2">
-            @foreach ([['Order', 'account.orders', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'], ['Custom', 'account.custom-order', 'M12 6v6m0 0v6m0-6h6m-6 0H6'], ['Transaction', 'account.transactions', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'], ['Menu', 'account.menu', 'M4 6h16M4 12h16M4 18h16']] as [$label, $route, $path])
+            @foreach ([['Order', 'account.orders', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'], ['Address', 'account.addresses.index', 'M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19.5 9c0 7-7.5 12-7.5 12S4.5 16 4.5 9a7.5 7.5 0 1115 0z'], ['Transaction', 'account.transactions', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'], ['Menu', 'account.menu', 'M4 6h16M4 12h16M4 18h16']] as [$label, $route, $path])
                 <a href="{{ route($route) }}" class="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-surface-elevated border border-border active:scale-95 transition-transform">
                     <span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $path }}"/></svg>
@@ -130,6 +130,7 @@
                     <div class="account-panel-header"><h2 class="font-semibold text-ink">Quick Actions</h2></div>
                     <div class="account-panel-body space-y-2">
                         <a href="{{ route('account.orders') }}" class="account-quick-link">View all orders</a>
+                        <a href="{{ route('account.addresses.index') }}" class="account-quick-link">Shipping addresses</a>
                         <a href="{{ route('account.profile') }}" class="account-quick-link">Edit profile</a>
                         <a href="{{ route('categories.index') }}" class="account-quick-link">Browse categories</a>
                         <a href="{{ route('cart.index') }}" class="account-quick-link">Go to cart</a>

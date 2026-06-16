@@ -3,6 +3,7 @@
 use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CustomOrderController;
+use App\Http\Controllers\Frontend\CustomerAddressController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CategoryController;
 use App\Http\Controllers\Frontend\CheckoutController;
@@ -36,6 +37,11 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
     Route::get('/custom-order', [CustomOrderController::class, 'create'])->name('custom-order');
     Route::post('/custom-order', [CustomOrderController::class, 'store'])->name('custom-order.store');
+    Route::get('/addresses', [CustomerAddressController::class, 'index'])->name('addresses.index');
+    Route::post('/addresses', [CustomerAddressController::class, 'store'])->name('addresses.store');
+    Route::patch('/addresses/{address}', [CustomerAddressController::class, 'update'])->name('addresses.update');
+    Route::patch('/addresses/{address}/default', [CustomerAddressController::class, 'makeDefault'])->name('addresses.default');
+    Route::delete('/addresses/{address}', [CustomerAddressController::class, 'destroy'])->name('addresses.destroy');
     Route::get('/menu', [AccountController::class, 'menu'])->name('menu');
     Route::get('/profile', [AccountController::class, 'profile'])->name('profile');
     Route::put('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');
@@ -55,11 +61,13 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::delete('/cart/{key}', [CartController::class, 'remove'])->name('cart.remove');
 });
 
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
-Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
+Route::middleware(['auth', 'customer'])->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
+    Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
+});
 
 Route::middleware('throttle:20,1')->group(function () {
     Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('order.track');

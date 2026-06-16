@@ -42,6 +42,18 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class);
+    }
+
+    public function defaultAddress(): ?CustomerAddress
+    {
+        return $this->addresses()
+            ->where('is_default', true)
+            ->first() ?? $this->addresses()->oldest()->first();
+    }
+
     public function hasActiveRole(): bool
     {
         return (bool) $this->role?->is_active;

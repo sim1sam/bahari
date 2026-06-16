@@ -25,6 +25,7 @@
                 ['label' => 'My Orders', 'route' => 'account.orders', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
                 ['label' => 'Custom Order', 'route' => 'account.custom-order', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
                 ['label' => 'Transactions', 'route' => 'account.transactions', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
+                ['label' => 'Shipping Addresses', 'route' => 'account.addresses.index', 'icon' => 'M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19.5 9c0 7-7.5 12-7.5 12S4.5 16 4.5 9a7.5 7.5 0 1115 0z'],
                 ['label' => 'Profile', 'route' => 'account.profile', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
             ],
         ];
@@ -74,7 +75,7 @@
         @foreach ($sections as $title => $items)
             <div class="account-panel">
                 <div class="account-panel-header"><h2 class="font-semibold">{{ $title }}</h2></div>
-                <div class="account-panel-body !p-0 divide-y divide-border">
+                <div class="account-panel-body p-0! divide-y divide-border">
                     @foreach ($items as $item)
                         <a href="{{ route($item['route']) }}" class="flex items-center gap-3 px-6 py-4 hover:bg-surface/60 transition-colors">
                             <span class="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
