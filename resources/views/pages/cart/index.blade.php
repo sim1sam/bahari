@@ -4,8 +4,8 @@
 
 @section('content')
     <div class="bg-surface-elevated border-b border-border">
-        <div class="container-store py-8">
-            <h1 class="text-3xl font-bold tracking-tight text-ink">Shopping Cart</h1>
+        <div class="container-store py-6 sm:py-8">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-ink">Shopping Cart</h1>
             <p class="mt-1 text-ink-muted">
                 @if (count($items) > 0)
                     {{ collect($items)->sum('quantity') }} {{ Str::plural('item', collect($items)->sum('quantity')) }} in your bag
@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <section class="py-10 lg:py-14">
+    <section class="py-6 sm:py-10 lg:py-14">
         <div class="container-store">
             @if (empty($items))
                 <div class="text-center py-16">
@@ -30,38 +30,38 @@
                     <x-ui.button :href="route('home')" class="mt-6">Continue Shopping</x-ui.button>
                 </div>
             @else
-                <div class="grid lg:grid-cols-3 gap-10">
+                <div class="grid lg:grid-cols-3 gap-6 lg:gap-10">
                     {{-- Cart items --}}
                     <div class="lg:col-span-2 space-y-4">
                         @foreach ($items as $item)
-                            <article class="flex gap-4 sm:gap-6 p-4 sm:p-6 bg-surface-elevated rounded-2xl border border-border">
-                                <a href="{{ route('products.show', $item['slug']) }}" class="shrink-0 w-24 sm:w-32 aspect-[3/4] rounded-xl overflow-hidden bg-brand-50 border border-border">
+                            <article class="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 p-3 sm:flex sm:gap-6 sm:p-6 bg-surface-elevated rounded-2xl border border-border">
+                                <a href="{{ route('products.show', $item['slug']) }}" class="shrink-0 w-full sm:w-32 aspect-3/4 rounded-xl overflow-hidden bg-brand-50 border border-border">
                                     <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover object-top">
                                 </a>
 
                                 <div class="flex-1 min-w-0 flex flex-col">
-                                    <div class="flex justify-between gap-4">
-                                        <div>
-                                            <a href="{{ route('products.show', $item['slug']) }}" class="font-medium text-ink hover:text-brand-600 transition-colors line-clamp-2">{{ $item['name'] }}</a>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
+                                        <div class="min-w-0">
+                                            <a href="{{ route('products.show', $item['slug']) }}" class="block font-medium text-sm sm:text-base text-ink hover:text-brand-600 transition-colors line-clamp-2">{{ $item['name'] }}</a>
                                             @if (! empty($item['color']))
                                                 <p class="mt-1 text-sm text-ink-muted">Color: {{ $item['color'] }}</p>
                                             @endif
                                         </div>
-                                        <p class="font-semibold text-ink shrink-0">{{ money($item['price'] * $item['quantity']) }}</p>
+                                        <p class="font-semibold text-ink shrink-0 sm:text-right">{{ money($item['price'] * $item['quantity']) }}</p>
                                     </div>
 
-                                    <div class="mt-auto pt-4 flex flex-wrap items-center justify-between gap-4">
+                                    <div class="mt-auto pt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 sm:gap-4">
                                         <form
                                             action="{{ route('cart.update', $item['key']) }}"
                                             method="POST"
-                                            class="flex flex-wrap items-center gap-4"
+                                            class="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                                             x-data="{ qty: {{ $item['quantity'] }} }"
                                         >
                                             @csrf
                                             @method('PATCH')
 
                                             @if (! empty($item['size']) || ! empty($item['size_hint']))
-                                                <div class="flex items-center gap-2 min-w-[180px]">
+                                                <div class="flex items-center gap-2 min-w-0 sm:min-w-[180px]">
                                                     <label class="text-sm text-ink-muted shrink-0">Size</label>
                                                     <input
                                                         type="text"
@@ -69,12 +69,12 @@
                                                         value="{{ $item['size'] }}"
                                                         placeholder="{{ $item['size_hint'] }}"
                                                         onchange="this.form.requestSubmit()"
-                                                        class="flex-1 min-w-[120px] rounded-lg border border-border bg-surface py-1.5 px-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                                        class="flex-1 min-w-0 sm:min-w-[120px] rounded-lg border border-border bg-surface py-1.5 px-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                                                     >
                                                 </div>
                                             @endif
 
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex items-center justify-between gap-2 sm:justify-start">
                                                 <label class="text-sm text-ink-muted">Qty</label>
                                                 <div class="flex items-center border border-border rounded-lg overflow-hidden">
                                                     <button
@@ -93,7 +93,7 @@
                                             </div>
                                         </form>
 
-                                        <form action="{{ route('cart.remove', $item['key']) }}" method="POST">
+                                        <form action="{{ route('cart.remove', $item['key']) }}" method="POST" class="sm:ml-auto">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-sm text-ink-muted hover:text-red-600 transition-colors">Remove</button>
@@ -106,7 +106,7 @@
 
                     {{-- Order summary --}}
                     <div class="lg:col-span-1">
-                        <div class="sticky top-28 p-6 bg-surface-elevated rounded-2xl border border-border">
+                        <div class="lg:sticky lg:top-28 p-4 sm:p-6 bg-surface-elevated rounded-2xl border border-border">
                             <h2 class="text-lg font-semibold text-ink">Order Summary</h2>
 
                             <dl class="mt-6 space-y-3 text-sm">
