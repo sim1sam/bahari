@@ -168,6 +168,7 @@ class ApiProcessedController extends Controller
         ]);
 
         $published = 0;
+        $skippedZeroPrice = 0;
         $categoryId = (int) $validated['category_id'];
 
         foreach ($validated['items'] as $id) {
@@ -179,6 +180,12 @@ class ApiProcessedController extends Controller
             $prices->applyToItem($item);
             $item->refresh();
 
+            if ((float) $item->price <= 0) {
+                $skippedZeroPrice++;
+
+                continue;
+            }
+
             if ($item->product_id) {
                 $importer->syncProduct($item, $item->product, $categoryId);
             } else {
@@ -188,10 +195,15 @@ class ApiProcessedController extends Controller
         }
 
         $categoryName = Category::find($categoryId)?->name ?? 'selected category';
+        $message = "{$published} product(s) are now live under {$categoryName}.";
+
+        if ($skippedZeroPrice > 0) {
+            $message .= " {$skippedZeroPrice} item(s) skipped because price is 0. Send price_bdt or enter price manually.";
+        }
 
         return redirect()
             ->route('admin.processed.live')
-            ->with('success', "{$published} product(s) are now live under {$categoryName}.");
+            ->with($published > 0 ? 'success' : 'warning', $message);
     }
 
     public function destroyLive(ApiReceivedItem $item, ApiProductImportService $importer): RedirectResponse
