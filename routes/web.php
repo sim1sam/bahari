@@ -66,8 +66,8 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
 });
+Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
 
 Route::middleware('throttle:20,1')->group(function () {
     Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('order.track');
