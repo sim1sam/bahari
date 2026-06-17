@@ -69,6 +69,94 @@
                     <p><strong>Payload includes:</strong> order, items, and payments.</p>
                 </div>
             </div>
+
+            <div class="card">
+                <div class="card-header"><h3 class="card-title">Payload Field Names</h3></div>
+                <div class="card-body small">
+                    <p class="mb-1"><strong>order:</strong></p>
+                    <p><code>number, status, type, customer_name, customer_email, customer_phone, address, city, zip, payment_method, payment_status, reference_code, bank_name, notes, coupon_code, subtotal, discount, shipping, total, amount_paid, created_at</code></p>
+                    <p class="mb-1"><strong>items[]:</strong></p>
+                    <p><code>product_slug, product_name, product_link, image, size, color, quantity, price</code></p>
+                    <p class="mb-1"><strong>payments[]:</strong></p>
+                    <p class="mb-0"><code>amount, payment_method, bank_name, notes, created_at</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Laravel Receiver Script Example</h3></div>
+        <div class="card-body">
+            <p class="text-muted small">Add this on the other website. Keep the API key and token same as this setting page.</p>
+<pre class="bg-dark text-white rounded p-3 mb-0" style="white-space: pre-wrap;"><code>@verbatim
+// routes/api.php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/orders/import', function (Request $request) {
+    $apiKey = 'YOUR_API_KEY';
+    $accessToken = 'YOUR_ACCESS_TOKEN';
+
+    if ($request->header('X-API-Key') !== $apiKey) {
+        return response()->json(['message' => 'Invalid API key'], 401);
+    }
+
+    if ($request->bearerToken() !== $accessToken) {
+        return response()->json(['message' => 'Invalid access token'], 401);
+    }
+
+    $data = $request->validate([
+        'order' => 'required|array',
+        'order.number' => 'required|string|max:100',
+        'order.status' => 'nullable|string|max:50',
+        'order.type' => 'nullable|string|max:50',
+        'order.customer_name' => 'nullable|string|max:200',
+        'order.customer_email' => 'nullable|email|max:150',
+        'order.customer_phone' => 'nullable|string|max:50',
+        'order.address' => 'nullable|string|max:255',
+        'order.city' => 'nullable|string|max:100',
+        'order.zip' => 'nullable|string|max:50',
+        'order.payment_method' => 'nullable|string|max:50',
+        'order.payment_status' => 'nullable|string|max:50',
+        'order.reference_code' => 'nullable|string|max:100',
+        'order.bank_name' => 'nullable|string|max:100',
+        'order.notes' => 'nullable|string|max:2000',
+        'order.coupon_code' => 'nullable|string|max:30',
+        'order.subtotal' => 'nullable|numeric',
+        'order.discount' => 'nullable|numeric',
+        'order.shipping' => 'nullable|numeric',
+        'order.total' => 'nullable|numeric',
+        'order.amount_paid' => 'nullable|numeric',
+        'order.created_at' => 'nullable|string',
+        'items' => 'nullable|array',
+        'items.*.product_slug' => 'nullable|string|max:255',
+        'items.*.product_name' => 'nullable|string|max:255',
+        'items.*.product_link' => 'nullable|string|max:500',
+        'items.*.image' => 'nullable|string|max:500',
+        'items.*.size' => 'nullable|string|max:50',
+        'items.*.color' => 'nullable|string|max:50',
+        'items.*.quantity' => 'nullable|integer|min:1',
+        'items.*.price' => 'nullable|numeric|min:0',
+        'payments' => 'nullable|array',
+        'payments.*.amount' => 'nullable|numeric|min:0',
+        'payments.*.payment_method' => 'nullable|string|max:50',
+        'payments.*.bank_name' => 'nullable|string|max:100',
+        'payments.*.notes' => 'nullable|string|max:500',
+        'payments.*.created_at' => 'nullable|string',
+    ]);
+
+    // Example: save raw payload first, then map fields to your own tables.
+    // DB::table('received_orders')->updateOrInsert(
+    //     ['number' => $data['order']['number']],
+    //     ['payload' => json_encode($data), 'updated_at' => now(), 'created_at' => now()]
+    // );
+
+    return response()->json([
+        'message' => 'Order received',
+        'order_number' => $data['order']['number'],
+    ]);
+});
+@endverbatim</code></pre>
         </div>
     </div>
 @endsection
