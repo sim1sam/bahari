@@ -68,7 +68,9 @@ class CartController extends Controller
             return back()->with('error', 'Product not found.');
         }
 
-        return back()->with('success', 'Added to cart!');
+        return back()
+            ->with('success', 'Added to cart!')
+            ->with('cart_drawer_open', true);
     }
 
     public function update(Request $request, string $key): RedirectResponse
@@ -80,13 +82,21 @@ class CartController extends Controller
 
         $this->cart->update($key, $validated['quantity'], $validated['size'] ?? null);
 
-        return redirect()->route('cart.index')->with('success', 'Cart updated.');
+        $redirect = $request->boolean('cart_drawer')
+            ? back()->with('cart_drawer_open', true)
+            : redirect()->route('cart.index');
+
+        return $redirect->with('success', 'Cart updated.');
     }
 
-    public function remove(string $key): RedirectResponse
+    public function remove(Request $request, string $key): RedirectResponse
     {
         $this->cart->remove($key);
 
-        return redirect()->route('cart.index')->with('success', 'Item removed from cart.');
+        $redirect = $request->boolean('cart_drawer')
+            ? back()->with('cart_drawer_open', true)
+            : redirect()->route('cart.index');
+
+        return $redirect->with('success', 'Item removed from cart.');
     }
 }
