@@ -114,9 +114,13 @@ class CartController extends Controller
         return $redirect->with('success', 'Cart updated.');
     }
 
-    public function remove(Request $request, string $key): RedirectResponse
+    public function remove(Request $request, string $key): RedirectResponse|JsonResponse
     {
         $this->cart->remove($key);
+
+        if ($request->expectsJson()) {
+            return response()->json($this->cartPayload());
+        }
 
         $redirect = $request->boolean('cart_drawer')
             ? back()->with('cart_drawer_open', true)

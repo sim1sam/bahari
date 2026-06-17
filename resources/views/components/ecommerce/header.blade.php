@@ -105,6 +105,33 @@
                 item.syncing = false;
             }
         },
+        async removeCartItem(form, item) {
+            const formData = new FormData(form);
+            formData.set('cart_drawer', '1');
+            item.syncing = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: formData,
+                });
+
+                if (! response.ok) {
+                    throw new Error('Cart remove failed.');
+                }
+
+                const cart = await response.json();
+                this.applyCart(cart);
+            } catch (error) {
+                form.requestSubmit();
+            } finally {
+                item.syncing = false;
+            }
+        },
     }"
 >
     <div class="container-store">
@@ -261,28 +288,34 @@
                     type="button"
                     x-show="!cartOpen"
                     x-cloak
-                    class="fixed right-0 top-1/2 flex -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-xl bg-brand-600 px-3 py-4 text-xs font-semibold text-white shadow-xl hover:bg-brand-700"
+                    class="fixed right-0 top-1/2 flex min-w-16 -translate-y-1/2 flex-col overflow-hidden rounded-l-xl bg-white text-xs font-semibold text-ink shadow-xl ring-1 ring-black/5"
                     style="z-index: 9998;"
                     @click="cartOpen = true"
                     aria-label="Open cart"
                 >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                    </svg>
-                    <span><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Items</span>
+                    <span class="flex w-full flex-col items-center justify-center gap-1 bg-brand-600 px-3 py-3 text-white hover:bg-brand-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                        </svg>
+                        <span class="whitespace-nowrap"><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Items</span>
+                    </span>
+                    <span class="w-full whitespace-nowrap px-2 py-2 text-center text-[10px] font-bold text-ink" x-text="cartSubtotal">{{ money($cartSubtotal) }}</span>
                 </button>
             @endif
         @else
             <a
                 href="{{ route('login') }}"
-                class="fixed right-0 top-1/2 flex -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-xl bg-brand-600 px-3 py-4 text-xs font-semibold text-white shadow-xl hover:bg-brand-700"
+                class="fixed right-0 top-1/2 flex min-w-16 -translate-y-1/2 flex-col overflow-hidden rounded-l-xl bg-white text-xs font-semibold text-ink shadow-xl ring-1 ring-black/5"
                 style="z-index: 9998;"
                 aria-label="Open cart"
             >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                </svg>
-                <span>0 Items</span>
+                <span class="flex w-full flex-col items-center justify-center gap-1 bg-brand-600 px-3 py-3 text-white hover:bg-brand-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                    </svg>
+                    <span class="whitespace-nowrap">0 Items</span>
+                </span>
+                <span class="w-full whitespace-nowrap px-2 py-2 text-center text-[10px] font-bold text-ink">{{ money(0) }}</span>
             </a>
         @endauth
 
@@ -314,7 +347,7 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-start justify-between gap-2">
                                         <a :href="item.product_url" class="line-clamp-2 text-xs font-semibold leading-snug text-ink hover:text-brand-600" x-text="item.name"></a>
-                                        <form :action="item.remove_url" method="POST" class="shrink-0">
+                                        <form :action="item.remove_url" method="POST" class="shrink-0" @submit.prevent="removeCartItem($el, item)">
                                             @csrf
                                             @method('DELETE')
                                             <input type="hidden" name="cart_drawer" value="1">
