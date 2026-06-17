@@ -18,6 +18,13 @@ class OrderTransferSettingController extends Controller
         ]);
     }
 
+    public function scripts(): View
+    {
+        return view('admin.orders.transfer-scripts', [
+            'setting' => OrderTransferSetting::current(),
+        ]);
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([

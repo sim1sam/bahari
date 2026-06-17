@@ -56,6 +56,7 @@
                     </div>
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Save Setting</button>
+                        <a href="{{ route('admin.orders.transfer-settings.scripts') }}" class="btn btn-info">View Scripts</a>
                         <a href="{{ route('admin.orders.index') }}" class="btn btn-default">Back to Orders</a>
                     </div>
                 </form>
@@ -94,6 +95,9 @@
                     <p><code>product_slug, product_name, product_link, image, size, color, quantity, price</code></p>
                     <p class="mb-1"><strong>payments[]:</strong></p>
                     <p class="mb-0"><code>amount, payment_method, bank_name, notes, created_at</code></p>
+                    <hr>
+                    <p class="mb-1"><strong>incoming status update to this site:</strong></p>
+                    <p class="mb-0"><code>POST {{ url('/api/orders/status-update') }}</code> with <code>order_number, status, payment_status, amount_paid, message</code></p>
                 </div>
             </div>
         </div>
@@ -171,6 +175,33 @@ Route::post('/orders/import', function (Request $request) {
         'order_number' => $data['order']['number'],
     ]);
 });
+@endverbatim</code></pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Send Status Update Back To This Site</h3></div>
+        <div class="card-body">
+            <p class="text-muted small">Use this from the other website when its order status changes. It uses the same API key and access token.</p>
+<pre class="bg-dark text-white rounded p-3 mb-0" style="white-space: pre-wrap;"><code>@verbatim
+use Illuminate\Support\Facades\Http;
+
+$response = Http::acceptJson()
+    ->withHeaders([
+        'X-API-Key' => 'YOUR_API_KEY',
+        'Authorization' => 'Bearer YOUR_ACCESS_TOKEN',
+    ])
+    ->post('https://your-main-site.com/api/orders/status-update', [
+        'order_number' => 'LW-12345678',
+        'status' => 'shipped', // pending, processing, shipped, completed, cancelled
+        'payment_status' => 'paid', // optional: pending, paid, partial, due
+        'amount_paid' => 2200, // optional
+        'message' => 'Updated from receiver site', // optional
+    ]);
+
+if ($response->successful()) {
+    // status updated on main site
+}
 @endverbatim</code></pre>
         </div>
     </div>
