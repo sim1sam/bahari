@@ -49,6 +49,12 @@ return [
         'route' => 'admin.orders.index',
         'active' => 'admin.orders.*',
     ],
+    'coupons' => [
+        'label' => 'Coupons',
+        'icon' => 'fas fa-ticket-alt',
+        'route' => 'admin.coupons.index',
+        'active' => 'admin.coupons.*',
+    ],
     'transactions' => [
         'label' => 'Transactions',
         'icon' => 'fas fa-money-check-alt',

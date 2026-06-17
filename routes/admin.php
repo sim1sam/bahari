@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ApiProcessedController;
 use App\Http\Controllers\Admin\ApiSettingsController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FooterLinkController;
@@ -126,6 +127,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
             Route::post('orders/{order}/payments', [OrderController::class, 'storePayment'])->name('orders.payments.store');
             Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+        });
+
+        Route::middleware('admin.feature:coupons')->group(function () {
+            Route::resource('coupons', CouponController::class)->except(['show']);
         });
 
         Route::middleware('admin.feature:settings')->group(function () {

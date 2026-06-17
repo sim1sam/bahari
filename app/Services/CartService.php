@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Auth;
+
 class CartService
 {
     private const SESSION_KEY = 'cart';
@@ -44,7 +46,7 @@ class CartService
             return null;
         }
 
-        $coupon = $this->coupons->find($code);
+        $coupon = $this->coupons->find($code, Auth::user());
 
         if (! $coupon) {
             session()->forget(self::COUPON_KEY);
@@ -65,7 +67,7 @@ class CartService
             return 0;
         }
 
-        return $this->coupons->discount($code, $this->subtotal());
+        return $this->coupons->discount($code, $this->subtotal(), Auth::user());
     }
 
     public function total(): float
@@ -75,8 +77,8 @@ class CartService
 
     public function applyCoupon(string $code): ?string
     {
-        if (! $this->coupons->find($code)) {
-            return 'Invalid coupon code.';
+        if ($error = $this->coupons->validationError($code, Auth::user())) {
+            return $error;
         }
 
         session([self::COUPON_KEY => strtoupper(trim($code))]);
