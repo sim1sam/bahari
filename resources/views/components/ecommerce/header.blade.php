@@ -253,9 +253,42 @@
     </div>
 
     {{-- Cart drawer --}}
-    <div x-show="cartOpen" x-cloak class="fixed inset-0 z-10000" aria-modal="true" role="dialog">
+    <template x-teleport="body">
+    <div>
+        @auth
+            @if (! auth()->user()->isAdmin())
+                <button
+                    type="button"
+                    x-show="!cartOpen"
+                    x-cloak
+                    class="fixed right-0 top-1/2 flex -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-xl bg-brand-600 px-3 py-4 text-xs font-semibold text-white shadow-xl hover:bg-brand-700"
+                    style="z-index: 9998;"
+                    @click="cartOpen = true"
+                    aria-label="Open cart"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                    </svg>
+                    <span><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Items</span>
+                </button>
+            @endif
+        @else
+            <a
+                href="{{ route('login') }}"
+                class="fixed right-0 top-1/2 flex -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-xl bg-brand-600 px-3 py-4 text-xs font-semibold text-white shadow-xl hover:bg-brand-700"
+                style="z-index: 9998;"
+                aria-label="Open cart"
+            >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                </svg>
+                <span>0 Items</span>
+            </a>
+        @endauth
+
+    <div x-show="cartOpen" x-cloak class="fixed inset-0" style="z-index: 9999;" aria-modal="true" role="dialog">
         <div class="absolute inset-0 bg-black/45" @click="cartOpen = false"></div>
-        <aside class="fixed bottom-0 right-0 top-0 flex h-dvh min-h-dvh w-full max-w-sm flex-col bg-surface-elevated shadow-2xl" @click.stop>
+        <aside class="fixed bottom-0 right-0 top-0 flex h-dvh min-h-dvh w-full max-w-sm flex-col bg-surface-elevated shadow-2xl" style="z-index: 10000;" @click.stop>
             <div class="flex items-center justify-between border-b border-border px-4 py-3">
                 <div>
                     <h2 class="text-base font-bold text-ink">Your Cart</h2>
@@ -341,7 +374,7 @@
                 </div>
             </div>
 
-            <div class="shrink-0 border-t border-border bg-surface-elevated px-4 pb-[calc(4rem+env(safe-area-inset-bottom,0))] pt-3">
+            <div class="shrink-0 border-t border-border bg-surface-elevated px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0))] pt-3">
                 <div>
                     <h3 class="mb-2 text-sm font-bold text-ink">Order Summary</h3>
                     <div class="mb-1.5 flex items-center justify-between text-xs">
@@ -361,4 +394,6 @@
             </div>
         </aside>
     </div>
+    </div>
+    </template>
 </header>
