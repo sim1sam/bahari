@@ -87,7 +87,7 @@
                     </div>
 
                     {{-- Add to cart --}}
-                    <form action="{{ route('cart.add') }}" method="POST" class="mt-8" x-data="{ qty: 1 }">
+                    <form action="{{ route('cart.add') }}" method="POST" class="mt-8" x-data="{ qty: 1 }" @submit.prevent="$dispatch('cart:add', { form: $el })">
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
 

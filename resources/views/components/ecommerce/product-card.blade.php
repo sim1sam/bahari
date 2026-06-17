@@ -43,7 +43,7 @@
 
         @if ($slug)
             <div class="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
-                <form action="{{ route('cart.add') }}" method="POST">
+                <form action="{{ route('cart.add') }}" method="POST" x-data @submit.prevent="$dispatch('cart:add', { form: $el })">
                     @csrf
                     <input type="hidden" name="slug" value="{{ $slug }}">
                     <input type="hidden" name="quantity" value="1">

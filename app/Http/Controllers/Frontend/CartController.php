@@ -35,10 +35,14 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(Request $request): RedirectResponse
+    public function add(Request $request): RedirectResponse|JsonResponse
     {
         if (! Auth::check()) {
             session()->put('url.intended', url()->previous() ?: route('home'));
+
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('login')], 401);
+            }
 
             return redirect()->route('login')->with('error', 'Please sign in before adding items to your cart.');
         }
@@ -46,10 +50,18 @@ class CartController extends Controller
         if (! Auth::user()->hasActiveRole()) {
             Auth::logout();
 
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('login')], 403);
+            }
+
             return redirect()->route('login')->with('error', 'Your account role has been deactivated.');
         }
 
         if (Auth::user()->isAdmin()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Please sign in with a customer account to add items to your cart.'], 403);
+            }
+
             return redirect()->route('home')->with('error', 'Please sign in with a customer account to add items to your cart.');
         }
 
@@ -66,7 +78,15 @@ class CartController extends Controller
             $validated['size'] ?? null,
             $validated['color'] ?? null,
         )) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Product not found.'], 404);
+            }
+
             return back()->with('error', 'Product not found.');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json($this->cartPayload());
         }
 
         return back()
@@ -81,18 +101,10 @@ class CartController extends Controller
             'size' => 'nullable|string|max:255',
         ]);
 
-        $item = $this->cart->items()[$key] ?? null;
-
         $this->cart->update($key, $validated['quantity'], $validated['size'] ?? null);
 
         if ($request->expectsJson()) {
-            return response()->json([
-                'cart_count' => $this->cart->count(),
-                'subtotal' => $this->cart->subtotal(),
-                'subtotal_formatted' => money($this->cart->subtotal()),
-                'total_formatted' => money($this->cart->subtotal()),
-                'line_total_formatted' => money(($item['price'] ?? 0) * $validated['quantity']),
-            ]);
+            return response()->json($this->cartPayload());
         }
 
         $redirect = $request->boolean('cart_drawer')
@@ -111,5 +123,32 @@ class CartController extends Controller
             : redirect()->route('cart.index');
 
         return $redirect->with('success', 'Item removed from cart.');
+    }
+
+    private function cartPayload(): array
+    {
+        $subtotal = $this->cart->subtotal();
+        $freeShippingAt = (float) config('currency.free_shipping_threshold', 2000);
+        $freeShippingRemaining = max(0, $freeShippingAt - $subtotal);
+
+        return [
+            'cart_count' => $this->cart->count(),
+            'subtotal' => $subtotal,
+            'subtotal_formatted' => money($subtotal),
+            'total_formatted' => money($subtotal),
+            'free_shipping_remaining' => $freeShippingRemaining,
+            'free_shipping_remaining_formatted' => money($freeShippingRemaining),
+            'items' => collect($this->cart->items())->map(function ($item) {
+                $product = $this->catalog->find($item['slug']);
+                $item['size_hint'] = implode(', ', $product['sizes'] ?? []);
+                $item['product_url'] = route('products.show', $item['slug']);
+                $item['update_url'] = route('cart.update', $item['key']);
+                $item['remove_url'] = route('cart.remove', $item['key']);
+                $item['line_total_formatted'] = money($item['price'] * $item['quantity']);
+                $item['syncing'] = false;
+
+                return $item;
+            })->values()->all(),
+        ];
     }
 }
