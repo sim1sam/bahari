@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderTransferSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class OrderTransferSettingController extends Controller
@@ -35,5 +36,26 @@ class OrderTransferSettingController extends Controller
         return redirect()
             ->route('admin.orders.transfer-settings.edit')
             ->with('success', 'Order transfer setting updated.');
+    }
+
+    public function generate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:api_key,access_token',
+        ]);
+
+        $setting = OrderTransferSetting::current();
+
+        if ($validated['type'] === 'api_key') {
+            $setting->update(['api_key' => 'ok_'.Str::random(40)]);
+            $message = 'API key generated.';
+        } else {
+            $setting->update(['access_token' => Str::random(80)]);
+            $message = 'Access token generated.';
+        }
+
+        return redirect()
+            ->route('admin.orders.transfer-settings.edit')
+            ->with('success', $message);
     }
 }

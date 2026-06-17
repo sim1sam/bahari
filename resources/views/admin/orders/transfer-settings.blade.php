@@ -35,12 +35,18 @@
                         </div>
                         <div class="form-group">
                             <label>API Key *</label>
-                            <input type="text" name="api_key" class="form-control @error('api_key') is-invalid @enderror" value="{{ old('api_key', $setting->api_key) }}">
+                            <div class="input-group">
+                                <input type="text" name="api_key" class="form-control @error('api_key') is-invalid @enderror" value="{{ old('api_key', $setting->api_key) }}">
+                                <div class="input-group-append">
+                                    <button type="submit" form="generate-api-key-form" class="btn btn-outline-secondary" onclick="return confirm('Generate a new API key? Old key will stop working after save/use.')">Generate</button>
+                                </div>
+                            </div>
                             @error('api_key')<span class="invalid-feedback">{{ $message }}</span>@enderror
                         </div>
                         <div class="form-group">
                             <label>Access Token *</label>
                             <textarea name="access_token" class="form-control @error('access_token') is-invalid @enderror" rows="4">{{ old('access_token', $setting->access_token) }}</textarea>
+                            <button type="submit" form="generate-access-token-form" class="btn btn-sm btn-outline-secondary mt-2" onclick="return confirm('Generate a new access token? Old token will stop working after save/use.')">Generate Access Token</button>
                             @error('access_token')<span class="invalid-feedback">{{ $message }}</span>@enderror
                         </div>
                         <div class="custom-control custom-switch">
@@ -54,6 +60,15 @@
                     </div>
                 </form>
             </div>
+
+            <form id="generate-api-key-form" action="{{ route('admin.orders.transfer-settings.generate') }}" method="POST" class="d-none">
+                @csrf
+                <input type="hidden" name="type" value="api_key">
+            </form>
+            <form id="generate-access-token-form" action="{{ route('admin.orders.transfer-settings.generate') }}" method="POST" class="d-none">
+                @csrf
+                <input type="hidden" name="type" value="access_token">
+            </form>
         </div>
         <div class="col-lg-5">
             <div class="card">
