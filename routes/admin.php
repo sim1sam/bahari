@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
 use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderTransferSettingController;
 use App\Http\Controllers\Admin\PaymentBankController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
@@ -120,6 +121,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:orders')->group(function () {
             Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+            Route::get('orders/transfer-settings', [OrderTransferSettingController::class, 'edit'])->name('orders.transfer-settings.edit');
+            Route::put('orders/transfer-settings', [OrderTransferSettingController::class, 'update'])->name('orders.transfer-settings.update');
             Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
             Route::put('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
             Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');

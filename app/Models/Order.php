@@ -13,6 +13,7 @@ class Order extends Model
         'address', 'city', 'zip', 'payment_method', 'reference_code', 'bank_name',
         'payment_screenshot', 'notes', 'subtotal', 'discount', 'shipping', 'total',
         'coupon_code', 'status', 'payment_status', 'amount_paid',
+        'external_transfer_status', 'external_transfer_message', 'external_transferred_at',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class Order extends Model
             'shipping' => 'decimal:2',
             'total' => 'decimal:2',
             'amount_paid' => 'decimal:2',
+            'external_transferred_at' => 'datetime',
         ];
     }
 

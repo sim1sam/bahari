@@ -7,8 +7,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
 use App\Services\MediaStorageService;
+use App\Services\OrderTransferService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -17,7 +19,7 @@ class OrderController extends Controller
     public function index(): View
     {
         return view('admin.orders.index', [
-            'orders' => Order::latest()->paginate(20),
+            'orders' => Order::query()->latest()->paginate(20),
         ]);
     }
 
@@ -37,9 +39,10 @@ class OrderController extends Controller
         ]);
     }
 
-    public function update(Request $request, Order $order, MediaStorageService $media): RedirectResponse
+    public function update(Request $request, Order $order, MediaStorageService $media, OrderTransferService $transfer): RedirectResponse
     {
         $banks = array_keys(config('payment.banks', []));
+        $wasProcessing = $order->status === 'processing';
 
         $validated = $request->validate([
             'customer_name' => 'required|string|max:200',
@@ -105,7 +108,7 @@ class OrderController extends Controller
                     if ($item->image && ! str_starts_with($item->image, 'http')) {
                         $media->delete($item->image);
                     }
-                    $item->delete();
+                    OrderItem::query()->whereKey($item->getKey())->delete();
                 }
             }
 
@@ -149,7 +152,7 @@ class OrderController extends Controller
                 $payment = $order->payments->firstWhere('id', $paymentId);
                 if ($payment) {
                     $media->delete($payment->screenshot);
-                    $payment->delete();
+                    OrderPayment::query()->whereKey($payment->getKey())->delete();
                 }
             }
 
@@ -182,7 +185,7 @@ class OrderController extends Controller
 
                 OrderPayment::create([
                     'order_id' => $order->id,
-                    'recorded_by' => auth()->id(),
+                    'recorded_by' => Auth::id(),
                     'amount' => round((float) $paymentData['amount'], 2),
                     'payment_method' => $paymentData['payment_method'],
                     'bank_name' => $bankLabel,
@@ -244,23 +247,40 @@ class OrderController extends Controller
             $order->save();
         });
 
+        $message = 'Order updated successfully.';
+
+        if (! $wasProcessing && $order->fresh()->status === 'processing') {
+            $message .= $transfer->transfer($order->fresh())
+                ? ' Order transferred to API site.'
+                : ' Order transfer did not complete. Check transfer status.';
+        }
+
         return redirect()
             ->route('admin.orders.show', $order)
-            ->with('success', 'Order updated successfully.');
+            ->with('success', $message);
     }
 
-    public function updateStatus(Request $request, Order $order): RedirectResponse
+    public function updateStatus(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,processing,shipped,completed,cancelled',
         ]);
 
+        $wasProcessing = $order->status === 'processing';
         $order->update($validated);
 
-        return back()->with('success', 'Order status updated.');
+        $message = 'Order status updated.';
+
+        if (! $wasProcessing && $order->status === 'processing') {
+            $message .= $transfer->transfer($order)
+                ? ' Order transferred to API site.'
+                : ' Order transfer did not complete. Check transfer status.';
+        }
+
+        return back()->with('success', $message);
     }
 
-    public function approve(Request $request, Order $order): RedirectResponse
+    public function approve(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse
     {
         if ($order->status !== 'pending') {
             return back()->with('error', 'Only pending orders can be approved.');
@@ -287,10 +307,15 @@ class OrderController extends Controller
 
         $order->save();
 
-        return back()->with('success', 'Order approved. Payment status: '.$order->paymentStatusLabel().'.');
+        $message = 'Order approved. Payment status: '.$order->paymentStatusLabel().'.';
+        $message .= $transfer->transfer($order)
+            ? ' Order transferred to API site.'
+            : ' Order transfer did not complete. Check transfer status.';
+
+        return back()->with('success', $message);
     }
 
-    public function storePayment(Request $request, Order $order, MediaStorageService $media): RedirectResponse
+    public function storePayment(Request $request, Order $order, MediaStorageService $media, OrderTransferService $transfer): RedirectResponse
     {
         $banks = array_keys(config('payment.banks', []));
 
@@ -324,7 +349,7 @@ class OrderController extends Controller
 
         OrderPayment::create([
             'order_id' => $order->id,
-            'recorded_by' => auth()->id(),
+            'recorded_by' => Auth::id(),
             'amount' => $amount,
             'payment_method' => $validated['payment_method'],
             'bank_name' => $bankLabel,
@@ -335,13 +360,23 @@ class OrderController extends Controller
         $order->amount_paid = round((float) $order->amount_paid + $amount, 2);
         $order->recalculatePaymentStatus();
 
-        if ($order->status === 'pending') {
+        $movedToProcessing = $order->status === 'pending';
+
+        if ($movedToProcessing) {
             $order->status = 'processing';
         }
 
         $order->save();
 
-        return back()->with('success', 'Payment of '.money($amount).' recorded.');
+        $message = 'Payment of '.money($amount).' recorded.';
+
+        if ($movedToProcessing) {
+            $message .= $transfer->transfer($order)
+                ? ' Order transferred to API site.'
+                : ' Order transfer did not complete. Check transfer status.';
+        }
+
+        return back()->with('success', $message);
     }
 
     public function destroy(Order $order, MediaStorageService $media): RedirectResponse
@@ -364,7 +399,7 @@ class OrderController extends Controller
             $media->delete($payment->screenshot);
         }
 
-        $order->delete();
+        Order::query()->whereKey($order->getKey())->delete();
 
         return redirect()
             ->route('admin.orders.index')

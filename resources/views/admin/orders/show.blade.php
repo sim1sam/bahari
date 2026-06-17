@@ -7,6 +7,7 @@
     <div class="mb-3">
         <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-info btn-sm">Edit Order</a>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-sm">Back to Orders</a>
+        <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-outline-primary btn-sm">API Transfer Setting</a>
         @php $pendingTxn = $order->paymentTransactions->first(fn ($t) => $t->isPending()); @endphp
         @if ($pendingTxn)
             <a href="{{ route('admin.transactions.show', $pendingTxn) }}" class="btn btn-warning btn-sm">Review Payment Screenshot</a>
@@ -118,6 +119,21 @@
                         Payment: {{ $order->paymentMethodLabel() }}
                         <span class="badge {{ $order->paymentStatusBadgeClass() }} ml-1">{{ $order->paymentStatusLabel() }}</span>
                     </p>
+                    <p>
+                        <strong>API Transfer:</strong>
+                        <span class="badge badge-{{ match ($order->external_transfer_status) {
+                            'sent' => 'success',
+                            'failed' => 'danger',
+                            'skipped' => 'secondary',
+                            default => 'light',
+                        } }}">{{ ucfirst($order->external_transfer_status ?? 'pending') }}</span>
+                    </p>
+                    @if ($order->external_transfer_message)
+                        <p class="small text-muted">{{ $order->external_transfer_message }}</p>
+                    @endif
+                    @if ($order->external_transferred_at)
+                        <p class="small text-muted">Transferred: {{ $order->external_transferred_at->format('M d, Y H:i') }}</p>
+                    @endif
                     @if ($order->isCustom())
                         <p><span class="badge badge-info">Custom Order</span></p>
                         @if ($order->bank_name)
