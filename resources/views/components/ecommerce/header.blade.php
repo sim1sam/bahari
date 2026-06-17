@@ -20,7 +20,50 @@
     $freeShippingRemaining = max(0, $freeShippingAt - $cartSubtotal);
 @endphp
 
-<header class="sticky top-0 z-50 bg-surface-elevated/95 backdrop-blur-md border-b border-border" x-data="{ mobileOpen: false, searchOpen: false, cartOpen: {{ session('cart_drawer_open') ? 'true' : 'false' }} }">
+<header
+    class="sticky top-0 z-50 bg-surface-elevated/95 backdrop-blur-md border-b border-border"
+    x-data="{
+        mobileOpen: false,
+        searchOpen: false,
+        cartOpen: {{ session('cart_drawer_open') ? 'true' : 'false' }},
+        cartCount: {{ $cartCount ?? 0 }},
+        cartSubtotal: @js(money($cartSubtotal)),
+        cartTotal: @js(money($cartSubtotal)),
+        async updateCartItem(form, item, nextQty) {
+            const formData = new FormData(form);
+            formData.set('quantity', nextQty);
+            formData.set('cart_drawer', '1');
+
+            item.qty = nextQty;
+            item.syncing = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: formData,
+                });
+
+                if (! response.ok) {
+                    throw new Error('Cart update failed.');
+                }
+
+                const cart = await response.json();
+                item.lineTotal = cart.line_total_formatted;
+                this.cartCount = cart.cart_count;
+                this.cartSubtotal = cart.subtotal_formatted;
+                this.cartTotal = cart.total_formatted;
+            } catch (error) {
+                form.requestSubmit();
+            } finally {
+                item.syncing = false;
+            }
+        },
+    }"
+>
     <div class="container-store">
         {{-- Main bar --}}
         <div class="flex items-center justify-between gap-4 py-4">
@@ -97,7 +140,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                             @if (($cartCount ?? 0) > 0)
-                                <span class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-brand-600 text-white rounded-full">{{ $cartCount }}</span>
+                                <span class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-brand-600 text-white rounded-full" x-text="cartCount">{{ $cartCount }}</span>
                             @endif
                         </button>
                     @endif
@@ -184,7 +227,7 @@
             <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-2">
                 @if (count($cartItems) > 0)
                     <div class="mb-3">
-                        <p class="text-sm font-semibold text-ink">{{ $cartCount ?? 0 }} {{ Str::plural('Item', $cartCount ?? 0) }}</p>
+                        <p class="text-sm font-semibold text-ink"><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Item<span x-show="cartCount !== 1">s</span></p>
                         @if ($freeShippingRemaining > 0)
                             <p class="mt-1 text-[11px] text-brand-600">Add {{ money($freeShippingRemaining) }} more to get free shipping.</p>
                         @endif
@@ -192,7 +235,7 @@
 
                     <div class="space-y-3">
                         @foreach ($cartItems as $item)
-                            <div class="flex gap-3 border-b border-border pb-3 last:border-b-0" x-data="{ qty: {{ $item['quantity'] }} }">
+                            <div class="flex gap-3 border-b border-border pb-3 last:border-b-0" x-data="{ qty: {{ $item['quantity'] }}, lineTotal: @js(money($item['price'] * $item['quantity'])), syncing: false }">
                                 <a href="{{ route('products.show', $item['slug']) }}" class="h-16 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-brand-50">
                                     <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover object-top">
                                 </a>
@@ -227,17 +270,17 @@
                                             </div>
 
                                             <div class="flex items-center gap-2">
-                                                <p class="text-xs font-semibold text-ink">{{ money($item['price'] * $item['quantity']) }}</p>
+                                                <p class="text-xs font-semibold text-ink" x-text="lineTotal">{{ money($item['price'] * $item['quantity']) }}</p>
                                                 <div class="flex h-9 items-center overflow-hidden rounded-full border border-border bg-surface">
                                                     <button
                                                         type="button"
-                                                        @click="if (qty > 1) { qty--; $refs.qtyInput.value = qty; $el.form.requestSubmit(); }"
+                                                        @click="if (qty > 1 && ! syncing) { $refs.qtyInput.value = qty - 1; updateCartItem($el.form, $data, qty - 1); }"
                                                         class="flex h-full w-9 items-center justify-center text-sm text-ink-muted hover:bg-surface-elevated"
                                                     >-</button>
                                                     <span class="w-8 text-center text-sm font-semibold text-ink" x-text="qty"></span>
                                                     <button
                                                         type="button"
-                                                        @click="if (qty < 10) { qty++; $refs.qtyInput.value = qty; $el.form.requestSubmit(); }"
+                                                        @click="if (qty < 10 && ! syncing) { $refs.qtyInput.value = qty + 1; updateCartItem($el.form, $data, qty + 1); }"
                                                         class="flex h-full w-9 items-center justify-center text-sm bg-brand-600 text-white hover:bg-brand-700"
                                                     >+</button>
                                                 </div>
@@ -263,8 +306,8 @@
                 <div>
                     <h3 class="mb-2 text-sm font-bold text-ink">Order Summary</h3>
                     <div class="mb-1.5 flex items-center justify-between text-xs">
-                        <span class="text-ink-muted">Sub Total ({{ $cartCount ?? 0 }} {{ Str::plural('item', $cartCount ?? 0) }})</span>
-                        <span class="font-medium text-ink">{{ money($cartSubtotal) }}</span>
+                        <span class="text-ink-muted">Sub Total (<span x-text="cartCount">{{ $cartCount ?? 0 }}</span> item<span x-show="cartCount !== 1">s</span>)</span>
+                        <span class="font-medium text-ink" x-text="cartSubtotal">{{ money($cartSubtotal) }}</span>
                     </div>
                     <div class="mb-2 flex items-center justify-between border-b border-border pb-2 text-xs">
                         <span class="text-ink-muted">Discount</span>
@@ -272,7 +315,7 @@
                     </div>
                     <div class="mb-3 flex items-center justify-between text-sm">
                         <span class="font-bold text-ink">Total Amount</span>
-                        <span class="font-bold text-ink">{{ money($cartSubtotal) }}</span>
+                        <span class="font-bold text-ink" x-text="cartTotal">{{ money($cartSubtotal) }}</span>
                     </div>
                     <a href="{{ route('checkout.index') }}" class="block w-full rounded-full bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700">Continue</a>
                 </div>

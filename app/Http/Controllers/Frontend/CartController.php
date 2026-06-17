@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Services\CartService;
 use App\Services\ProductCatalog;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,14 +74,26 @@ class CartController extends Controller
             ->with('cart_drawer_open', true);
     }
 
-    public function update(Request $request, string $key): RedirectResponse
+    public function update(Request $request, string $key): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1|max:10',
             'size' => 'nullable|string|max:255',
         ]);
 
+        $item = $this->cart->items()[$key] ?? null;
+
         $this->cart->update($key, $validated['quantity'], $validated['size'] ?? null);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'cart_count' => $this->cart->count(),
+                'subtotal' => $this->cart->subtotal(),
+                'subtotal_formatted' => money($this->cart->subtotal()),
+                'total_formatted' => money($this->cart->subtotal()),
+                'line_total_formatted' => money(($item['price'] ?? 0) * $validated['quantity']),
+            ]);
+        }
 
         $redirect = $request->boolean('cart_drawer')
             ? back()->with('cart_drawer_open', true)
