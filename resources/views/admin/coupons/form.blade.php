@@ -91,13 +91,14 @@
                     <div class="col-md-12" id="coupon-customers-field">
                         <div class="form-group">
                             <label>Allowed Customers</label>
-                            <select name="customer_ids[]" class="form-control @error('customer_ids') is-invalid @enderror" multiple size="8">
+                            <select id="coupon-customers-select" name="customer_ids[]" class="form-control @error('customer_ids') is-invalid @enderror" multiple size="8">
                                 @foreach ($customers as $customer)
                                     <option value="{{ $customer->id }}" @selected(in_array($customer->id, array_map('intval', $selectedCustomers), true))>
                                         {{ $customer->name }} ({{ $customer->email }})
                                     </option>
                                 @endforeach
                             </select>
+                            <div id="selected-customers-list" class="mt-2"></div>
                             <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple customers. Used only when audience is Customer Wise.</small>
                             @error('customer_ids')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                             @error('customer_ids.*')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
@@ -134,6 +135,8 @@
     (function () {
         const audience = document.getElementById('coupon-audience');
         const customers = document.getElementById('coupon-customers-field');
+        const customerSelect = document.getElementById('coupon-customers-select');
+        const selectedCustomersList = document.getElementById('selected-customers-list');
 
         function toggleCustomers() {
             if (!audience || !customers) return;
@@ -142,6 +145,41 @@
 
         audience?.addEventListener('change', toggleCustomers);
         toggleCustomers();
+
+        function renderSelectedCustomers() {
+            if (!customerSelect || !selectedCustomersList) return;
+
+            const selectedOptions = Array.from(customerSelect.selectedOptions);
+
+            selectedCustomersList.innerHTML = selectedOptions.length
+                ? ''
+                : '<span class="text-muted small">No customers selected.</span>';
+
+            selectedOptions.forEach(option => {
+                const badge = document.createElement('span');
+                badge.className = 'badge badge-info mr-1 mb-1 p-2';
+
+                const text = document.createElement('span');
+                text.textContent = option.textContent.trim();
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'btn btn-link btn-sm p-0 ml-2 text-white';
+                remove.setAttribute('aria-label', 'Remove customer');
+                remove.innerHTML = '&times;';
+                remove.addEventListener('click', function () {
+                    option.selected = false;
+                    renderSelectedCustomers();
+                });
+
+                badge.appendChild(text);
+                badge.appendChild(remove);
+                selectedCustomersList.appendChild(badge);
+            });
+        }
+
+        customerSelect?.addEventListener('change', renderSelectedCustomers);
+        renderSelectedCustomers();
     })();
 </script>
 @endpush
