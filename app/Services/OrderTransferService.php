@@ -102,7 +102,7 @@ class OrderTransferService
                 'product_slug' => $item->product_slug,
                 'product_name' => $item->product_name,
                 'product_link' => $item->product_link,
-                'image' => $item->imageUrl(),
+                'image' => $this->absoluteImageUrl($item->imageUrl()),
                 'size' => $item->size,
                 'color' => $item->color,
                 'quantity' => (int) $item->quantity,
@@ -116,5 +116,18 @@ class OrderTransferService
                 'created_at' => $payment->created_at?->toIso8601String(),
             ])->values()->all(),
         ];
+    }
+
+    private function absoluteImageUrl(?string $imageUrl): ?string
+    {
+        if (! $imageUrl) {
+            return null;
+        }
+
+        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
+            return $imageUrl;
+        }
+
+        return url($imageUrl);
     }
 }
