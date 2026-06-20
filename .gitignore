@@ -2,6 +2,10 @@
 .DS_Store
 .env*
 !.env.example
+/.htaccess
+/public/.htaccess
+!.htaccess.example
+!public/.htaccess.example
 .phpactor.json
 .phpunit.result.cache
 /.codex
