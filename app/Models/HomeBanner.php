@@ -34,7 +34,34 @@ class HomeBanner extends Model
             'title' => $this->title,
             'subtitle' => $this->subtitle,
             'button_text' => $this->button_text,
-            'button_href' => $this->button_href,
+            'button_href' => $this->resolvedButtonHref(),
         ];
+    }
+
+    public function resolvedButtonHref(): string
+    {
+        $href = trim((string) ($this->button_href ?? ''));
+
+        if ($href === '') {
+            return route('categories.index');
+        }
+
+        if ($href === '/deals' && str_contains(strtolower($this->button_text ?? ''), 'dress')) {
+            return route('categories.show', 'dresses');
+        }
+
+        if ($href === '/deals') {
+            return route('deals');
+        }
+
+        if (str_starts_with($href, '/')) {
+            return url($href);
+        }
+
+        if (preg_match('/^[\w-]+$/', $href)) {
+            return route('categories.show', $href);
+        }
+
+        return $href;
     }
 }

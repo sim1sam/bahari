@@ -15,7 +15,21 @@
                         <div class="row">
                             <div class="col-md-4"><div class="form-group"><label>Badge</label><input type="text" name="badge" class="form-control" value="{{ old('badge', $banner->badge) }}" placeholder="Limited Time"></div></div>
                             <div class="col-md-4"><div class="form-group"><label>Button Text</label><input type="text" name="button_text" class="form-control" value="{{ old('button_text', $banner->button_text) }}"></div></div>
-                            <div class="col-md-4"><div class="form-group"><label>Button Link</label><input type="text" name="button_href" class="form-control" value="{{ old('button_href', $banner->button_href) }}"></div></div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Button Link</label>
+                                    <select id="category-link-preset" class="form-control mb-2">
+                                        <option value="">— Pick a category —</option>
+                                        @foreach ($categories as $category)
+                                            <option value="/categories/{{ $category->slug }}" @selected(old('button_href', $banner->button_href) === '/categories/'.$category->slug)>
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" name="button_href" id="button_href" class="form-control" value="{{ old('button_href', $banner->button_href) }}" placeholder="/categories/dresses">
+                                    <small class="text-muted">Use a category path or any custom URL.</small>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group"><label>Sort Order</label><input type="number" name="sort_order" class="form-control" value="{{ old('sort_order', $banner->sort_order ?? 0) }}" style="max-width:120px"></div>
                         <div class="form-check"><input type="checkbox" name="is_active" value="1" class="form-check-input" id="active" @checked(old('is_active', $banner->is_active ?? true))><label class="form-check-label" for="active">Active</label></div>
@@ -30,3 +44,20 @@
         </div>
     </form>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var preset = document.getElementById('category-link-preset');
+    var hrefInput = document.getElementById('button_href');
+
+    if (!preset || !hrefInput) return;
+
+    preset.addEventListener('change', function () {
+        if (this.value) {
+            hrefInput.value = this.value;
+        }
+    });
+})();
+</script>
+@endpush

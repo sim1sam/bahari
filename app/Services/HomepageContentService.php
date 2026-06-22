@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Cache;
 
 class HomepageContentService
 {
+    private const BANNERS_CACHE_KEY = 'homepage_banners_v2';
+
     public function sliders(): array
     {
         return Cache::remember('homepage_sliders', 3600, function () {
@@ -23,7 +25,7 @@ class HomepageContentService
 
     public function banners(): array
     {
-        return Cache::remember('homepage_banners', 3600, function () {
+        return Cache::remember(self::BANNERS_CACHE_KEY, 3600, function () {
             return HomeBanner::active()
                 ->orderBy('sort_order')
                 ->get()
@@ -59,6 +61,7 @@ class HomepageContentService
     {
         Cache::forget('homepage_sliders');
         Cache::forget('homepage_banners');
+        Cache::forget(self::BANNERS_CACHE_KEY);
         Cache::forget('homepage_features');
         Cache::forget('footer_links_shop');
         Cache::forget('footer_links_support');

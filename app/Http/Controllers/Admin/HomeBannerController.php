@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\HandlesHomepageImages;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\HomeBanner;
 use App\Services\HomepageContentService;
 use App\Services\MediaStorageService;
@@ -29,7 +30,10 @@ class HomeBannerController extends Controller
 
     public function create(): View
     {
-        return view('admin.homepage.banners.form', ['banner' => new HomeBanner]);
+        return view('admin.homepage.banners.form', [
+            'banner' => new HomeBanner,
+            'categories' => $this->categories(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -41,7 +45,10 @@ class HomeBannerController extends Controller
 
     public function edit(HomeBanner $banner): View
     {
-        return view('admin.homepage.banners.form', compact('banner'));
+        return view('admin.homepage.banners.form', [
+            'banner' => $banner,
+            'categories' => $this->categories(),
+        ]);
     }
 
     public function update(Request $request, HomeBanner $banner): RedirectResponse
@@ -83,5 +90,14 @@ class HomeBannerController extends Controller
         $this->homepage->clearCache();
 
         return $data;
+    }
+
+    private function categories()
+    {
+        return Category::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
     }
 }

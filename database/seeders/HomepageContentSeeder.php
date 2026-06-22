@@ -55,7 +55,7 @@ class HomepageContentSeeder extends Seeder
                 'title' => 'Up to 40% Off Dresses',
                 'subtitle' => 'Shop our summer dress collection — floral, maxi, party & casual styles at amazing prices.',
                 'button_text' => 'Shop Dresses',
-                'button_href' => '/deals',
+                'button_href' => '/categories/dresses',
                 'sort_order' => 0,
                 'is_active' => true,
             ]);
