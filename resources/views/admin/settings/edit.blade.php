@@ -34,7 +34,7 @@
                             @endif
                             <input type="file" name="logo" class="form-control-file mb-2" accept="image/*">
                             <input type="url" name="logo_url" class="form-control" placeholder="Or paste logo URL" value="{{ old('logo_url') }}">
-                            <small class="text-muted">Used in header, footer, and auth pages. Max 2MB.</small>
+                            <small class="text-muted">Used in admin sidebar, header, footer, and auth pages. Max 2MB.</small>
                         </div>
                         <div class="form-group">
                             <label>Favicon</label>

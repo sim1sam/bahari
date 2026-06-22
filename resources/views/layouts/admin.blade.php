@@ -7,6 +7,74 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <style>
+        .main-sidebar .brand-link.admin-brand-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.85rem 0.75rem;
+            min-height: 4.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            line-height: 1.2;
+            white-space: normal;
+            text-align: center;
+        }
+
+        .main-sidebar .brand-link.admin-brand-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+
+        .admin-sidebar-logo {
+            display: block;
+            max-height: 3.25rem;
+            max-width: calc(100% - 0.5rem);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .admin-sidebar-logo-fallback {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: #17a2b8;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .admin-sidebar-brand-text {
+            display: block;
+            max-width: 100%;
+            font-size: 0.95rem;
+            line-height: 1.25;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link.admin-brand-link,
+        .sidebar-mini .main-sidebar .brand-link.admin-brand-link {
+            justify-content: center;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .brand-link.admin-brand-link {
+            min-height: 3.5rem;
+            padding: 0.65rem 0.35rem;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-logo {
+            max-height: 2rem;
+            max-width: 2.5rem;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-brand-text {
+            display: none;
+        }
+    </style>
     @stack('styles')
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -37,7 +105,7 @@
         @php
             $adminHomeRoute = \App\Support\AdminFeatures::firstAccessibleRoute(auth()->user()) ?? 'admin.dashboard';
         @endphp
-        <a href="{{ route($adminHomeRoute) }}" class="brand-link">
+        <a href="{{ route($adminHomeRoute) }}" class="brand-link admin-brand-link">
             <x-site.admin-logo />
         </a>
         <div class="sidebar">

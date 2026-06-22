@@ -1,17 +1,12 @@
 @php
-    $settings = app(\App\Services\SiteSettingsService::class);
-    $logoUrl = $settings->logoUrl();
-    $siteName = $settings->siteName();
-    $initial = $settings->logoInitial();
+    $logoUrl = $site->logoUrl();
+    $siteName = $site->siteName();
+    $initial = $site->logoInitial();
 @endphp
 
 @if ($logoUrl)
-    <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="brand-image elevation-3" style="max-height:33px;width:auto;opacity:.9">
+    <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="admin-sidebar-logo">
 @else
-    <span class="brand-image img-circle elevation-3 bg-info d-flex align-items-center justify-content-center" style="width:33px;height:33px;opacity:.9">
-        <span class="text-white font-weight-bold" style="font-size:14px">{{ $initial }}</span>
-    </span>
+    <span class="admin-sidebar-logo-fallback">{{ $initial }}</span>
+    <span class="brand-text admin-sidebar-brand-text font-weight-light">{{ $siteName }}</span>
 @endif
-@unless ($logoUrl)
-    <span class="brand-text font-weight-light">{{ $siteName }} Admin</span>
-@endunless
