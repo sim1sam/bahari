@@ -145,6 +145,18 @@ class SiteSettingsService
         return strtoupper(substr($this->siteName(), 0, 1));
     }
 
+    public function gtmContainerId(): ?string
+    {
+        $id = strtoupper(trim((string) ($this->get()->gtm_container_id ?? '')));
+
+        return $id !== '' ? $id : null;
+    }
+
+    public function gtmEnabled(): bool
+    {
+        return (bool) ($this->get()->gtm_enabled ?? false) && $this->gtmContainerId() !== null;
+    }
+
     private function assetUrl(?string $path): ?string
     {
         return app(MediaStorageService::class)->url($path);

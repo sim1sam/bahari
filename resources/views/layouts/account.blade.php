@@ -13,9 +13,11 @@
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <x-site.theme-styles />
+    <x-site.google-tag-manager location="head" />
     @stack('styles')
 </head>
 <body class="account-app min-h-screen bg-surface text-ink antialiased">
+    <x-site.google-tag-manager location="body" />
     <div class="account-shell lg:flex">
         <x-account.sidebar />
 

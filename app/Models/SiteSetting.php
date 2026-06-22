@@ -10,6 +10,7 @@ class SiteSetting extends Model
         'site_name', 'tagline', 'logo', 'favicon',
         'meta_title', 'meta_description', 'meta_keywords',
         'og_title', 'og_description', 'og_image',
+        'gtm_container_id', 'gtm_enabled',
         'footer_description', 'contact_email', 'contact_phone',
         'facebook_url', 'instagram_url', 'tiktok_url', 'youtube_url',
         'top_bar_text', 'top_bar_text_mobile',
@@ -26,6 +27,7 @@ class SiteSetting extends Model
         return [
             'newsletter_enabled' => 'boolean',
             'api_auto_publish' => 'boolean',
+            'gtm_enabled' => 'boolean',
         ];
     }
 

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <x-site.meta :title="trim($__env->yieldContent('title')) ?: null" />
+    <x-site.google-tag-manager location="head" />
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet">
     <style>
@@ -354,6 +355,7 @@
     </style>
 </head>
 <body>
+    <x-site.google-tag-manager location="body" />
     <aside class="auth-brand">
         <div class="brand-inner">
             <a href="{{ route('home') }}" class="brand-logo">

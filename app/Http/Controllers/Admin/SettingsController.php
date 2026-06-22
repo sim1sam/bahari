@@ -8,6 +8,7 @@ use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -41,6 +42,14 @@ class SettingsController extends Controller
             'og_title' => 'nullable|string|max:150',
             'og_description' => 'nullable|string|max:500',
             'og_image' => 'nullable|url|max:500',
+            'gtm_enabled' => 'boolean',
+            'gtm_container_id' => [
+                'nullable',
+                'string',
+                'max:20',
+                'regex:/^GTM-[A-Z0-9]+$/i',
+                Rule::requiredIf($request->boolean('gtm_enabled')),
+            ],
             'footer_description' => 'nullable|string|max:500',
             'contact_email' => 'nullable|email|max:150',
             'contact_phone' => 'nullable|string|max:30',
@@ -76,6 +85,10 @@ class SettingsController extends Controller
         ])->all();
 
         $data['newsletter_enabled'] = $request->boolean('newsletter_enabled');
+        $data['gtm_enabled'] = $request->boolean('gtm_enabled');
+        $data['gtm_container_id'] = filled($validated['gtm_container_id'] ?? null)
+            ? strtoupper(trim($validated['gtm_container_id']))
+            : null;
 
         if ($request->boolean('remove_logo')) {
             $this->media->delete($settings->logo);

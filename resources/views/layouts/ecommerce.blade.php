@@ -11,9 +11,11 @@
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <x-site.theme-styles />
+    <x-site.google-tag-manager location="head" />
     @stack('styles')
 </head>
 <body class="storefront-body min-h-screen flex flex-col">
+    <x-site.google-tag-manager location="body" />
     <x-ecommerce.top-bar />
     <x-ecommerce.header />
     <x-ui.flash />
