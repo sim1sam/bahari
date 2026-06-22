@@ -82,10 +82,10 @@
                                 @foreach ($order->items as $item)
                                     <tr data-existing="1">
                                         <td>
-                                            <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
+                                            <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control form-control-sm item-name" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
                                         </td>
                                         <td>
-                                            <input type="text" name="items[{{ $item->id }}][product_slug]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.product_slug', $item->product_slug) }}">
+                                            <input type="text" name="items[{{ $item->id }}][product_slug]" class="form-control form-control-sm item-slug" value="{{ old('items.'.$item->id.'.product_slug', $item->product_slug) }}" data-manual="1">
                                         </td>
                                         <td>
                                             <input type="text" name="items[{{ $item->id }}][product_link]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.product_link', $item->product_link) }}">
@@ -288,8 +288,8 @@
     {{-- Hidden templates --}}
     <template id="item-row-template">
         <tr>
-            <td><input type="text" name="new_items[__INDEX__][product_name]" class="form-control form-control-sm" required></td>
-            <td><input type="text" name="new_items[__INDEX__][product_slug]" class="form-control form-control-sm" placeholder="custom"></td>
+            <td><input type="text" name="new_items[__INDEX__][product_name]" class="form-control form-control-sm item-name" required></td>
+            <td><input type="text" name="new_items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto from name" readonly></td>
             <td><input type="text" name="new_items[__INDEX__][product_link]" class="form-control form-control-sm"></td>
             <td><input type="text" name="new_items[__INDEX__][image]" class="form-control form-control-sm"></td>
             <td><input type="text" name="new_items[__INDEX__][size]" class="form-control form-control-sm"></td>
@@ -395,6 +395,32 @@
         if (manualFields) manualFields.style.display = hasPayments ? 'none' : 'block';
         if (manualStatus) manualStatus.style.display = hasPayments ? 'none' : 'block';
     }
+
+    function slugify(text) {
+        return text.toString().toLowerCase().trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'custom';
+    }
+
+    document.getElementById('items-body').addEventListener('input', function (e) {
+        if (!e.target.classList.contains('item-name')) return;
+        var slugInput = e.target.closest('tr').querySelector('.item-slug');
+        if (slugInput && slugInput.dataset.manual !== '1') {
+            slugInput.value = slugify(e.target.value);
+        }
+    });
+
+    document.getElementById('items-body').addEventListener('focusin', function (e) {
+        if (!e.target.classList.contains('item-slug')) return;
+        e.target.readOnly = false;
+    });
+
+    document.getElementById('items-body').addEventListener('input', function (e) {
+        if (!e.target.classList.contains('item-slug')) return;
+        e.target.dataset.manual = '1';
+        e.target.readOnly = false;
+    });
 
     toggleManualPaymentFields();
 })();

@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -117,7 +118,7 @@ class OrderController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
-                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $itemData['image'] ?? null,
                     'size' => $itemData['size'] ?? null,
@@ -278,7 +279,7 @@ class OrderController extends Controller
 
                 $item->update([
                     'product_name' => $itemData['product_name'],
-                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $itemData['image'] ?? null,
                     'size' => $itemData['size'] ?? null,
@@ -296,7 +297,7 @@ class OrderController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
-                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $itemData['image'] ?? null,
                     'size' => $itemData['size'] ?? null,
@@ -562,5 +563,14 @@ class OrderController extends Controller
         return redirect()
             ->route('admin.orders.index')
             ->with('success', 'Order deleted successfully.');
+    }
+
+    private function resolveProductSlug(array $itemData): string
+    {
+        if (filled($itemData['product_slug'] ?? null)) {
+            return $itemData['product_slug'];
+        }
+
+        return Str::slug($itemData['product_name'] ?? '') ?: 'custom';
     }
 }
