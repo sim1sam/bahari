@@ -121,6 +121,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:orders')->group(function () {
             Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+            Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');
+            Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
             Route::get('orders/transfer-settings', [OrderTransferSettingController::class, 'edit'])->name('orders.transfer-settings.edit');
             Route::get('orders/transfer-scripts', [OrderTransferSettingController::class, 'scripts'])->name('orders.transfer-settings.scripts');
             Route::put('orders/transfer-settings', [OrderTransferSettingController::class, 'update'])->name('orders.transfer-settings.update');

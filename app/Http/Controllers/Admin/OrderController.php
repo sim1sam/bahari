@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
+use App\Models\User;
 use App\Services\MediaStorageService;
 use App\Services\OrderTransferService;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,163 @@ class OrderController extends Controller
         return view('admin.orders.index', [
             'orders' => Order::query()->latest()->paginate(20),
         ]);
+    }
+
+    public function create(): View
+    {
+        return view('admin.orders.create', [
+            'banks' => config('payment.banks', []),
+            'customers' => User::customers()->orderBy('name')->get(['id', 'name', 'email']),
+        ]);
+    }
+
+    public function store(Request $request, MediaStorageService $media, OrderTransferService $transfer): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_id' => 'nullable|integer|exists:users,id',
+            'customer_name' => 'required|string|max:200',
+            'customer_email' => 'required|email|max:150',
+            'customer_phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'zip' => 'nullable|string|max:20',
+            'status' => 'required|in:pending,processing,shipped,completed,cancelled',
+            'order_type' => 'nullable|in:standard,custom',
+            'payment_method' => 'required|string|max:50',
+            'reference_code' => 'nullable|string|max:100',
+            'bank_name' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:2000',
+            'coupon_code' => 'nullable|string|max:30',
+            'subtotal' => 'required|numeric|min:0',
+            'discount' => 'required|numeric|min:0',
+            'shipping' => 'required|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'payment_status' => 'nullable|in:pending,paid,partial,due',
+            'payment_screenshot' => 'nullable|image|max:5120',
+            'items' => 'required|array|min:1',
+            'items.*.product_name' => 'required|string|max:255',
+            'items.*.product_slug' => 'nullable|string|max:255',
+            'items.*.product_link' => 'nullable|string|max:500',
+            'items.*.image' => 'nullable|string|max:500',
+            'items.*.size' => 'nullable|string|max:50',
+            'items.*.color' => 'nullable|string|max:50',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'payments' => 'nullable|array',
+            'payments.*.amount' => 'required_with:payments|numeric|min:0.01',
+            'payments.*.payment_method' => 'required_with:payments|in:cod,cash,bank_transfer',
+            'payments.*.bank_name' => 'nullable|string|max:100',
+            'payments.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        $orderNumber = 'LW-'.strtoupper(substr(uniqid(), -8));
+
+        $order = DB::transaction(function () use ($request, $media, $validated, $orderNumber) {
+            $screenshotPath = null;
+            if ($request->hasFile('payment_screenshot')) {
+                $screenshotPath = $media->storeUpload(
+                    $request->file('payment_screenshot'),
+                    'orders/payments',
+                    field: 'payment_screenshot'
+                );
+            }
+
+            $order = Order::create([
+                'user_id' => $validated['user_id'] ?? null,
+                'number' => $orderNumber,
+                'order_type' => $validated['order_type'] ?? 'standard',
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'],
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'zip' => $validated['zip'] ?? null,
+                'status' => $validated['status'],
+                'payment_method' => $validated['payment_method'],
+                'reference_code' => $validated['reference_code'] ?? null,
+                'bank_name' => $validated['bank_name'] ?? null,
+                'payment_screenshot' => $screenshotPath,
+                'notes' => $validated['notes'] ?? null,
+                'coupon_code' => $validated['coupon_code'] ?? null,
+                'subtotal' => round((float) $validated['subtotal'], 2),
+                'discount' => round((float) $validated['discount'], 2),
+                'shipping' => round((float) $validated['shipping'], 2),
+                'total' => round((float) $validated['total'], 2),
+                'payment_status' => $validated['payment_status'] ?? 'pending',
+                'amount_paid' => 0,
+            ]);
+
+            foreach ($validated['items'] as $itemData) {
+                if (empty($itemData['product_name'])) {
+                    continue;
+                }
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_name' => $itemData['product_name'],
+                    'product_slug' => $itemData['product_slug'] ?: 'custom',
+                    'product_link' => $itemData['product_link'] ?? null,
+                    'image' => $itemData['image'] ?? null,
+                    'size' => $itemData['size'] ?? null,
+                    'color' => $itemData['color'] ?? null,
+                    'quantity' => (int) $itemData['quantity'],
+                    'price' => round((float) $itemData['price'], 2),
+                ]);
+            }
+
+            foreach ($validated['payments'] ?? [] as $paymentData) {
+                if (empty($paymentData['amount']) || (float) $paymentData['amount'] <= 0) {
+                    continue;
+                }
+
+                $bankLabel = ! empty($paymentData['bank_name'])
+                    ? (config('payment.banks')[$paymentData['bank_name']] ?? $paymentData['bank_name'])
+                    : null;
+
+                OrderPayment::create([
+                    'order_id' => $order->id,
+                    'recorded_by' => Auth::id(),
+                    'amount' => round((float) $paymentData['amount'], 2),
+                    'payment_method' => $paymentData['payment_method'],
+                    'bank_name' => $bankLabel,
+                    'notes' => $paymentData['notes'] ?? null,
+                ]);
+            }
+
+            $order->refresh()->load('payments');
+
+            if ($order->payments->isNotEmpty()) {
+                $order->amount_paid = round((float) $order->payments->sum('amount'), 2);
+                $order->recalculatePaymentStatus();
+            } else {
+                $paymentStatus = $validated['payment_status'] ?? 'pending';
+                $amountPaid = min(round((float) ($validated['amount_paid'] ?? 0), 2), (float) $validated['total']);
+                $order->amount_paid = $amountPaid;
+                $order->payment_status = $paymentStatus;
+                if ($paymentStatus === 'paid') {
+                    $order->amount_paid = (float) $validated['total'];
+                } elseif ($paymentStatus === 'due') {
+                    $order->amount_paid = 0;
+                }
+            }
+
+            $order->save();
+
+            return $order;
+        });
+
+        $message = 'Order created successfully.';
+
+        if ($order->status === 'processing') {
+            $message .= $transfer->transfer($order->fresh())
+                ? ' Order transferred to API site.'
+                : ' Order transfer did not complete. Check transfer status.';
+        }
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('success', $message);
     }
 
     public function show(Order $order): View

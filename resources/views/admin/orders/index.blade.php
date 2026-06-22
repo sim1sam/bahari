@@ -7,9 +7,14 @@
     <div class="card">
         <div class="card-header d-flex align-items-center">
             <h3 class="card-title mb-0">Order List</h3>
-            <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-sm btn-outline-primary ml-auto">
-                <i class="fas fa-plug mr-1"></i> API Order Transfer Setting
-            </a>
+            <div class="ml-auto d-flex" style="gap: 0.5rem;">
+                <a href="{{ route('admin.orders.create') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus mr-1"></i> Create Order
+                </a>
+                <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-plug mr-1"></i> API Order Transfer Setting
+                </a>
+            </div>
         </div>
         <div class="card-body table-responsive p-0">
             <table class="table table-hover">
