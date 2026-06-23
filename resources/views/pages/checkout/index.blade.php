@@ -127,6 +127,11 @@
                         this.$nextTick(() => document.getElementById('checkout-form').requestSubmit());
                     },
                     preparePaymentSubmit(event) {
+                        if (this.payment === 'sslcommerz') {
+                            this.paymentAmount = this.total;
+                            this.paymentConfirmed = true;
+                            return;
+                        }
                         if (! this.paymentConfirmed) {
                             event.preventDefault();
                             this.openPaymentModal();
@@ -281,6 +286,15 @@
                                         </p>
                                     </div>
                                 </label>
+                                @if ($sslCommerzEnabled)
+                                    <label class="flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer hover:border-brand-300 transition-colors has-checked:border-brand-600 has-checked:bg-brand-50">
+                                        <input type="radio" name="payment" value="sslcommerz" x-model="payment" @change="selectPayment('sslcommerz')" class="text-brand-600 focus:ring-brand-500">
+                                        <div>
+                                            <p class="font-medium text-ink">Pay Online (SSLCommerz)</p>
+                                            <p class="text-sm text-ink-muted">Pay securely with card, bKash, Nagad, or mobile banking</p>
+                                        </div>
+                                    </label>
+                                @endif
                             </div>
                             @error('payment')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>

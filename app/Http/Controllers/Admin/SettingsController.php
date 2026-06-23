@@ -50,6 +50,15 @@ class SettingsController extends Controller
                 'regex:/^GTM-[A-Z0-9]+$/i',
                 Rule::requiredIf($request->boolean('gtm_enabled')),
             ],
+            'sslcommerz_enabled' => 'boolean',
+            'sslcommerz_sandbox' => 'boolean',
+            'sslcommerz_store_id' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::requiredIf($request->boolean('sslcommerz_enabled')),
+            ],
+            'sslcommerz_store_password' => 'nullable|string|max:100',
             'footer_description' => 'nullable|string|max:500',
             'contact_email' => 'nullable|email|max:150',
             'contact_phone' => 'nullable|string|max:30',
@@ -89,6 +98,25 @@ class SettingsController extends Controller
         $data['gtm_container_id'] = filled($validated['gtm_container_id'] ?? null)
             ? strtoupper(trim($validated['gtm_container_id']))
             : null;
+        $data['sslcommerz_enabled'] = $request->boolean('sslcommerz_enabled');
+        $data['sslcommerz_sandbox'] = $request->boolean('sslcommerz_sandbox');
+
+        if ($request->boolean('sslcommerz_enabled')) {
+            $hasPassword = filled($settings->sslcommerz_store_password)
+                || filled($validated['sslcommerz_store_password'] ?? null);
+
+            if (! $hasPassword) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['sslcommerz_store_password' => 'Store password is required when SSLCommerz is enabled.']);
+            }
+        }
+
+        if (filled($validated['sslcommerz_store_password'] ?? null)) {
+            $data['sslcommerz_store_password'] = $validated['sslcommerz_store_password'];
+        } else {
+            unset($data['sslcommerz_store_password']);
+        }
 
         if ($request->boolean('remove_logo')) {
             $this->media->delete($settings->logo);

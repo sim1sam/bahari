@@ -11,6 +11,7 @@ class SiteSetting extends Model
         'meta_title', 'meta_description', 'meta_keywords',
         'og_title', 'og_description', 'og_image',
         'gtm_container_id', 'gtm_enabled',
+        'sslcommerz_enabled', 'sslcommerz_sandbox', 'sslcommerz_store_id', 'sslcommerz_store_password',
         'footer_description', 'contact_email', 'contact_phone',
         'facebook_url', 'instagram_url', 'tiktok_url', 'youtube_url',
         'top_bar_text', 'top_bar_text_mobile',
@@ -28,6 +29,9 @@ class SiteSetting extends Model
             'newsletter_enabled' => 'boolean',
             'api_auto_publish' => 'boolean',
             'gtm_enabled' => 'boolean',
+            'sslcommerz_enabled' => 'boolean',
+            'sslcommerz_sandbox' => 'boolean',
+            'sslcommerz_store_password' => 'encrypted',
         ];
     }
 

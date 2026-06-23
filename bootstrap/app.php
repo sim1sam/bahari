@@ -31,6 +31,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $request->is('account', 'account/*') => route('login'),
             default => route('login'),
         });
+
+        $middleware->validateCsrfTokens(except: [
+            'payments/sslcommerz/ipn',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

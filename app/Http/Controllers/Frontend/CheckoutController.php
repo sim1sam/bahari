@@ -11,6 +11,8 @@ use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\MediaStorageService;
+use App\Services\SiteSettingsService;
+use App\Services\SslCommerzService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +24,8 @@ class CheckoutController extends Controller
     public function __construct(
         private CartService $cart,
         private MediaStorageService $media,
+        private SiteSettingsService $siteSettings,
+        private SslCommerzService $sslCommerz,
     ) {}
 
     public function index(): View|RedirectResponse
@@ -47,6 +51,7 @@ class CheckoutController extends Controller
             'selectedAddress' => $selectedAddress,
             'addressTypes' => CustomerAddress::types(),
             'banks' => PaymentBank::activeForCheckout(),
+            'sslCommerzEnabled' => $this->siteSettings->sslCommerzConfigured(),
             'checkoutDetails' => [
                 'name' => $selectedAddress?->recipient_name ?? $user->name,
                 'email' => $user->email,
@@ -88,6 +93,11 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
+        $paymentMethods = ['cod', 'bank_transfer'];
+        if ($this->siteSettings->sslCommerzConfigured()) {
+            $paymentMethods[] = 'sslcommerz';
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:200',
             'email' => 'required|email|max:150',
@@ -95,7 +105,7 @@ class CheckoutController extends Controller
             'address' => 'required|string|max:255',
             'city' => 'required|string|max:100',
             'zip' => 'required|string|max:20',
-            'payment' => 'required|in:cod,bank_transfer',
+            'payment' => 'required|in:'.implode(',', $paymentMethods),
             'payment_amount' => 'required|numeric|min:0',
             'bank_id' => 'required_if:payment,bank_transfer|nullable|integer|exists:payment_banks,id',
             'payment_screenshot' => 'required_if:payment,bank_transfer|nullable|image|max:5120',
@@ -156,10 +166,11 @@ class CheckoutController extends Controller
         $discount = $this->cart->discount();
         $coupon = $this->cart->coupon();
         $total = $this->cart->total();
+        $isSslCommerz = $validated['payment'] === 'sslcommerz';
 
-        DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total, $bank, $screenshotPath) {
+        $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz) {
             $isBankTransfer = $validated['payment'] === 'bank_transfer';
-            $paymentAmount = round((float) $validated['payment_amount'], 2);
+            $paymentAmount = $isSslCommerz ? $total : round((float) $validated['payment_amount'], 2);
 
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -173,14 +184,18 @@ class CheckoutController extends Controller
                 'payment_method' => $validated['payment'],
                 'bank_name' => $bank?->displayName(),
                 'payment_screenshot' => $screenshotPath,
-                'notes' => $isBankTransfer ? null : 'COD amount confirmed: '.money($paymentAmount),
+                'notes' => match (true) {
+                    $isSslCommerz => 'Awaiting SSLCommerz payment',
+                    $isBankTransfer => null,
+                    default => 'COD amount confirmed: '.money($paymentAmount),
+                },
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'shipping' => $shipping,
                 'total' => $total,
                 'coupon_code' => $coupon['code'] ?? null,
                 'status' => 'pending',
-                'payment_status' => $isBankTransfer ? 'pending' : 'due',
+                'payment_status' => $isSslCommerz || $isBankTransfer ? 'pending' : 'due',
                 'amount_paid' => 0,
             ]);
 
@@ -207,7 +222,21 @@ class CheckoutController extends Controller
                     'status' => PaymentTransaction::STATUS_PENDING,
                 ]);
             }
+
+            return $order;
         });
+
+        if ($isSslCommerz) {
+            try {
+                $gatewayUrl = $this->sslCommerz->initiatePayment($order);
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
+
+            $this->cart->clear();
+
+            return redirect()->away($gatewayUrl);
+        }
 
         session([
             'last_order' => [

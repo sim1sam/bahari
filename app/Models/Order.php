@@ -123,6 +123,7 @@ class Order extends Model
         return match ($this->payment_method) {
             'cod' => 'COD (Cash on Delivery)',
             'bank_transfer' => 'Bank Transfer',
+            'sslcommerz' => 'SSLCommerz',
             'order_code' => 'COD',
             default => ucfirst(str_replace('_', ' ', $this->payment_method ?? 'card')),
         };

@@ -11,6 +11,7 @@ use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
+use App\Http\Controllers\Frontend\SslCommerzController;
 use App\Http\Controllers\PublicStorageController;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +69,11 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 });
 Route::get('/order/success', [CheckoutController::class, 'success'])->name('order.success');
+
+Route::post('/payments/sslcommerz/ipn', [SslCommerzController::class, 'ipn'])->name('sslcommerz.ipn');
+Route::match(['get', 'post'], '/payments/sslcommerz/success', [SslCommerzController::class, 'success'])->name('sslcommerz.success');
+Route::match(['get', 'post'], '/payments/sslcommerz/fail', [SslCommerzController::class, 'fail'])->name('sslcommerz.fail');
+Route::match(['get', 'post'], '/payments/sslcommerz/cancel', [SslCommerzController::class, 'cancel'])->name('sslcommerz.cancel');
 
 Route::middleware('throttle:20,1')->group(function () {
     Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('order.track');

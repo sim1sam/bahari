@@ -157,6 +157,51 @@ class SiteSettingsService
         return (bool) ($this->get()->gtm_enabled ?? false) && $this->gtmContainerId() !== null;
     }
 
+    public function sslCommerzEnabled(): bool
+    {
+        return (bool) ($this->get()->sslcommerz_enabled ?? false);
+    }
+
+    public function sslCommerzSandbox(): bool
+    {
+        return (bool) ($this->get()->sslcommerz_sandbox ?? true);
+    }
+
+    public function sslCommerzStoreId(): ?string
+    {
+        $id = trim((string) ($this->get()->sslcommerz_store_id ?? ''));
+
+        return $id !== '' ? $id : null;
+    }
+
+    public function sslCommerzStorePassword(): ?string
+    {
+        $password = $this->get()->sslcommerz_store_password;
+
+        return filled($password) ? (string) $password : null;
+    }
+
+    public function sslCommerzConfigured(): bool
+    {
+        return $this->sslCommerzEnabled()
+            && $this->sslCommerzStoreId() !== null
+            && $this->sslCommerzStorePassword() !== null;
+    }
+
+    public function sslCommerzApiUrl(): string
+    {
+        return $this->sslCommerzSandbox()
+            ? 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php'
+            : 'https://securepay.sslcommerz.com/gwprocess/v4/api.php';
+    }
+
+    public function sslCommerzValidationUrl(): string
+    {
+        return $this->sslCommerzSandbox()
+            ? 'https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php'
+            : 'https://securepay.sslcommerz.com/validator/api/validationserverAPI.php';
+    }
+
     private function assetUrl(?string $path): ?string
     {
         return app(MediaStorageService::class)->url($path);
