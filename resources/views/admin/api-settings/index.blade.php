@@ -156,7 +156,7 @@
                         value="{{ old('api_webhook_url', $webhookBaseUrl) }}"
                         placeholder="https://yourdomain.com">
                     @error('api_webhook_url')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                    <small class="text-muted">Leave empty to use <code>APP_URL</code>. <code>/api/content/receive</code> is added automatically.</small>
+                    <small class="text-muted">Saved in site settings. Leave empty to use this server’s <code>APP_URL</code>.</small>
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
             </form>

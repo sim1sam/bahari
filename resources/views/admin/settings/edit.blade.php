@@ -292,7 +292,7 @@
                                 <input type="checkbox" class="custom-control-input" id="gtm_enabled" name="gtm_enabled" value="1" @checked(old('gtm_enabled', $settings->gtm_enabled ?? false))>
                                 <label class="custom-control-label" for="gtm_enabled">Enable Google Tag Manager</label>
                             </div>
-                            <small class="text-muted d-block mt-1">Injects GTM on the storefront, login, and account pages.</small>
+                            <small class="text-muted d-block mt-1">Saved in site settings (database). No <code>.env</code> entry needed — works the same after git push/pull.</small>
                         </div>
                         <div class="form-group mb-0">
                             <label>Container ID</label>

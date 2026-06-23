@@ -164,17 +164,17 @@ class SiteSettingsService
 
     public function apiReceiveUrl(): string
     {
-        $override = trim((string) (env('API_WEBHOOK_URL') ?: $this->get()->api_webhook_url ?: ''));
+        $base = trim((string) ($this->get()->api_webhook_url ?: ''));
 
-        if ($override !== '') {
-            if (str_contains($override, '/api/content/receive')) {
-                return rtrim($override, '/');
-            }
-
-            return rtrim($override, '/').'/api/content/receive';
+        if ($base === '') {
+            $base = rtrim((string) config('app.url'), '/');
         }
 
-        return rtrim(config('app.url'), '/').'/api/content/receive';
+        if (str_contains($base, '/api/content/receive')) {
+            return rtrim($base, '/');
+        }
+
+        return rtrim($base, '/').'/api/content/receive';
     }
 
     public function apiLogoUrl(): ?string
