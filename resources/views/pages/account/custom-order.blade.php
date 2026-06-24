@@ -78,6 +78,16 @@
                                 <p class="text-xs text-ink-muted mt-1">Upload product photo (JPG, PNG, WebP — max 5MB)</p>
                             </div>
                             <div>
+                                <label class="block text-sm font-medium mb-1">Size</label>
+                                <input
+                                    type="text"
+                                    :name="'items[' + index + '][size]'"
+                                    x-model="item.size"
+                                    placeholder="e.g. M, L, XL, 38"
+                                    class="account-input"
+                                >
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium mb-1">Qty</label>
                                 <input
                                     type="number"
@@ -126,7 +136,7 @@
         <div class="account-panel mb-5">
             <div class="account-panel-header"><h2 class="font-semibold text-ink">Notes (optional)</h2></div>
             <div class="account-panel-body">
-                <textarea name="notes" rows="2" placeholder="Size, color, delivery notes..." class="account-input resize-none">{{ old('notes') }}</textarea>
+                <textarea name="notes" rows="2" placeholder="Color, delivery notes..." class="account-input resize-none">{{ old('notes') }}</textarea>
             </div>
         </div>
 
@@ -258,7 +268,7 @@
 function customOrderForm() {
     return {
         currencySymbol: @json($currencySymbol),
-        items: [{ id: 1, name: '', product_link: '', imagePreview: null, quantity: 1, unit_price: 0 }],
+        items: [{ id: 1, name: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 }],
         nextId: 2,
         paymentMode: @json(old('payment_mode', 'cod')),
         showModal: false,
@@ -279,7 +289,7 @@ function customOrderForm() {
         },
 
         addItem() {
-            this.items.push({ id: this.nextId++, name: '', product_link: '', imagePreview: null, quantity: 1, unit_price: 0 });
+            this.items.push({ id: this.nextId++, name: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 });
         },
 
         onItemImage(event, index) {

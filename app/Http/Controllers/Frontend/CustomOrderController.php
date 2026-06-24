@@ -32,6 +32,7 @@ class CustomOrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.name' => 'required|string|max:200',
             'items.*.product_link' => 'nullable|url|max:500',
+            'items.*.size' => 'nullable|string|max:50',
             'items.*.image_file' => 'nullable|image|max:5120',
             'items.*.quantity' => 'required|integer|min:1|max:9999',
             'items.*.unit_price' => 'required|numeric|min:0',
@@ -57,6 +58,7 @@ class CustomOrderController extends Controller
             return [
                 'name' => $item['name'] ?? '',
                 'product_link' => $item['product_link'] ?? null,
+                'size' => $item['size'] ?? null,
                 'image' => $imagePath,
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'unit_price' => round((float) ($item['unit_price'] ?? 0), 2),
@@ -117,6 +119,7 @@ class CustomOrderController extends Controller
                     'product_name' => $item['name'],
                     'product_link' => $item['product_link'],
                     'image' => $item['image'],
+                    'size' => $item['size'] ?: null,
                     'quantity' => $item['quantity'],
                     'price' => $item['unit_price'],
                 ]);
