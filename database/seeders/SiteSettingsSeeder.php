@@ -9,7 +9,11 @@ class SiteSettingsSeeder extends Seeder
 {
     public function run(): void
     {
-        SiteSetting::updateOrCreate(['id' => 1], [
+        if (SiteSetting::query()->exists()) {
+            return;
+        }
+
+        SiteSetting::create([
             'site_name' => config('app.name', 'LuxeWear'),
             'tagline' => 'Premium women\'s fashion — dresses, tops, and party wear for every occasion.',
             'meta_title' => config('app.name', 'LuxeWear').' — Women\'s Fashion Online',

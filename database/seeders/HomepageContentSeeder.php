@@ -86,7 +86,24 @@ class HomepageContentSeeder extends Seeder
             ]);
         }
 
-        SiteSetting::current()->update([
+        $settings = SiteSetting::current();
+        $updates = [];
+
+        foreach ($this->defaultSiteSettingValues() as $key => $value) {
+            if (blank($settings->{$key})) {
+                $updates[$key] = $value;
+            }
+        }
+
+        if ($updates !== []) {
+            $settings->update($updates);
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function defaultSiteSettingValues(): array
+    {
+        return [
             'top_bar_text' => 'Free shipping on dress orders over $50 ✦ New styles every week',
             'top_bar_text_mobile' => 'Free shipping on orders $50+',
             'top_bar_bg_color' => '#164e63',
@@ -106,6 +123,6 @@ class HomepageContentSeeder extends Seeder
             'theme_footer_bg' => '#1c1917',
             'theme_text' => '#1c1917',
             'theme_background' => '#f8fafc',
-        ]);
+        ];
     }
 }

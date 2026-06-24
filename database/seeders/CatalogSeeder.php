@@ -10,6 +10,10 @@ class CatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        if (Category::query()->exists()) {
+            return;
+        }
+
         $img = fn (string $id) => "https://images.unsplash.com/{$id}?auto=format&fit=crop&w=600&h=750&q=80";
         $cardImg = fn (string $id) => "https://images.unsplash.com/{$id}?auto=format&fit=crop&w=400&h=300&q=80";
         $heroImg = fn (string $id) => "https://images.unsplash.com/{$id}?auto=format&fit=crop&w=1200&h=400&q=80";
