@@ -93,16 +93,15 @@ class MediaStorageService
             ]);
         }
 
-        Storage::disk('public')->makeDirectory($directory);
+        $this->ensurePublicDirectory($directory);
         $this->delete($current);
 
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
-        $extension = in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true) ? ($extension === 'jpeg' ? 'jpg' : $extension) : 'jpg';
+        $extension = $this->extensionFromUpload($file);
         $path = trim($directory, '/').'/'.Str::uuid().'.'.$extension;
 
         if (! Storage::disk('public')->put($path, $content)) {
             throw ValidationException::withMessages([
-                $field => 'Failed to write image to storage. Run: php artisan storage:link',
+                $field => 'Failed to write image to storage. Run: php artisan storage:link and check folder permissions on storage/app/public.',
             ]);
         }
 
@@ -194,6 +193,34 @@ class MediaStorageService
         }
     }
 
+    private function ensurePublicDirectory(string $directory): void
+    {
+        $relative = trim($directory, '/');
+        Storage::disk('public')->makeDirectory($relative);
+
+        $absolute = storage_path('app/public/'.$relative);
+
+        if (! is_dir($absolute) && ! @mkdir($absolute, 0755, true) && ! is_dir($absolute)) {
+            throw ValidationException::withMessages([
+                'logo' => 'Could not create storage directory. Check permissions on storage/app/public.',
+            ]);
+        }
+    }
+
+    private function extensionFromUpload(UploadedFile $file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+        $extension = match ($extension) {
+            'jpeg' => 'jpg',
+            'svg+xml' => 'svg',
+            default => $extension,
+        };
+
+        $allowed = ['jpg', 'png', 'webp', 'gif', 'svg', 'ico'];
+
+        return in_array($extension, $allowed, true) ? $extension : 'jpg';
+    }
+
     private function uploadErrorMessage(int $code): string
     {
         return match ($code) {
@@ -216,6 +243,8 @@ class MediaStorageService
             'image/webp' => 'webp',
             'image/gif' => 'gif',
             'image/svg+xml' => 'svg',
+            'image/x-icon' => 'ico',
+            'image/vnd.microsoft.icon' => 'ico',
         ];
 
         foreach ($map as $type => $ext) {
@@ -227,8 +256,8 @@ class MediaStorageService
         $path = parse_url($url, PHP_URL_PATH) ?: '';
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-        return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true)
-            ? ($ext === 'jpeg' ? 'jpg' : $ext)
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'ico'], true)
+            ? (match ($ext) { 'jpeg' => 'jpg', default => $ext })
             : 'jpg';
     }
 

@@ -8,8 +8,12 @@ use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class SettingsController extends Controller
 {
@@ -32,9 +36,9 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'site_name' => 'required|string|max:100',
             'tagline' => 'nullable|string|max:255',
-            'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
+            'logo' => 'nullable|file|mimes:png,jpg,jpeg,svg,webp|max:2048',
             'logo_url' => 'nullable|url|max:500',
-            'favicon' => 'nullable|image|mimes:png,jpg,jpeg,ico,svg,webp|max:1024',
+            'favicon' => 'nullable|file|mimes:png,jpg,jpeg,ico,svg,webp|max:1024',
             'favicon_url' => 'nullable|url|max:500',
             'meta_title' => 'nullable|string|max:150',
             'meta_description' => 'nullable|string|max:500',
@@ -48,7 +52,7 @@ class SettingsController extends Controller
                 'string',
                 'max:20',
                 'regex:/^GTM-[A-Z0-9]+$/i',
-                Rule::requiredIf($request->boolean('gtm_enabled')),
+                Rule::requiredIf($request->boolean('gtm_enabled') && Schema::hasColumn('site_settings', 'gtm_container_id')),
             ],
             'sslcommerz_enabled' => 'boolean',
             'sslcommerz_sandbox' => 'boolean',
@@ -56,7 +60,7 @@ class SettingsController extends Controller
                 'nullable',
                 'string',
                 'max:100',
-                Rule::requiredIf($request->boolean('sslcommerz_enabled')),
+                Rule::requiredIf($request->boolean('sslcommerz_enabled') && Schema::hasColumn('site_settings', 'sslcommerz_store_id')),
             ],
             'sslcommerz_store_password' => 'nullable|string|max:100',
             'footer_description' => 'nullable|string|max:500',
@@ -101,7 +105,7 @@ class SettingsController extends Controller
         $data['sslcommerz_enabled'] = $request->boolean('sslcommerz_enabled');
         $data['sslcommerz_sandbox'] = $request->boolean('sslcommerz_sandbox');
 
-        if ($request->boolean('sslcommerz_enabled')) {
+        if ($request->boolean('sslcommerz_enabled') && Schema::hasColumn('site_settings', 'sslcommerz_store_password')) {
             $hasPassword = filled($settings->sslcommerz_store_password)
                 || filled($validated['sslcommerz_store_password'] ?? null);
 
@@ -112,39 +116,70 @@ class SettingsController extends Controller
             }
         }
 
-        if (filled($validated['sslcommerz_store_password'] ?? null)) {
+        if (filled($validated['sslcommerz_store_password'] ?? null) && Schema::hasColumn('site_settings', 'sslcommerz_store_password')) {
             $data['sslcommerz_store_password'] = $validated['sslcommerz_store_password'];
         } else {
             unset($data['sslcommerz_store_password']);
         }
 
-        if ($request->boolean('remove_logo')) {
-            $this->media->delete($settings->logo);
-            $data['logo'] = null;
-        } else {
-            $logoFile = $request->file('logo');
-            if ($logoFile && $logoFile->getError() !== UPLOAD_ERR_NO_FILE) {
-                $data['logo'] = $this->media->storeUpload($logoFile, 'settings', $settings->logo, 'logo');
-            } elseif (! empty($validated['logo_url'])) {
-                $data['logo'] = $this->media->storeFromUrl($validated['logo_url'], 'settings', $settings->logo, 'logo_url');
+        try {
+            if ($request->boolean('remove_logo')) {
+                $this->media->delete($settings->logo);
+                $data['logo'] = null;
+            } else {
+                $logoFile = $request->file('logo');
+                if ($logoFile && $logoFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                    $data['logo'] = $this->media->storeUpload($logoFile, 'settings', $settings->logo, 'logo');
+                } elseif (! empty($validated['logo_url'])) {
+                    $data['logo'] = $this->media->storeFromUrl($validated['logo_url'], 'settings', $settings->logo, 'logo_url');
+                }
             }
+
+            if ($request->boolean('remove_favicon')) {
+                $this->media->delete($settings->favicon);
+                $data['favicon'] = null;
+            } else {
+                $faviconFile = $request->file('favicon');
+                if ($faviconFile && $faviconFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                    $data['favicon'] = $this->media->storeUpload($faviconFile, 'settings', $settings->favicon, 'favicon');
+                } elseif (! empty($validated['favicon_url'])) {
+                    $data['favicon'] = $this->media->storeFromUrl($validated['favicon_url'], 'settings', $settings->favicon, 'favicon_url');
+                }
+            }
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Could not save logo or favicon. Check storage permissions and run: php artisan storage:link');
         }
 
-        if ($request->boolean('remove_favicon')) {
-            $this->media->delete($settings->favicon);
-            $data['favicon'] = null;
-        } else {
-            $faviconFile = $request->file('favicon');
-            if ($faviconFile && $faviconFile->getError() !== UPLOAD_ERR_NO_FILE) {
-                $data['favicon'] = $this->media->storeUpload($faviconFile, 'settings', $settings->favicon, 'favicon');
-            } elseif (! empty($validated['favicon_url'])) {
-                $data['favicon'] = $this->media->storeFromUrl($validated['favicon_url'], 'settings', $settings->favicon, 'favicon_url');
-            }
+        $data = $this->onlyExistingColumns($settings, $data);
+
+        try {
+            $settings->update($data);
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Could not save settings. Please run database migrations on the server: php artisan migrate --force');
         }
 
-        $settings->update($data);
         $this->settings->clearCache();
 
         return redirect()->route('admin.settings.edit')->with('success', 'Site settings updated.');
+    }
+
+    /** @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function onlyExistingColumns(SiteSetting $settings, array $data): array
+    {
+        $columns = Schema::getColumnListing($settings->getTable());
+
+        return array_intersect_key($data, array_flip($columns));
     }
 }
