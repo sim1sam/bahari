@@ -53,6 +53,20 @@
 <div class="row">
     <div class="col-md-6">
         <div class="form-group">
+            <label>Brand</label>
+            <input type="text" name="brand" class="form-control" value="{{ old('brand', $item->brand) }}">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>Vendor</label>
+            <input type="text" name="vendor" class="form-control" value="{{ old('vendor', $item->vendor) }}">
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
             <label>Sizes (comma separated)</label>
             <input type="text" name="sizes" class="form-control" value="{{ old('sizes', implode(', ', $item->sizes ?? [])) }}">
         </div>

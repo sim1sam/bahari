@@ -72,6 +72,13 @@
                             <td>
                                 @if ($item->sku)<code class="small">{{ $item->sku }}</code><br>@endif
                                 <strong>{{ $item->title }}</strong>
+                                @if ($item->brand || $item->vendor)
+                                    <br><span class="small text-muted">
+                                        @if ($item->brand){{ $item->brand }}@endif
+                                        @if ($item->brand && $item->vendor) · @endif
+                                        @if ($item->vendor){{ $item->vendor }}@endif
+                                    </span>
+                                @endif
                             </td>
                             <td>{{ money($item->price) }}</td>
                             <td>{{ $item->category_name ?: '—' }}</td>

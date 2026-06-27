@@ -108,6 +108,13 @@
                                         @if ($item->sku)
                                             <code class="small">{{ $item->sku }}</code>
                                         @endif
+                                        @if ($item->brand || $item->vendor)
+                                            <p class="small text-muted mb-1">
+                                                @if ($item->brand)<span>{{ $item->brand }}</span>@endif
+                                                @if ($item->brand && $item->vendor)<span> · </span>@endif
+                                                @if ($item->vendor)<span>{{ $item->vendor }}</span>@endif
+                                            </p>
+                                        @endif
                                         <p class="small text-muted mb-1">{{ money($item->price) }}</p>
                                         <a href="{{ route('admin.content.show', $item) }}" class="btn btn-xs btn-outline-primary btn-block">Open</a>
                                     </div>

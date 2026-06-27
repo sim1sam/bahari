@@ -17,7 +17,7 @@ class ApiReceivedItem extends Model
 
     protected $fillable = [
         'api_source_id', 'source_id', 'sku', 'slug', 'title', 'price', 'original_price',
-        'image', 'processed_image', 'images', 'description', 'category_name',
+        'image', 'processed_image', 'images', 'description', 'category_name', 'brand', 'vendor',
         'sizes', 'colors', 'badge', 'badge_variant', 'rating',
         'payload', 'status', 'product_id', 'reviewed_by', 'reviewed_at', 'admin_notes',
     ];

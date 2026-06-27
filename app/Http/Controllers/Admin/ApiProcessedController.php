@@ -7,6 +7,7 @@ use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\ApiProductImportService;
+use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,7 @@ class ApiProcessedController extends Controller
         ]);
     }
 
-    public function show(ApiReceivedItem $item, ApiReceivedPriceService $prices): View|RedirectResponse
+    public function show(ApiReceivedItem $item, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata): View|RedirectResponse
     {
         if ((float) $item->price <= 0) {
             try {
@@ -58,6 +59,15 @@ class ApiProcessedController extends Controller
                 $item->refresh();
             } catch (\Throwable) {
                 // Price sync should not block viewing the item.
+            }
+        }
+
+        if (! $item->brand || ! $item->vendor) {
+            try {
+                $metadata->syncItem($item);
+                $item->refresh();
+            } catch (\Throwable) {
+                // Metadata sync should not block viewing the item.
             }
         }
 
@@ -98,6 +108,8 @@ class ApiProcessedController extends Controller
             'original_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:5000',
             'category_name' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:100',
+            'vendor' => 'nullable|string|max:100',
             'sizes' => 'nullable|string|max:255',
             'colors' => 'nullable|string|max:255',
             'badge' => 'nullable|string|max:30',
@@ -113,6 +125,8 @@ class ApiProcessedController extends Controller
             'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
             'description' => $validated['description'] ?? null,
             'category_name' => $validated['category_name'] ?? null,
+            'brand' => filled($validated['brand'] ?? null) ? $validated['brand'] : null,
+            'vendor' => filled($validated['vendor'] ?? null) ? $validated['vendor'] : null,
             'sizes' => $this->listFromString($validated['sizes'] ?? ''),
             'colors' => $this->listFromString($validated['colors'] ?? ''),
             'badge' => filled($validated['badge'] ?? null) ? $validated['badge'] : null,

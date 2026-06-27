@@ -60,6 +60,20 @@
                                 @endforeach
                             </datalist>
                         </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Brand</label>
+                                    <input type="text" name="brand" class="form-control" value="{{ old('brand', $item->brand) }}">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Vendor</label>
+                                    <input type="text" name="vendor" class="form-control" value="{{ old('vendor', $item->vendor) }}">
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>Description</label>
                             <textarea name="description" class="form-control" rows="3">{{ old('description', $item->description) }}</textarea>

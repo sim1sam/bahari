@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\SiteSetting;
 use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
+use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
@@ -42,10 +43,19 @@ class ApiContentController extends Controller
         ]);
     }
 
-    public function show(ApiReceivedItem $item): View|RedirectResponse
+    public function show(ApiReceivedItem $item, ApiReceivedMetadataService $metadata): View|RedirectResponse
     {
         if (! $item->isPending()) {
             return redirect()->route('admin.processed.show', $item);
+        }
+
+        if (! $item->brand || ! $item->vendor) {
+            try {
+                $metadata->syncItem($item);
+                $item->refresh();
+            } catch (\Throwable) {
+                // Metadata sync should not block viewing the item.
+            }
         }
 
         $item->load('source');
@@ -67,11 +77,12 @@ class ApiContentController extends Controller
         return back()->with('success', 'Logo uploaded. Select images and click Process.');
     }
 
-    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices): RedirectResponse
+    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata): RedirectResponse
     {
         $fixed = 0;
         $failed = 0;
         $pricesSynced = 0;
+        $metadataSynced = 0;
 
         $items = ApiReceivedItem::with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_PENDING)
@@ -97,17 +108,24 @@ class ApiContentController extends Controller
             if ($prices->syncItem($item)) {
                 $pricesSynced++;
             }
+
+            if ($metadata->syncItem($item)) {
+                $metadataSynced++;
+            }
         }
 
         $message = "{$fixed} image(s) re-downloaded.";
         if ($pricesSynced > 0) {
             $message .= " {$pricesSynced} price(s) synced from API payload.";
         }
+        if ($metadataSynced > 0) {
+            $message .= " {$metadataSynced} brand/vendor field(s) synced from API payload.";
+        }
         if ($failed > 0) {
             $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
         }
 
-        return back()->with($fixed > 0 || $pricesSynced > 0 ? 'success' : 'warning', $message);
+        return back()->with($fixed > 0 || $pricesSynced > 0 || $metadataSynced > 0 ? 'success' : 'warning', $message);
     }
 
     public function update(Request $request, ApiReceivedItem $item): RedirectResponse
@@ -124,6 +142,8 @@ class ApiContentController extends Controller
             'original_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:5000',
             'category_name' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:100',
+            'vendor' => 'nullable|string|max:100',
             'sizes' => 'nullable|string|max:255',
             'colors' => 'nullable|string|max:255',
             'badge' => 'nullable|string|max:30',
@@ -139,6 +159,8 @@ class ApiContentController extends Controller
             'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
             'description' => $validated['description'] ?? null,
             'category_name' => $validated['category_name'] ?? null,
+            'brand' => filled($validated['brand'] ?? null) ? $validated['brand'] : null,
+            'vendor' => filled($validated['vendor'] ?? null) ? $validated['vendor'] : null,
             'sizes' => $this->listFromString($validated['sizes'] ?? ''),
             'colors' => $this->listFromString($validated['colors'] ?? ''),
             'badge' => filled($validated['badge'] ?? null) ? $validated['badge'] : null,

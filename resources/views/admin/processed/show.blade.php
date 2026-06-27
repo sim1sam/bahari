@@ -61,6 +61,8 @@
                     <div class="card-body">
                         <p><strong>Title:</strong> {{ $item->title }}</p>
                         <p><strong>SKU:</strong> {{ $item->sku ?: '—' }}</p>
+                        <p><strong>Brand:</strong> {{ $item->brand ?: '—' }}</p>
+                        <p><strong>Vendor:</strong> {{ $item->vendor ?: '—' }}</p>
                         <p><strong>Price:</strong> {{ money($item->price) }}</p>
                         <p><strong>Category:</strong> {{ $item->product?->category?->name ?? $item->category_name ?: '—' }}</p>
                         <p><strong>Sizes:</strong> {{ implode(', ', $item->sizes ?? []) ?: '—' }}</p>

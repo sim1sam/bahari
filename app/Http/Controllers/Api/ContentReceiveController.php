@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Services\ApiReceivedImageService;
+use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,6 +39,13 @@ class ContentReceiveController extends Controller
             'description' => 'nullable|string|max:5000',
             'category' => 'nullable|string|max:100',
             'category_name' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:100',
+            'brand_name' => 'nullable|string|max:100',
+            'vendor' => 'nullable|string|max:100',
+            'vendor_name' => 'nullable|string|max:100',
+            'seller' => 'nullable|string|max:100',
+            'shop' => 'nullable|string|max:100',
+            'store' => 'nullable|string|max:100',
             'sizes' => 'nullable',
             'colors' => 'nullable',
             'badge' => 'nullable|string|max:30',
@@ -70,6 +78,13 @@ class ContentReceiveController extends Controller
             'description' => 'nullable|string|max:5000',
             'category' => 'nullable|string|max:100',
             'category_name' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:100',
+            'brand_name' => 'nullable|string|max:100',
+            'vendor' => 'nullable|string|max:100',
+            'vendor_name' => 'nullable|string|max:100',
+            'seller' => 'nullable|string|max:100',
+            'shop' => 'nullable|string|max:100',
+            'store' => 'nullable|string|max:100',
             'sizes' => 'nullable',
             'colors' => 'nullable',
             'badge' => 'nullable|string|max:30',
@@ -148,6 +163,7 @@ class ContentReceiveController extends Controller
         $title = $data['title'] ?? $data['name'] ?? null;
         $imageData = $images->ingestFromItemData($data, $sourceBaseUrl);
         $priceData = $prices->extract($data);
+        $metadata = app(ApiReceivedMetadataService::class)->extract($data);
 
         return [
             'source_id' => $data['source_id'] ?? null,
@@ -160,6 +176,8 @@ class ContentReceiveController extends Controller
             'images' => $imageData['images'],
             'description' => $data['description'] ?? null,
             'category_name' => $data['category_name'] ?? $data['category'] ?? null,
+            'brand' => $metadata['brand'],
+            'vendor' => $metadata['vendor'],
             'sizes' => $this->normalizeSizes($data),
             'colors' => $this->normalizeColors($data),
             'badge' => $data['badge'] ?? null,
