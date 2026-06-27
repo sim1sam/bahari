@@ -13,6 +13,7 @@ use App\Services\ApiReceivedPriceService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -40,6 +41,9 @@ class ApiContentController extends Controller
             'dateTo' => $request->query('date_to'),
             'pendingCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PENDING)->count(),
             'logoUrl' => $this->settings->apiLogoUrl(),
+            'logoScale' => Schema::hasColumn((new SiteSetting)->getTable(), 'api_logo_scale')
+                ? (SiteSetting::current()->api_logo_scale ?: 28)
+                : 28,
         ]);
     }
 
@@ -64,6 +68,9 @@ class ApiContentController extends Controller
             'item' => $item,
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->get(),
             'logoUrl' => $this->settings->apiLogoUrl(),
+            'logoScale' => Schema::hasColumn((new SiteSetting)->getTable(), 'api_logo_scale')
+                ? (SiteSetting::current()->api_logo_scale ?: 28)
+                : 28,
         ]);
     }
 
@@ -75,6 +82,20 @@ class ApiContentController extends Controller
         $this->settings->clearCache();
 
         return back()->with('success', 'Logo uploaded. Select images and click Process.');
+    }
+
+    public function updateLogoScale(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'api_logo_scale' => 'required|integer|min:10|max:50',
+        ]);
+
+        $settings = SiteSetting::current();
+        $settings->api_logo_scale = (int) $validated['api_logo_scale'];
+        $settings->save();
+        $this->settings->clearCache();
+
+        return back()->with('success', 'Logo size updated to '.$settings->api_logo_scale.'% of image width.');
     }
 
     public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata): RedirectResponse
@@ -209,10 +230,7 @@ class ApiContentController extends Controller
             return back()->with('error', $e->getMessage() ?: 'Failed to apply logo to this image.');
         }
 
-        $item->update([
-            'processed_image' => $processedPath,
-            'status' => ApiReceivedItem::STATUS_PROCESSED,
-        ]);
+        $images->recordProcessedImage($item, $processedPath, $imagePath);
 
         return redirect()
             ->route('admin.processed.show', $item)
@@ -272,10 +290,7 @@ class ApiContentController extends Controller
                 $images->persistLocalImage($item, $imagePath);
 
                 $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
-                $item->update([
-                    'processed_image' => $processedPath,
-                    'status' => ApiReceivedItem::STATUS_PROCESSED,
-                ]);
+                $images->recordProcessedImage($item, $processedPath, $imagePath);
                 $processed++;
             } catch (\Throwable) {
                 $failed++;

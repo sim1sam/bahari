@@ -105,6 +105,36 @@ class ApiReceivedImageService
         }
     }
 
+    public function recordProcessedImage(ApiReceivedItem $item, string $processedPath, ?string $sourcePath = null): void
+    {
+        $sourcePath = $this->media->storedPath($sourcePath ?? $item->image) ?? $sourcePath ?? $item->image;
+        $gallery = array_values(array_unique(array_filter([
+            $sourcePath,
+            $processedPath,
+        ])));
+
+        $attributes = [
+            'processed_image' => $processedPath,
+            'image' => $processedPath,
+            'images' => $gallery,
+            'status' => ApiReceivedItem::STATUS_PROCESSED,
+        ];
+
+        if (ApiReceivedItem::hasProcessedImageBlobColumn()) {
+            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($processedPath);
+
+            if (is_readable($fullPath)) {
+                $binary = file_get_contents($fullPath);
+
+                if ($binary !== false && $binary !== '') {
+                    $attributes['processed_image_blob'] = base64_encode($binary);
+                }
+            }
+        }
+
+        $item->forceFill($attributes)->save();
+    }
+
     /** @return array<int, string> */
     private function collectImageCandidates(array $data): array
     {

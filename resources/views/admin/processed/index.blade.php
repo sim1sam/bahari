@@ -26,6 +26,30 @@
         @csrf
     </form>
 
+    <form id="download-form" action="{{ route('admin.processed.download-images') }}" method="POST" class="d-none">
+        @csrf
+        <input type="hidden" name="layout" id="download-layout" value="brand">
+    </form>
+
+    <div class="card card-outline card-secondary mb-3">
+        <div class="card-body py-3">
+            <form action="{{ route('admin.processed.index') }}" method="GET" class="form-inline flex-wrap">
+                <label class="mr-2 mb-2 mb-md-0 text-muted small">Filter:</label>
+                <select name="brand" class="form-control form-control-sm mr-2 mb-2 mb-md-0" style="min-width:180px">
+                    <option value="">All brands</option>
+                    @foreach ($brands as $brandOption)
+                        <option value="{{ $brandOption }}" @selected($brand === $brandOption)>{{ $brandOption }}</option>
+                    @endforeach
+                </select>
+                <input type="date" name="date" class="form-control form-control-sm mr-2 mb-2 mb-md-0" value="{{ $date }}" aria-label="Processed date">
+                <button type="submit" class="btn btn-sm btn-outline-secondary mr-2 mb-2 mb-md-0">Apply</button>
+                @if ($brand || $date)
+                    <a href="{{ route('admin.processed.index') }}" class="btn btn-sm btn-link mb-2 mb-md-0">Clear</a>
+                @endif
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <h3 class="card-title mb-0">Processed Products</h3>
@@ -39,10 +63,16 @@
                 <label class="mb-0 mr-3">
                     <input type="checkbox" id="select-all"> Select all
                 </label>
-                <button type="button" class="btn btn-danger btn-sm mr-1" id="btn-delete-selected" disabled>
+                <button type="button" class="btn btn-outline-primary btn-sm mr-1 mb-2 mb-md-0" id="btn-download-flat" disabled>
+                    <i class="fas fa-download"></i> Download Selected
+                </button>
+                <button type="button" class="btn btn-primary btn-sm mr-1 mb-2 mb-md-0" id="btn-download-brand" disabled>
+                    <i class="fas fa-file-archive"></i> ZIP by Brand
+                </button>
+                <button type="button" class="btn btn-danger btn-sm mr-1 mb-2 mb-md-0" id="btn-delete-selected" disabled>
                     <i class="fas fa-trash"></i> Delete Selected
                 </button>
-                <button type="button" class="btn btn-success btn-sm" id="btn-live-selected" disabled>
+                <button type="button" class="btn btn-success btn-sm mb-2 mb-md-0" id="btn-live-selected" disabled>
                     <i class="fas fa-globe"></i> Go Live (Selected)
                 </button>
             </div>
@@ -54,6 +84,7 @@
                         <th width="40"></th>
                         <th>Image</th>
                         <th>Product</th>
+                        <th>Brand</th>
                         <th>Price</th>
                         <th>Category</th>
                         <th>Processed</th>
@@ -72,18 +103,18 @@
                             <td>
                                 @if ($item->sku)<code class="small">{{ $item->sku }}</code><br>@endif
                                 <strong>{{ $item->title }}</strong>
-                                @if ($item->brand || $item->vendor)
-                                    <br><span class="small text-muted">
-                                        @if ($item->brand){{ $item->brand }}@endif
-                                        @if ($item->brand && $item->vendor) · @endif
-                                        @if ($item->vendor){{ $item->vendor }}@endif
-                                    </span>
+                                @if ($item->vendor)
+                                    <br><span class="small text-muted">{{ $item->vendor }}</span>
                                 @endif
                             </td>
+                            <td>{{ $item->brand ?: '—' }}</td>
                             <td>{{ money($item->price) }}</td>
                             <td>{{ $item->category_name ?: '—' }}</td>
                             <td class="text-nowrap small text-muted">{{ $item->updated_at->format('M d, Y H:i') }}</td>
                             <td class="text-nowrap">
+                                <a href="{{ route('admin.processed.download-image', $item) }}" class="btn btn-xs btn-outline-secondary" title="Download image">
+                                    <i class="fas fa-download"></i>
+                                </a>
                                 <a href="{{ route('admin.processed.show', $item) }}" class="btn btn-xs btn-primary">Review</a>
                                 <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" class="d-inline live-item-form" onsubmit="return submitLiveItem(this)">
                                     @csrf
@@ -99,7 +130,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-5">
+                            <td colspan="8" class="text-center text-muted py-5">
                                 No processed items yet. Process images from the <a href="{{ route('admin.content.index') }}">Content</a> menu.
                             </td>
                         </tr>
@@ -120,8 +151,12 @@
     var selectAll = document.getElementById('select-all');
     var liveBtn = document.getElementById('btn-live-selected');
     var deleteBtn = document.getElementById('btn-delete-selected');
+    var downloadFlatBtn = document.getElementById('btn-download-flat');
+    var downloadBrandBtn = document.getElementById('btn-download-brand');
     var liveForm = document.getElementById('batch-form');
     var deleteForm = document.getElementById('delete-batch-form');
+    var downloadForm = document.getElementById('download-form');
+    var downloadLayout = document.getElementById('download-layout');
     var categorySelect = document.getElementById('live-category-id');
 
     function selectedCategoryId() {
@@ -140,10 +175,36 @@
         return confirm('Publish this product in the selected category?');
     };
 
+    function selectedChecks() {
+        return Array.from(checks).filter(function (c) { return c.checked; });
+    }
+
     function updateBtns() {
-        var any = Array.from(checks).some(function (c) { return c.checked; });
+        var any = selectedChecks().length > 0;
         if (liveBtn) liveBtn.disabled = !any;
         if (deleteBtn) deleteBtn.disabled = !any;
+        if (downloadFlatBtn) downloadFlatBtn.disabled = !any;
+        if (downloadBrandBtn) downloadBrandBtn.disabled = !any;
+    }
+
+    function submitDownload(layout) {
+        var selected = selectedChecks();
+        if (!selected.length) {
+            alert('Please select at least one processed item.');
+            return;
+        }
+
+        downloadForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
+        selected.forEach(function (c) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'items[]';
+            input.value = c.value;
+            downloadForm.appendChild(input);
+        });
+
+        if (downloadLayout) downloadLayout.value = layout;
+        downloadForm.submit();
     }
 
     checks.forEach(function (c) { c.addEventListener('change', updateBtns); });
@@ -151,6 +212,16 @@
         selectAll.addEventListener('change', function () {
             checks.forEach(function (c) { c.checked = selectAll.checked; });
             updateBtns();
+        });
+    }
+    if (downloadFlatBtn) {
+        downloadFlatBtn.addEventListener('click', function () {
+            submitDownload('flat');
+        });
+    }
+    if (downloadBrandBtn) {
+        downloadBrandBtn.addEventListener('click', function () {
+            submitDownload('brand');
         });
     }
     if (liveBtn && liveForm) {
@@ -166,14 +237,12 @@
             }
             liveForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
             liveForm.querySelectorAll('input[name="category_id"]').forEach(function (el) { el.remove(); });
-            checks.forEach(function (c) {
-                if (c.checked) {
-                    var itemInput = document.createElement('input');
-                    itemInput.type = 'hidden';
-                    itemInput.name = 'items[]';
-                    itemInput.value = c.value;
-                    liveForm.appendChild(itemInput);
-                }
+            selectedChecks().forEach(function (c) {
+                var itemInput = document.createElement('input');
+                itemInput.type = 'hidden';
+                itemInput.name = 'items[]';
+                itemInput.value = c.value;
+                liveForm.appendChild(itemInput);
             });
             var input = document.createElement('input');
             input.type = 'hidden';
@@ -189,14 +258,12 @@
                 return;
             }
             deleteForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
-            checks.forEach(function (c) {
-                if (c.checked) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'items[]';
-                    input.value = c.value;
-                    deleteForm.appendChild(input);
-                }
+            selectedChecks().forEach(function (c) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'items[]';
+                input.value = c.value;
+                deleteForm.appendChild(input);
             });
             deleteForm.submit();
         });

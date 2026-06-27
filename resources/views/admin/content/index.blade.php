@@ -48,11 +48,21 @@
                     @endif
                 </div>
                 <div class="col-md-5 mb-3 mb-md-0">
-                    <form action="{{ route('admin.content.logo') }}" method="POST" enctype="multipart/form-data" class="form-inline">
+                    <form action="{{ route('admin.content.logo') }}" method="POST" enctype="multipart/form-data" class="form-inline mb-2">
                         @csrf
                         <input type="file" name="logo" class="form-control-file mr-2" accept="image/*" required>
                         <button type="submit" class="btn btn-secondary btn-sm">Upload Logo</button>
                     </form>
+                    <form action="{{ route('admin.content.logo-scale') }}" method="POST" class="form-inline align-items-center">
+                        @csrf
+                        @method('PUT')
+                        <label class="small text-muted mr-2 mb-0">Logo size on image</label>
+                        <input type="number" name="api_logo_scale" class="form-control form-control-sm mr-1" style="width:72px"
+                            min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" required>
+                        <span class="small text-muted mr-2">%</span>
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Save Size</button>
+                    </form>
+                    <small class="text-muted d-block mt-1">Default is 28% of image width (was 18%). Increase before processing.</small>
                 </div>
                 <div class="col-md-4 text-md-right">
                     <button type="button" class="btn btn-primary" id="btn-process-selected" disabled>

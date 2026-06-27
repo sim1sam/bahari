@@ -109,11 +109,17 @@ class ContentReceiveController extends Controller
                 : null;
 
             if ($existing) {
-                $existing->update(ApiReceivedItem::withoutMissingBrandVendorColumns(array_merge($normalized, [
+                $resetAttributes = [
                     'payload' => $itemData,
                     'status' => ApiReceivedItem::STATUS_PENDING,
                     'processed_image' => null,
-                ])));
+                ];
+
+                if (ApiReceivedItem::hasProcessedImageBlobColumn()) {
+                    $resetAttributes['processed_image_blob'] = null;
+                }
+
+                $existing->update(ApiReceivedItem::withoutMissingBrandVendorColumns(array_merge($normalized, $resetAttributes)));
                 $received = $existing;
                 $updated[] = $received->id;
             } else {

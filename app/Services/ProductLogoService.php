@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SiteSetting;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -58,7 +59,8 @@ class ProductLogoService
         $logoW = imagesx($logo);
         $logoH = imagesy($logo);
 
-        $targetLogoW = max(40, (int) round($baseW * 0.18));
+        $scalePercent = $this->logoScalePercent();
+        $targetLogoW = max(48, (int) round($baseW * ($scalePercent / 100)));
         $scale = $targetLogoW / $logoW;
         $targetLogoH = max(1, (int) round($logoH * $scale));
 
@@ -110,6 +112,17 @@ class ProductLogoService
         $settings->save();
 
         return $path;
+    }
+
+    private function logoScalePercent(): int
+    {
+        $default = 28;
+
+        if (! Schema::hasColumn((new SiteSetting)->getTable(), 'api_logo_scale')) {
+            return $default;
+        }
+
+        return max(10, min(50, (int) (SiteSetting::current()->api_logo_scale ?: $default)));
     }
 
     private function resolveLocalPath(string $path): ?string

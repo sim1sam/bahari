@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ApiContentController;
 use App\Http\Controllers\Admin\ApiProcessedController;
+use App\Http\Controllers\Admin\ApiReceivedImageController;
 use App\Http\Controllers\Admin\ApiSettingsController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -98,6 +99,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:api_content')->group(function () {
             Route::get('content', [ApiContentController::class, 'index'])->name('content.index');
             Route::post('content/logo', [ApiContentController::class, 'uploadLogo'])->name('content.logo');
+            Route::put('content/logo-scale', [ApiContentController::class, 'updateLogoScale'])->name('content.logo-scale');
             Route::post('content/repair-images', [ApiContentController::class, 'repairImages'])->name('content.repair-images');
             Route::post('content/process-batch', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
             Route::get('content/{item}', [ApiContentController::class, 'show'])->name('content.show');
@@ -111,8 +113,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('processed/live/all', [ApiProcessedController::class, 'liveIndex'])->name('processed.live');
             Route::delete('processed/live/{item}', [ApiProcessedController::class, 'destroyLive'])->name('processed.destroy-live');
             Route::post('processed/live-batch', [ApiProcessedController::class, 'liveBatch'])->name('processed.live-batch');
+            Route::post('processed/download-images', [ApiProcessedController::class, 'downloadImages'])->name('processed.download-images');
+            Route::get('received-images/{item}/processed', [ApiReceivedImageController::class, 'processed'])->name('received-images.processed');
             Route::delete('processed/batch', [ApiProcessedController::class, 'destroyBatch'])->name('processed.destroy-batch');
             Route::post('processed/purge-manual-products', [ApiProcessedController::class, 'purgeManualProducts'])->name('processed.purge-manual-products');
+            Route::get('processed/{item}/download-image', [ApiProcessedController::class, 'downloadImage'])->name('processed.download-image');
             Route::get('processed/{item}', [ApiProcessedController::class, 'show'])->name('processed.show');
             Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->name('processed.update');
             Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->name('processed.live-item');

@@ -10,15 +10,19 @@ use App\Services\ApiProductImportService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use App\Services\MediaStorageService;
+use App\Services\ProcessedImageDownloadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ApiProcessedController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = ApiReceivedItem::with(['source', 'product'])
+        $query = ApiReceivedItem::queryForLists()
+            ->with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_PROCESSED)
             ->latest();
 
@@ -26,9 +30,15 @@ class ApiProcessedController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
+        if ($request->filled('brand')) {
+            $this->applyBrandFilter($query, $request->string('brand')->toString());
+        }
+
         return view('admin.processed.index', [
             'items' => $query->paginate(20)->withQueryString(),
             'date' => $request->query('date'),
+            'brand' => $request->query('brand'),
+            'brands' => $this->processedBrands(),
             'processedCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)->count(),
             'liveCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_IMPORTED)->count(),
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->get(),
@@ -37,7 +47,8 @@ class ApiProcessedController extends Controller
 
     public function liveIndex(Request $request): View
     {
-        $query = ApiReceivedItem::with(['source', 'product'])
+        $query = ApiReceivedItem::queryForLists()
+            ->with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_IMPORTED)
             ->latest();
 
@@ -282,6 +293,82 @@ class ApiProcessedController extends Controller
         return redirect()
             ->route('admin.processed.index')
             ->with('success', "{$deleted} old product(s) removed. Only API processed products will show on the storefront.");
+    }
+
+    public function downloadImage(ApiReceivedItem $item, ProcessedImageDownloadService $downloader): BinaryFileResponse|RedirectResponse
+    {
+        if (! $item->isProcessed() && ! $item->isImported()) {
+            abort(404);
+        }
+
+        $resolved = $downloader->resolveDownloadablePath($item);
+
+        if (! $resolved) {
+            return back()->with('error', 'Image file not found for this item.');
+        }
+
+        return response()
+            ->download($resolved['path'], $downloader->downloadFilename($item))
+            ->deleteFileAfterSend($resolved['temporary']);
+    }
+
+    public function downloadImages(Request $request, ProcessedImageDownloadService $downloader): BinaryFileResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*' => 'integer|exists:api_received_items,id',
+            'layout' => 'required|in:flat,brand',
+        ]);
+
+        $items = ApiReceivedItem::query()
+            ->whereIn('id', $validated['items'])
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->get();
+
+        if ($items->isEmpty()) {
+            return back()->with('error', 'No processed items found for download.');
+        }
+
+        if ($items->count() === 1 && $validated['layout'] === 'flat') {
+            return $this->downloadImage($items->first(), $downloader);
+        }
+
+        try {
+            $zipPath = $downloader->createZip($items, $validated['layout']);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage() ?: 'Could not prepare download archive.');
+        }
+
+        $suffix = $validated['layout'] === 'brand' ? 'by-brand' : 'selected';
+
+        return response()
+            ->download($zipPath, 'processed-images-'.$suffix.'-'.now()->format('Y-m-d-His').'.zip')
+            ->deleteFileAfterSend(true);
+    }
+
+    private function applyBrandFilter($query, string $brand): void
+    {
+        $query->where(function ($brandQuery) use ($brand) {
+            if (ApiReceivedItem::hasBrandVendorColumns()) {
+                $brandQuery->where('brand', $brand);
+            }
+
+            $brandQuery->orWhere('payload->brand_name', $brand)
+                ->orWhere('payload->brand', $brand);
+        });
+    }
+
+    /** @return Collection<int, string> */
+    private function processedBrands(): Collection
+    {
+        return ApiReceivedItem::query()
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->get(['id', 'brand', 'payload'])
+            ->map(fn (ApiReceivedItem $item) => $item->brand)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
     }
 
     private function deleteProcessedItem(ApiReceivedItem $item, MediaStorageService $media): void

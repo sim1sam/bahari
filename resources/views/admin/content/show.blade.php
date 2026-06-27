@@ -103,8 +103,11 @@
                 <div class="card-header"><h3 class="card-title">Process with Logo</h3></div>
                 <div class="card-body">
                     @if ($logoUrl)
-                        <p class="small text-muted mb-2">Logo:</p>
+                        <p class="small text-muted mb-2">Logo ({{ $logoScale }}% of image width):</p>
                         <img src="{{ $logoUrl }}" alt="Logo" class="img-thumbnail mb-3" style="max-height:48px">
+                        <p class="small text-muted mb-0">
+                            <a href="{{ route('admin.content.index') }}">Change logo size</a> on the Content page before processing.
+                        </p>
                     @else
                         <p class="text-warning">Upload logo on Content page first.</p>
                     @endif

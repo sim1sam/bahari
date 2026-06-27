@@ -6301,6 +6301,7 @@ namespace App\Models {
 	 *
 	 * @property \Illuminate\Support\Carbon|null $updated_at
 	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property integer $api_logo_scale
 	 * @property string|null $api_logo
 	 * @property boolean $api_auto_publish
 	 * @property string|null $api_webhook_url
@@ -6393,6 +6394,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereApiWebhookUrl($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereApiAutoPublish($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereApiLogo($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereApiLogoScale($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereCreatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting newModelQuery()

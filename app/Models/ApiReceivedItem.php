@@ -50,6 +50,36 @@ class ApiReceivedItem extends Model
         return $hasColumns ??= Schema::hasColumn((new self)->getTable(), 'brand');
     }
 
+    public static function hasProcessedImageBlobColumn(): bool
+    {
+        static $hasColumn = null;
+
+        return $hasColumn ??= Schema::hasColumn((new self)->getTable(), 'processed_image_blob');
+    }
+
+    /** @return array<int, string> */
+    public static function listSelectColumns(): array
+    {
+        static $columns = null;
+
+        if ($columns !== null) {
+            return $columns;
+        }
+
+        $columns = Schema::getColumnListing((new self)->getTable());
+
+        if (self::hasProcessedImageBlobColumn()) {
+            $columns = array_values(array_diff($columns, ['processed_image_blob']));
+        }
+
+        return $columns;
+    }
+
+    public static function queryForLists()
+    {
+        return static::query()->select(self::listSelectColumns());
+    }
+
     /** @param array<string, mixed> $attributes */
     public static function withoutMissingBrandVendorColumns(array $attributes): array
     {
@@ -147,7 +177,15 @@ class ApiReceivedItem extends Model
 
     public function processedImageUrl(): ?string
     {
-        return $this->resolveMediaUrl($this->processed_image);
+        if ($url = $this->resolveMediaUrl($this->processed_image)) {
+            return $url;
+        }
+
+        if ($this->processed_image && self::hasProcessedImageBlobColumn()) {
+            return route('admin.received-images.processed', $this);
+        }
+
+        return null;
     }
 
     public function displayImageUrl(): ?string
