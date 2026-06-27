@@ -109,19 +109,19 @@ class ContentReceiveController extends Controller
                 : null;
 
             if ($existing) {
-                $existing->update(array_merge($normalized, [
+                $existing->update(ApiReceivedItem::withoutMissingBrandVendorColumns(array_merge($normalized, [
                     'payload' => $itemData,
                     'status' => ApiReceivedItem::STATUS_PENDING,
                     'processed_image' => null,
-                ]));
+                ])));
                 $received = $existing;
                 $updated[] = $received->id;
             } else {
-                $received = ApiReceivedItem::create(array_merge($normalized, [
+                $received = ApiReceivedItem::create(ApiReceivedItem::withoutMissingBrandVendorColumns(array_merge($normalized, [
                     'api_source_id' => $source->id,
                     'payload' => $itemData,
                     'status' => ApiReceivedItem::STATUS_PENDING,
-                ]));
+                ])));
                 $created[] = $received->id;
             }
         }

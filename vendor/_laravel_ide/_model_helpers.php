@@ -31,6 +31,8 @@ namespace App\Models {
 	 * @property string|null $source_id
 	 * @property int|null $api_source_id
 	 * @property int $id
+	 * @property-read mixed $brand
+	 * @property-read mixed $vendor
 	 * @property-read \App\Models\ApiSource $source
 	 * @property-read \App\Models\Product $product
 	 * @property-read \App\Models\User $reviewer
@@ -6328,6 +6330,12 @@ namespace App\Models {
 	 * @property string|null $contact_phone
 	 * @property string|null $contact_email
 	 * @property string|null $footer_description
+	 * @property mixed $sslcommerz_store_password
+	 * @property string|null $sslcommerz_store_id
+	 * @property boolean $sslcommerz_sandbox
+	 * @property boolean $sslcommerz_enabled
+	 * @property boolean $gtm_enabled
+	 * @property string|null $gtm_container_id
 	 * @property string|null $og_image
 	 * @property string|null $og_description
 	 * @property string|null $og_title
@@ -6350,6 +6358,12 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereOgTitle($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereOgDescription($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereOgImage($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereGtmContainerId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereGtmEnabled($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereSslcommerzEnabled($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereSslcommerzSandbox($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereSslcommerzStoreId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereSslcommerzStorePassword($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereFooterDescription($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereContactEmail($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<SiteSetting>|SiteSetting whereContactPhone($value)

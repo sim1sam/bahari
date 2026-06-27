@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\ApiReceivedMetadataService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class ApiReceivedItem extends Model
 {
@@ -39,6 +41,43 @@ class ApiReceivedItem extends Model
     public function payloadData(): array
     {
         return is_array($this->payload) ? $this->payload : [];
+    }
+
+    public static function hasBrandVendorColumns(): bool
+    {
+        static $hasColumns = null;
+
+        return $hasColumns ??= Schema::hasColumn((new self)->getTable(), 'brand');
+    }
+
+    /** @param array<string, mixed> $attributes */
+    public static function withoutMissingBrandVendorColumns(array $attributes): array
+    {
+        if (self::hasBrandVendorColumns()) {
+            return $attributes;
+        }
+
+        unset($attributes['brand'], $attributes['vendor']);
+
+        return $attributes;
+    }
+
+    public function getBrandAttribute(?string $value): ?string
+    {
+        if (filled($value)) {
+            return $value;
+        }
+
+        return app(ApiReceivedMetadataService::class)->extract($this->payloadData())['brand'];
+    }
+
+    public function getVendorAttribute(?string $value): ?string
+    {
+        if (filled($value)) {
+            return $value;
+        }
+
+        return app(ApiReceivedMetadataService::class)->extract($this->payloadData())['vendor'];
     }
 
     public function source(): BelongsTo

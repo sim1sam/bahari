@@ -23,6 +23,10 @@ class ApiReceivedMetadataService
 
     public function syncItem(ApiReceivedItem $item): bool
     {
+        if (! ApiReceivedItem::hasBrandVendorColumns()) {
+            return false;
+        }
+
         $payload = $item->payloadData();
 
         if ($payload === []) {
@@ -30,13 +34,14 @@ class ApiReceivedMetadataService
         }
 
         $metadata = $this->extract($payload);
+        $stored = $item->getAttributes();
         $updates = [];
 
-        if ($metadata['brand'] !== null && $item->brand !== $metadata['brand']) {
+        if ($metadata['brand'] !== null && ($stored['brand'] ?? null) !== $metadata['brand']) {
             $updates['brand'] = $metadata['brand'];
         }
 
-        if ($metadata['vendor'] !== null && $item->vendor !== $metadata['vendor']) {
+        if ($metadata['vendor'] !== null && ($stored['vendor'] ?? null) !== $metadata['vendor']) {
             $updates['vendor'] = $metadata['vendor'];
         }
 

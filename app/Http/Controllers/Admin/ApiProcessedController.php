@@ -62,7 +62,7 @@ class ApiProcessedController extends Controller
             }
         }
 
-        if (! $item->brand || ! $item->vendor) {
+        if (ApiReceivedItem::hasBrandVendorColumns()) {
             try {
                 $metadata->syncItem($item);
                 $item->refresh();
@@ -117,7 +117,7 @@ class ApiProcessedController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
 
-        $item->update([
+        $item->update(ApiReceivedItem::withoutMissingBrandVendorColumns([
             'title' => $validated['title'],
             'sku' => $validated['sku'] ?? null,
             'slug' => $validated['slug'] ?? null,
@@ -132,7 +132,7 @@ class ApiProcessedController extends Controller
             'badge' => filled($validated['badge'] ?? null) ? $validated['badge'] : null,
             'badge_variant' => filled($validated['badge_variant'] ?? null) ? $validated['badge_variant'] : null,
             'rating' => filled($validated['rating'] ?? null) ? $validated['rating'] : null,
-        ]);
+        ]));
 
         $item->loadMissing('product');
 
