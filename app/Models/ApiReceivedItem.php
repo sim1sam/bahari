@@ -177,15 +177,7 @@ class ApiReceivedItem extends Model
 
     public function processedImageUrl(): ?string
     {
-        if ($url = $this->resolveMediaUrl($this->processed_image)) {
-            return $url;
-        }
-
-        if ($this->processed_image && self::hasProcessedImageBlobColumn()) {
-            return route('admin.received-images.processed', $this);
-        }
-
-        return null;
+        return $this->resolveMediaUrl($this->processed_image);
     }
 
     public function displayImageUrl(): ?string

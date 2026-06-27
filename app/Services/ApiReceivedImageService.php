@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ApiReceivedItem;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ApiReceivedImageService
 {
@@ -98,16 +100,36 @@ class ApiReceivedImageService
         return null;
     }
 
-    public function persistLocalImage(ApiReceivedItem $item, string $localPath): void
+    public function persistLocalImage(ApiReceivedItem $item, string $localPath): string
     {
-        if ($item->image !== $localPath) {
-            $item->update(['image' => $localPath]);
+        $storedPath = $this->ensurePublicStoragePath($localPath, 'api-received', $item->image);
+
+        if (! $storedPath) {
+            throw new \RuntimeException('Could not store product image on disk.');
         }
+
+        $gallery = array_values(array_unique(array_filter(array_merge(
+            $item->images ?? [],
+            [$storedPath]
+        ))));
+
+        $item->update([
+            'image' => $storedPath,
+            'images' => $gallery,
+        ]);
+
+        return $storedPath;
     }
 
     public function recordProcessedImage(ApiReceivedItem $item, string $processedPath, ?string $sourcePath = null): void
     {
-        $sourcePath = $this->media->storedPath($sourcePath ?? $item->image) ?? $sourcePath ?? $item->image;
+        $processedPath = $this->media->storedPath($processedPath) ?? $processedPath;
+
+        if (! Storage::disk('public')->exists($processedPath)) {
+            throw new \RuntimeException('Processed image file was not saved to storage.');
+        }
+
+        $sourcePath = $this->media->storedPath($sourcePath ?? $item->image) ?? $sourcePath;
         $gallery = array_values(array_unique(array_filter([
             $sourcePath,
             $processedPath,
@@ -121,18 +143,49 @@ class ApiReceivedImageService
         ];
 
         if (ApiReceivedItem::hasProcessedImageBlobColumn()) {
-            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($processedPath);
+            $attributes['processed_image_blob'] = null;
+        }
 
-            if (is_readable($fullPath)) {
-                $binary = file_get_contents($fullPath);
+        $item->update($attributes);
+    }
 
-                if ($binary !== false && $binary !== '') {
-                    $attributes['processed_image_blob'] = base64_encode($binary);
-                }
+    private function ensurePublicStoragePath(string $path, string $directory, ?string $current = null): ?string
+    {
+        $path = trim($path);
+
+        if ($path === '') {
+            return null;
+        }
+
+        $stored = $this->media->storedPath($path);
+
+        if ($stored && Storage::disk('public')->exists($stored)) {
+            return $stored;
+        }
+
+        if ($this->media->isExternal($path)) {
+            try {
+                return $this->media->storeFromUrl($path, $directory, $current);
+            } catch (\Throwable) {
+                return null;
             }
         }
 
-        $item->forceFill($attributes)->save();
+        if (is_file($path) && is_readable($path)) {
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg');
+            $extension = in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)
+                ? ($extension === 'jpeg' ? 'jpg' : $extension)
+                : 'jpg';
+            $destination = trim($directory, '/').'/'.Str::uuid().'.'.$extension;
+
+            Storage::disk('public')->makeDirectory($directory);
+
+            if (Storage::disk('public')->put($destination, file_get_contents($path))) {
+                return $destination;
+            }
+        }
+
+        return $stored;
     }
 
     /** @return array<int, string> */

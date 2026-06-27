@@ -95,9 +95,9 @@ class ProductLogoService
 
         imagedestroy($base);
 
-        if (! $saved) {
+        if (! $saved || ! Storage::disk('public')->exists($outputPath)) {
             throw ValidationException::withMessages([
-                'image' => 'Failed to save processed image.',
+                'image' => 'Failed to save processed image to storage.',
             ]);
         }
 

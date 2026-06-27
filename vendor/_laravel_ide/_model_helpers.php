@@ -21,6 +21,7 @@ namespace App\Models {
 	 * @property string|null $category_name
 	 * @property string|null $description
 	 * @property array|null $images
+	 * @property string|null $processed_image_blob
 	 * @property string|null $processed_image
 	 * @property string|null $image
 	 * @property float|null $original_price
@@ -46,6 +47,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereOriginalPrice($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereImage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereProcessedImage($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereProcessedImageBlob($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereImages($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereDescription($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereCategoryName($value)

@@ -220,17 +220,16 @@ class ApiContentController extends Controller
             return back()->with('error', 'Could not load product image. Set sender Site URL in API Settings, then click Re-download Images.');
         }
 
-        $images->persistLocalImage($item, $imagePath);
-
         try {
-            $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
+            $storedPath = $images->persistLocalImage($item, $imagePath);
+            $processedPath = $logoService->applyLogoToReceivedItem($storedPath);
         } catch (ValidationException $e) {
             return back()->with('error', collect($e->errors())->flatten()->first() ?: 'Failed to apply logo.');
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage() ?: 'Failed to apply logo to this image.');
         }
 
-        $images->recordProcessedImage($item, $processedPath, $imagePath);
+        $images->recordProcessedImage($item, $processedPath, $storedPath);
 
         return redirect()
             ->route('admin.processed.show', $item)
@@ -287,11 +286,14 @@ class ApiContentController extends Controller
                     continue;
                 }
 
-                $images->persistLocalImage($item, $imagePath);
-
-                $processedPath = $logoService->applyLogoToReceivedItem($imagePath);
-                $images->recordProcessedImage($item, $processedPath, $imagePath);
-                $processed++;
+                try {
+                    $storedPath = $images->persistLocalImage($item, $imagePath);
+                    $processedPath = $logoService->applyLogoToReceivedItem($storedPath);
+                    $images->recordProcessedImage($item, $processedPath, $storedPath);
+                    $processed++;
+                } catch (\Throwable) {
+                    $failed++;
+                }
             } catch (\Throwable) {
                 $failed++;
             }

@@ -39,28 +39,6 @@ class ProcessedImageDownloadService
             ];
         }
 
-        if ($item->processed_image && ApiReceivedItem::hasProcessedImageBlobColumn()) {
-            $blob = ApiReceivedItem::query()
-                ->whereKey($item->id)
-                ->value('processed_image_blob');
-
-            if (is_string($blob) && $blob !== '') {
-                $binary = base64_decode($blob, true);
-
-                if ($binary !== false && $binary !== '') {
-                    $extension = strtolower(pathinfo((string) $relative, PATHINFO_EXTENSION) ?: 'jpg');
-                    $temporary = tempnam(sys_get_temp_dir(), 'proc_blob_').'.'.$extension;
-
-                    if (file_put_contents($temporary, $binary) !== false) {
-                        return [
-                            'path' => $temporary,
-                            'temporary' => true,
-                        ];
-                    }
-                }
-            }
-        }
-
         $url = $item->displayImageUrl();
 
         if (! $url || ! $this->media->isExternal($url)) {
