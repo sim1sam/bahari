@@ -16,8 +16,8 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: flex-start;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 0;
             padding: 0 0.85rem;
             height: 3.5rem;
             min-height: 3.5rem;
@@ -37,7 +37,7 @@
             display: block;
             flex: 0 0 auto;
             max-height: 2rem;
-            max-width: 4.5rem;
+            max-width: 100%;
             width: auto;
             height: auto;
             object-fit: contain;
@@ -55,18 +55,6 @@
             color: #fff;
             font-size: 0.85rem;
             font-weight: 700;
-        }
-
-        .admin-sidebar-brand-text {
-            display: block;
-            flex: 1 1 auto;
-            min-width: 0;
-            max-width: 100%;
-            font-size: 0.82rem;
-            line-height: 1.2;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .layout-fixed .main-header {
@@ -117,14 +105,6 @@
             width: 1.75rem;
             height: 1.75rem;
             font-size: 0.75rem;
-        }
-
-        .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-brand-text {
-            display: none;
-        }
-
-        .sidebar-mini.sidebar-collapse .main-sidebar:hover .admin-sidebar-brand-text {
-            display: block;
         }
 
         @media (max-width: 991.98px) {
