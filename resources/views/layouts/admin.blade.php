@@ -19,7 +19,7 @@
             justify-content: center;
             gap: 0.35rem;
             padding: 0.85rem 0.75rem;
-            min-height: 4.5rem;
+            min-height: 5.75rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
             line-height: 1.2;
             white-space: normal;
@@ -33,8 +33,8 @@
 
         .admin-sidebar-logo {
             display: block;
-            max-height: 3.25rem;
-            max-width: calc(100% - 0.5rem);
+            max-height: 4.75rem;
+            max-width: calc(100% - 0.25rem);
             width: auto;
             height: auto;
             object-fit: contain;
@@ -44,12 +44,12 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
             border-radius: 50%;
             background: #17a2b8;
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1.35rem;
             font-weight: 700;
         }
 
@@ -66,13 +66,13 @@
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .brand-link.admin-brand-link {
-            min-height: 3.5rem;
+            min-height: 4rem;
             padding: 0.65rem 0.35rem;
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-logo {
-            max-height: 2rem;
-            max-width: 2.5rem;
+            max-height: 2.75rem;
+            max-width: 3.25rem;
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-brand-text {

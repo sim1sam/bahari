@@ -13,8 +13,8 @@
 
     $sizes = [
         'sm' => ['box' => 'w-8 h-8 text-sm rounded-lg', 'img' => 'h-8', 'text' => 'text-base'],
-        'md' => ['box' => 'w-9 h-9 text-lg rounded-lg', 'img' => 'h-9', 'text' => 'text-xl'],
-        'lg' => ['box' => 'w-11 h-11 text-xl rounded-xl', 'img' => 'h-11', 'text' => 'text-2xl'],
+        'md' => ['box' => 'w-12 h-12 text-lg rounded-lg', 'img' => 'h-12', 'text' => 'text-xl'],
+        'lg' => ['box' => 'w-14 h-14 text-xl rounded-xl', 'img' => 'h-14', 'text' => 'text-2xl'],
         'admin' => ['box' => 'w-[33px] h-[33px] text-sm rounded-circle', 'img' => 'h-[33px]', 'text' => ''],
     ];
     $s = $sizes[$size] ?? $sizes['md'];

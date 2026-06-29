@@ -68,8 +68,8 @@
         }
 
         .brand-logo-icon {
-            width: 44px;
-            height: 44px;
+            width: 56px;
+            height: 56px;
             border-radius: 12px;
             background: rgba(255,255,255,.18);
             backdrop-filter: blur(8px);
@@ -154,8 +154,8 @@
         }
 
         .mobile-logo-icon {
-            width: 38px;
-            height: 38px;
+            width: 48px;
+            height: 48px;
             border-radius: 10px;
             background: #ecfeff;
             color: #0891b2;
@@ -330,7 +330,7 @@
         <div class="brand-content">
             <div class="brand-logo">
                 @if ($site->logoUrl())
-                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:44px;width:auto;border-radius:12px">
+                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:56px;width:auto;border-radius:12px">
                 @else
                     <span class="brand-logo-icon">{{ $site->logoInitial() }}</span>
                     {{ $site->siteName() }}
@@ -361,7 +361,7 @@
         <div class="login-form-wrap">
             <div class="mobile-logo">
                 @if ($site->logoUrl())
-                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:36px;width:auto">
+                    <img src="{{ $site->logoUrl() }}" alt="{{ $site->siteName() }}" style="height:48px;width:auto">
                 @else
                     <span class="mobile-logo-icon"><i class="fas fa-store"></i></span>
                     {{ $site->siteName() }} Admin
