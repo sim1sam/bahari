@@ -103,7 +103,7 @@ Http::acceptJson()
         'Authorization' => 'Bearer PASTE_ACCESS_TOKEN_HERE',
     ])
     ->post('https://MAIN-SITE-DOMAIN.com/api/orders/status-update', [
-        'order_number' => 'LW-12345678',
+        'order_number' => 'BF-12345678',
         'status' => 'shipped', // pending, processing, shipped, completed, cancelled
         'payment_status' => 'paid', // optional: pending, paid, partial, due
         'amount_paid' => 2200, // optional

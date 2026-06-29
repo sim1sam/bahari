@@ -192,7 +192,7 @@ $response = Http::acceptJson()
         'Authorization' => 'Bearer YOUR_ACCESS_TOKEN',
     ])
     ->post('https://your-main-site.com/api/orders/status-update', [
-        'order_number' => 'LW-12345678',
+        'order_number' => 'BF-12345678',
         'status' => 'shipped', // pending, processing, shipped, completed, cancelled
         'payment_status' => 'paid', // optional: pending, paid, partial, due
         'amount_paid' => 2200, // optional

@@ -30,9 +30,6 @@
                 <p class="dash-hero-text">Track sales, manage catalog, and stay on top of new orders for {{ $site->siteName() }}.</p>
             </div>
             <div class="dash-hero-actions">
-                <a href="{{ route('home') }}" target="_blank" class="btn btn-light btn-sm">
-                    <i class="fas fa-external-link-alt mr-1"></i> View Store
-                </a>
                 @if (auth()->user()->canAccessAdminFeature('orders'))
                     <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-shopping-bag mr-1"></i> All Orders

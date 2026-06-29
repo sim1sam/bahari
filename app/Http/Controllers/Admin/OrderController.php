@@ -9,6 +9,7 @@ use App\Models\OrderPayment;
 use App\Models\User;
 use App\Services\MediaStorageService;
 use App\Services\OrderTransferService;
+use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    public function __construct(private SiteSettingsService $siteSettings) {}
+
     public function index(): View
     {
         return view('admin.orders.index', [
@@ -73,7 +76,7 @@ class OrderController extends Controller
             'payments.*.notes' => 'nullable|string|max:500',
         ]);
 
-        $orderNumber = 'LW-'.strtoupper(substr(uniqid(), -8));
+        $orderNumber = $this->siteSettings->generateOrderNumber();
 
         $order = DB::transaction(function () use ($request, $media, $validated, $orderNumber) {
             $screenshotPath = null;

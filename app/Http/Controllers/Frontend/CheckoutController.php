@@ -159,7 +159,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $orderNumber = 'LW-'.strtoupper(substr(uniqid(), -8));
+        $orderNumber = $this->siteSettings->generateOrderNumber();
         $items = array_values($this->cart->items());
         $subtotal = $this->cart->subtotal();
         $shipping = $this->cart->shipping();

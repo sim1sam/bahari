@@ -145,6 +145,33 @@ class SiteSettingsService
         return strtoupper(substr($this->siteName(), 0, 1));
     }
 
+    public function orderNumberPrefix(): string
+    {
+        $skip = ['by', 'the', 'and', 'of', '&'];
+        $words = array_values(array_filter(
+            preg_split('/\s+/', trim($this->siteName())) ?: [],
+            fn (string $word) => ! in_array(strtolower($word), $skip, true)
+        ));
+
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+        }
+
+        $compactName = preg_replace('/\s+/', '', $this->siteName()) ?: 'BF';
+
+        return strtoupper(substr($compactName, 0, 2));
+    }
+
+    public function generateOrderNumber(bool $custom = false): string
+    {
+        $prefix = $this->orderNumberPrefix();
+        $suffix = strtoupper(substr(uniqid(), $custom ? -7 : -8));
+
+        return $custom
+            ? "{$prefix}-C{$suffix}"
+            : "{$prefix}-{$suffix}";
+    }
+
     public function gtmContainerId(): ?string
     {
         $id = strtoupper(trim((string) ($this->get()->gtm_container_id ?? '')));

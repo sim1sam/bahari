@@ -60,6 +60,22 @@
             line-height: 1.25;
         }
 
+        .admin-header-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.3;
+            max-width: min(52vw, 28rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .content-header {
+            display: none;
+        }
+
         .sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link.admin-brand-link,
         .sidebar-mini .main-sidebar .brand-link.admin-brand-link {
             justify-content: center;
@@ -93,12 +109,9 @@
                 font-size: 0.85rem;
             }
 
-            body.admin-mobile-app .content-header {
-                padding: 0.75rem 0.5rem 0;
-            }
-
-            body.admin-mobile-app .content-header h1 {
-                font-size: 1.35rem;
+            body.admin-mobile-app .admin-header-title {
+                font-size: 1.05rem;
+                max-width: min(42vw, 16rem);
             }
 
             body.admin-mobile-app .content {
@@ -289,12 +302,12 @@
 <body class="hold-transition sidebar-mini layout-fixed admin-mobile-app">
 <div class="wrapper">
     <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom-0">
-        <ul class="navbar-nav">
+        <ul class="navbar-nav align-items-center">
             <li class="nav-item">
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
             </li>
-            <li class="nav-item d-none d-lg-inline-block">
-                <a href="{{ route('home') }}" target="_blank" class="nav-link">View Store</a>
+            <li class="nav-item pl-2">
+                <h1 class="admin-header-title">@yield('page_title', 'Dashboard')</h1>
             </li>
         </ul>
         <ul class="navbar-nav ml-auto">
@@ -359,17 +372,7 @@
     </aside>
 
     <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0">@yield('page_title', 'Dashboard')</h1>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="content">
+        <section class="content pt-3">
             <div class="container-fluid">
                 @yield('content')
             </div>

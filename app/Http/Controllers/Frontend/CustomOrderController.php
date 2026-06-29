@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentTransaction;
 use App\Services\MediaStorageService;
+use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,10 @@ use Illuminate\View\View;
 
 class CustomOrderController extends Controller
 {
-    public function __construct(private MediaStorageService $media) {}
+    public function __construct(
+        private MediaStorageService $media,
+        private SiteSettingsService $siteSettings,
+    ) {}
 
     public function create(): View
     {
@@ -84,7 +88,7 @@ class CustomOrderController extends Controller
         }
 
         $user = auth()->user();
-        $orderNumber = 'LW-C'.strtoupper(substr(uniqid(), -7));
+        $orderNumber = $this->siteSettings->generateOrderNumber(custom: true);
         $bankLabel = $validated['payment_mode'] === 'manual'
             ? (config('payment.banks')[$validated['bank_name']] ?? $validated['bank_name'])
             : null;

@@ -146,10 +146,6 @@
                         </div>
                     @endforeach
                     <div class="admin-more-grid">
-                        <a href="{{ route('home') }}" target="_blank" class="admin-more-item">
-                            <span class="admin-more-item-icon"><i class="fas fa-store"></i></span>
-                            <span>View Store</span>
-                        </a>
                         <form action="{{ route('admin.logout') }}" method="POST" class="admin-more-item admin-more-item--button">
                             @csrf
                             <button type="submit" class="admin-more-logout-btn">
