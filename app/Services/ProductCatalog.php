@@ -54,12 +54,47 @@ class ProductCatalog
         return array_slice($products, 0, $limit);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function search(string $query, ?int $limit = null): array
+    {
+        $query = trim($query);
+
+        if ($query === '' || ! $this->usesStorefrontProducts()) {
+            return [];
+        }
+
+        $term = '%'.addcslashes($query, '%_\\').'%';
+
+        $builder = $this->storefrontQuery()
+            ->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('description', 'like', $term)
+                    ->orWhereHas('category', function ($category) use ($term) {
+                        $category->where('name', 'like', $term);
+                    });
+            })
+            ->orderBy('name');
+
+        if ($limit !== null) {
+            $builder->limit($limit);
+        }
+
+        return $builder
+            ->get()
+            ->map(fn ($product) => $this->toCard($product->toCatalogArray()))
+            ->values()
+            ->all();
+    }
+
     public function toCard(array $product): array
     {
         return [
             'slug' => $product['slug'],
             'name' => $product['name'],
             'price' => $product['price'],
+            'price_formatted' => money($product['price']),
             'original_price' => $product['original_price'] ?? null,
             'image' => $product['image'],
             'badge' => $product['badge'] ?? null,
