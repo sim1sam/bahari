@@ -65,6 +65,31 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product removed from storefront.');
     }
 
+    public function destroyBatch(Request $request, ApiProductImportService $importer): RedirectResponse
+    {
+        $validated = $request->validate([
+            'products' => 'required|array|min:1',
+            'products.*' => 'integer|exists:products,id',
+        ]);
+
+        $deleted = 0;
+
+        foreach ($validated['products'] as $id) {
+            $product = Product::query()->liveFromApi()->find($id);
+
+            if (! $product) {
+                continue;
+            }
+
+            $importer->unpublish($product);
+            $deleted++;
+        }
+
+        return redirect()
+            ->route('admin.products.index')
+            ->with('success', "{$deleted} product(s) removed from storefront.");
+    }
+
     private function validateProduct(Request $request, ?Product $product = null): array
     {
         $validated = $request->validate([

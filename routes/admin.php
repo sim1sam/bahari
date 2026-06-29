@@ -52,6 +52,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::middleware('admin.feature:products')->group(function () {
+            Route::delete('products/batch', [ProductController::class, 'destroyBatch'])->name('products.destroy-batch');
             Route::resource('products', ProductController::class)->except(['show']);
         });
 
