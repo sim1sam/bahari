@@ -27,6 +27,23 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <strong>Product could not be saved. Please fix:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if ($categories->isEmpty())
+            <div class="alert alert-warning">
+                No active categories found. <a href="{{ route('admin.categories.create') }}">Create a category</a> before adding products.
+            </div>
+        @endif
+
         <div class="card card-outline card-primary">
             <div class="card-header"><h3 class="card-title mb-0">Basic Information</h3></div>
             <div class="card-body">
@@ -34,7 +51,8 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Name *</label>
-                            <input type="text" name="name" id="product-name" class="form-control" value="{{ old('name', $product->name) }}" {{ $isApiProduct ? 'readonly' : 'required' }}>
+                            <input type="text" name="name" id="product-name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product->name) }}" {{ $isApiProduct ? 'readonly' : 'required' }}>
+                            @error('name')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -44,11 +62,12 @@
                                 type="text"
                                 name="slug"
                                 id="product-slug"
-                                class="form-control"
+                                class="form-control @error('slug') is-invalid @enderror"
                                 value="{{ old('slug', $product->slug) }}"
                                 {{ $isApiProduct ? 'readonly' : 'readonly' }}
                                 placeholder="Auto-generated from name"
                             >
+                            @error('slug')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                             @unless ($isApiProduct)
                                 <small class="form-text text-muted">Generated from the product name. Click the field to edit manually.</small>
                             @endunless
@@ -63,12 +82,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Category *</label>
-                            <select name="category_id" class="form-control" required>
+                            <select name="category_id" class="form-control @error('category_id') is-invalid @enderror" required @disabled($categories->isEmpty())>
                                 <option value="">— Select category —</option>
                                 @foreach ($categories as $cat)
                                     <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id) == $cat->id)>{{ $cat->name }}</option>
                                 @endforeach
                             </select>
+                            @error('category_id')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         </div>
                     </div>
                 </div>
@@ -88,19 +108,22 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Sale Price *</label>
-                            <input type="number" step="0.01" name="price" class="form-control" value="{{ old('price', $product->price) }}" required>
+                            <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price', $product->price) }}" required>
+                            @error('price')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Original / Discount Price</label>
-                            <input type="number" step="0.01" name="original_price" class="form-control" value="{{ old('original_price', $product->original_price) }}" placeholder="Shown crossed-out">
+                            <input type="number" step="0.01" name="original_price" class="form-control @error('original_price') is-invalid @enderror" value="{{ old('original_price', $product->original_price) }}" placeholder="Shown crossed-out">
+                            @error('original_price')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Stock Qty *</label>
-                            <input type="number" min="0" name="stock" class="form-control" value="{{ old('stock', $product->stock ?? 0) }}" required>
+                            <input type="number" min="0" name="stock" class="form-control @error('stock') is-invalid @enderror" value="{{ old('stock', $product->stock ?? 0) }}" required>
+                            @error('stock')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         </div>
                     </div>
                 </div>
@@ -141,8 +164,10 @@
                                         <label class="custom-control-label" for="remove_thumbnail">Remove current thumbnail</label>
                                     </div>
                                 @endif
-                                <input type="file" name="thumbnail" class="form-control-file mb-2" accept="image/*">
-                                <input type="url" name="thumbnail_url" class="form-control" placeholder="Or paste thumbnail URL" value="{{ old('thumbnail_url') }}">
+                                <input type="file" name="thumbnail" class="form-control-file mb-2 @error('thumbnail') is-invalid @enderror" accept="image/*">
+                                @error('thumbnail')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                                <input type="url" name="thumbnail_url" class="form-control @error('thumbnail_url') is-invalid @enderror" placeholder="Or paste thumbnail URL" value="{{ old('thumbnail_url') }}">
+                                @error('thumbnail_url')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -161,9 +186,13 @@
                                         @endforeach
                                     </div>
                                 @endif
-                                <input type="file" name="gallery[]" class="form-control-file mb-2" accept="image/*" multiple>
-                                <input type="url" name="gallery_urls[]" class="form-control mb-2" placeholder="Gallery image URL">
-                                <input type="url" name="gallery_urls[]" class="form-control" placeholder="Another gallery image URL">
+                                <input type="file" name="gallery[]" class="form-control-file mb-2 @error('gallery') is-invalid @enderror @error('gallery.*') is-invalid @enderror" accept="image/*" multiple>
+                                @error('gallery')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                                @error('gallery.*')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                                <input type="url" name="gallery_urls[]" class="form-control mb-2 @error('gallery_urls.*') is-invalid @enderror" placeholder="Gallery image URL" value="{{ old('gallery_urls.0') }}">
+                                @error('gallery_urls.0')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                                <input type="url" name="gallery_urls[]" class="form-control @error('gallery_urls.1') is-invalid @enderror" placeholder="Another gallery image URL" value="{{ old('gallery_urls.1') }}">
+                                @error('gallery_urls.1')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                             </div>
                         </div>
                     </div>
@@ -283,6 +312,14 @@
 
                 if (isNew) {
                     syncSlugFromName();
+                }
+
+                var form = nameInput.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function () {
+                        slugInput.readOnly = false;
+                        syncSlugFromName();
+                    });
                 }
             })();
         </script>

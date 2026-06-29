@@ -10,6 +10,7 @@ use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -42,8 +43,19 @@ class ProductController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $product = Product::create($this->validateProduct($request));
-        $product->update($this->syncImages($request, $product));
+        try {
+            $validated = $this->validateProduct($request);
+            $product = Product::create($validated);
+            $product->update($this->syncImages($request, $product));
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Product could not be created: '.$e->getMessage());
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Product created and published on storefront.');
     }
@@ -69,8 +81,18 @@ class ProductController extends Controller
             return redirect()->route('admin.products.index')->with('success', 'API product updated.');
         }
 
-        $product->update($this->validateProduct($request, $product));
-        $product->update($this->syncImages($request, $product));
+        try {
+            $product->update($this->validateProduct($request, $product));
+            $product->update($this->syncImages($request, $product));
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Product could not be updated: '.$e->getMessage());
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated.');
     }
@@ -122,7 +144,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
-            'slug' => 'nullable|string|max:100|unique:products,slug,'.($product?->id ?? 'NULL'),
+            'slug' => 'nullable|string|max:100',
             'name' => 'required|string|max:200',
             'brand' => 'nullable|string|max:120',
             'purchase_price' => 'nullable|numeric|min:0',
@@ -136,9 +158,29 @@ class ProductController extends Controller
             'badge' => 'nullable|string|max:30',
             'badge_variant' => 'nullable|string|max:30',
             'rating' => 'nullable|numeric|min:0|max:5',
+            'thumbnail' => 'nullable|image|max:5120',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'nullable|image|max:5120',
+            'thumbnail_url' => 'nullable|url|max:2048',
+            'gallery_urls' => 'nullable|array',
+            'gallery_urls.*' => 'nullable|url|max:2048',
             'is_featured' => 'boolean',
             'is_new_arrival' => 'boolean',
             'is_active' => 'boolean',
+        ], [
+            'category_id.required' => 'Please select a category.',
+            'category_id.exists' => 'The selected category is invalid.',
+            'name.required' => 'Product name is required.',
+            'price.required' => 'Sale price is required.',
+            'price.numeric' => 'Sale price must be a valid number.',
+            'original_price.gte' => 'Original / discount price must be equal to or higher than the sale price.',
+            'stock.required' => 'Stock quantity is required.',
+            'thumbnail.image' => 'Thumbnail must be an image file (jpg, png, webp, etc.).',
+            'thumbnail.max' => 'Thumbnail must be smaller than 5 MB.',
+            'gallery.*.image' => 'Each gallery file must be an image.',
+            'gallery.*.max' => 'Each gallery image must be smaller than 5 MB.',
+            'thumbnail_url.url' => 'Thumbnail URL must be a valid link.',
+            'gallery_urls.*.url' => 'Each gallery URL must be a valid link.',
         ]);
 
         $validated['sizes'] = $this->toArray($validated['sizes'] ?? '');
@@ -157,12 +199,33 @@ class ProductController extends Controller
             $validated['slug'] = 'product-'.Str::random(8);
         }
 
+        $validated['slug'] = $this->ensureUniqueSlug($validated['slug'], $product?->id);
+
         if (empty($validated['badge']) && ! empty($validated['original_price']) && $validated['original_price'] > $validated['price']) {
             $validated['badge'] = 'Sale';
             $validated['badge_variant'] = 'sale';
         }
 
+        unset($validated['thumbnail'], $validated['gallery'], $validated['thumbnail_url'], $validated['gallery_urls']);
+
         return $validated;
+    }
+
+    private function ensureUniqueSlug(string $slug, ?int $exceptId = null): string
+    {
+        $base = Str::slug($slug) ?: 'product';
+        $candidate = $base;
+        $suffix = 1;
+
+        while (Product::query()
+            ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
+            ->where('slug', $candidate)
+            ->exists()) {
+            $candidate = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 
     private function validateApiProduct(Request $request, Product $product): array

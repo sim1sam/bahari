@@ -1,4 +1,4 @@
-@if (session('success') || session('error'))
+@if (session('success') || session('error') || $errors->any())
     <script>
         (function () {
             function showFlashAlerts() {
@@ -25,6 +25,24 @@
                         icon: 'error',
                         title: 'Error',
                         text: @json(session('error')),
+                        position: 'center',
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#dc3545',
+                        allowOutsideClick: true,
+                        heightAuto: false,
+                    });
+                @endif
+
+                @if ($errors->any())
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Could not save',
+                        html: '<ul style="text-align:left;margin:0;padding-left:1.25rem;">' +
+                            @json($errors->all()).map(function (message) {
+                                return '<li>' + message + '</li>';
+                            }).join('') +
+                            '</ul>',
                         position: 'center',
                         showConfirmButton: true,
                         confirmButtonText: 'OK',
