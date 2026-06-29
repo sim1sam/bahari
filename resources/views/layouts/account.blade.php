@@ -14,6 +14,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <x-site.theme-styles />
     <x-site.google-tag-manager location="head" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     @stack('styles')
 </head>
 <body class="account-app min-h-screen bg-surface text-ink antialiased">
@@ -40,6 +41,7 @@
 
     <x-account.mobile-tab-bar />
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('scripts')
 </body>
 </html>

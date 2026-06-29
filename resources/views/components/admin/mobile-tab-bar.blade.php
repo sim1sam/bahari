@@ -3,6 +3,7 @@
 
     $user = auth()->user();
     $features = AdminFeatures::all();
+    $navigation = AdminFeatures::navigationFor($user);
 
     $primaryKeys = ['dashboard', 'orders', 'products', 'customers'];
     $tabs = [];
@@ -28,7 +29,7 @@
         ];
     }
 
-    $moreItems = [];
+    $moreSections = [];
     $onPrimaryTab = collect($primaryKeys)->contains(function ($key) use ($features, $user) {
         if (! isset($features[$key]) || ! $user->canAccessAdminFeature($key)) {
             return false;
@@ -37,25 +38,51 @@
         return request()->routeIs($features[$key]['active']);
     });
 
-    foreach ($features as $key => $feature) {
-        if (! $user->canAccessAdminFeature($key)) {
+    foreach ($navigation as $nav) {
+        if ($nav['type'] === 'item') {
+            if (in_array($nav['key'], $primaryKeys, true)) {
+                continue;
+            }
+
+            $moreSections[] = [
+                'label' => null,
+                'items' => [[
+                    'key' => $nav['key'],
+                    'label' => $nav['feature']['label'],
+                    'icon' => $nav['feature']['icon'],
+                    'route' => $nav['feature']['route'],
+                    'active' => AdminFeatures::isNavigationItemActive($nav['feature']),
+                ]],
+            ];
+
             continue;
         }
 
-        if (in_array($key, $primaryKeys, true)) {
-            continue;
+        $sectionItems = [];
+
+        foreach ($nav['items'] as $item) {
+            if (in_array($item['key'], $primaryKeys, true)) {
+                continue;
+            }
+
+            $sectionItems[] = [
+                'key' => $item['key'],
+                'label' => $item['feature']['label'],
+                'icon' => $item['feature']['icon'],
+                'route' => $item['feature']['route'],
+                'active' => AdminFeatures::isNavigationItemActive($item['feature']),
+            ];
         }
 
-        $moreItems[] = [
-            'key' => $key,
-            'label' => $feature['label'],
-            'icon' => $feature['icon'],
-            'route' => $feature['route'],
-            'active' => request()->routeIs($feature['active']),
-        ];
+        if ($sectionItems !== []) {
+            $moreSections[] = [
+                'label' => $nav['label'],
+                'items' => $sectionItems,
+            ];
+        }
     }
 
-    $showMore = count($moreItems) > 0;
+    $showMore = collect($moreSections)->flatMap(fn ($section) => $section['items'])->isNotEmpty();
     $pendingOrders = $user->canAccessAdminFeature('orders')
         ? \App\Models\Order::where('status', 'pending')->count()
         : 0;
@@ -105,13 +132,20 @@
                     </button>
                 </div>
                 <div class="modal-body pt-2">
+                    @foreach ($moreSections as $section)
+                        @if ($section['label'])
+                            <h6 class="admin-more-section-title text-muted text-uppercase small font-weight-bold mb-2 mt-3">{{ $section['label'] }}</h6>
+                        @endif
+                        <div class="admin-more-grid {{ $section['label'] ? 'mb-2' : '' }}">
+                            @foreach ($section['items'] as $item)
+                                <a href="{{ route($item['route']) }}" class="admin-more-item {{ $item['active'] ? 'is-active' : '' }}">
+                                    <span class="admin-more-item-icon"><i class="{{ $item['icon'] }}"></i></span>
+                                    <span>{{ $item['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endforeach
                     <div class="admin-more-grid">
-                        @foreach ($moreItems as $item)
-                            <a href="{{ route($item['route']) }}" class="admin-more-item {{ $item['active'] ? 'is-active' : '' }}">
-                                <span class="admin-more-item-icon"><i class="{{ $item['icon'] }}"></i></span>
-                                <span>{{ $item['label'] }}</span>
-                            </a>
-                        @endforeach
                         <a href="{{ route('home') }}" target="_blank" class="admin-more-item">
                             <span class="admin-more-item-icon"><i class="fas fa-store"></i></span>
                             <span>View Store</span>

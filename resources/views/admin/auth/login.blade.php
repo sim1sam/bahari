@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -322,6 +323,7 @@
             .login-card { padding: 2.5rem; }
         }
     </style>
+    @stack('styles')
 </head>
 <body>
     <aside class="login-brand">
@@ -371,13 +373,6 @@
                     <h2>Welcome back</h2>
                     <p>Sign in to your admin account</p>
                 </div>
-
-                @if (session('error'))
-                    <div class="alert alert-danger">
-                        <i class="fas fa-circle-exclamation"></i>
-                        {{ session('error') }}
-                    </div>
-                @endif
 
                 <form action="{{ route('admin.login.submit') }}" method="POST">
                     @csrf
@@ -435,5 +430,8 @@
             </div>
         </div>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <x-admin.flash-sweetalert />
+    @stack('scripts')
 </body>
 </html>

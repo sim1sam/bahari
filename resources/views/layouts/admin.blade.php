@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         .main-sidebar .brand-link.admin-brand-link {
             display: flex;
@@ -219,6 +220,10 @@
             gap: 0.75rem;
         }
 
+        .admin-more-section-title:first-child {
+            margin-top: 0 !important;
+        }
+
         .admin-more-item {
             display: flex;
             flex-direction: column;
@@ -314,14 +319,37 @@
         </a>
         <div class="sidebar">
             <nav class="mt-2">
-                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
-                    @foreach (config('admin_features', []) as $key => $feature)
-                        @if (auth()->user()->canAccessAdminFeature($key))
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    @foreach (\App\Support\AdminFeatures::navigationFor(auth()->user()) as $nav)
+                        @if ($nav['type'] === 'item')
+                            @php $feature = $nav['feature']; @endphp
                             <li class="nav-item">
-                                <a href="{{ route($feature['route']) }}" class="nav-link {{ request()->routeIs($feature['active']) ? 'active' : '' }}">
+                                <a href="{{ route($feature['route']) }}" class="nav-link {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
                                     <i class="nav-icon {{ $feature['icon'] }}"></i>
                                     <p>{{ $feature['label'] }}</p>
                                 </a>
+                            </li>
+                        @else
+                            @php $groupActive = \App\Support\AdminFeatures::isNavigationGroupActive($nav['items']); @endphp
+                            <li class="nav-item has-treeview {{ $groupActive ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ $groupActive ? 'active' : '' }}">
+                                    <i class="nav-icon {{ $nav['icon'] }}"></i>
+                                    <p>
+                                        {{ $nav['label'] }}
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @foreach ($nav['items'] as $item)
+                                        @php $feature = $item['feature']; @endphp
+                                        <li class="nav-item">
+                                            <a href="{{ route($feature['route']) }}" class="nav-link {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
+                                                <i class="nav-icon {{ $feature['icon'] }}"></i>
+                                                <p>{{ $feature['label'] }}</p>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
                             </li>
                         @endif
                     @endforeach
@@ -343,18 +371,6 @@
 
         <section class="content">
             <div class="container-fluid">
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        {{ session('success') }}
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        {{ session('error') }}
-                    </div>
-                @endif
                 @yield('content')
             </div>
         </section>
@@ -370,6 +386,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (function () {
     document.querySelectorAll('#adminMoreMenuModal .admin-more-item[href]').forEach(function (link) {
@@ -381,6 +398,7 @@
     });
 })();
 </script>
+<x-admin.flash-sweetalert />
 @stack('scripts')
 </body>
 </html>
