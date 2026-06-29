@@ -129,6 +129,30 @@ class CategoryCatalog
         ];
     }
 
+    /**
+     * @return array<int, array{label: string, href: string, active: bool}>
+     */
+    public function navigationLinks(): array
+    {
+        $links = [
+            [
+                'label' => 'Home',
+                'href' => route('home'),
+                'active' => request()->routeIs('home'),
+            ],
+        ];
+
+        foreach ($this->all() as $category) {
+            $links[] = [
+                'label' => $category['name'],
+                'href' => route('categories.show', $category['slug']),
+                'active' => request()->routeIs('categories.show') && request()->route('slug') === $category['slug'],
+            ];
+        }
+
+        return $links;
+    }
+
     private function categories(): array
     {
         if ($this->usesDatabase()) {

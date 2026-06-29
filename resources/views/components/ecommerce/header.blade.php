@@ -1,11 +1,5 @@
 @php
-    $navLinks = [
-        ['label' => 'Home', 'href' => route('home')],
-        ['label' => 'Dresses', 'href' => route('categories.show', 'dresses')],
-        ['label' => 'Tops', 'href' => route('categories.show', 'tops')],
-        ['label' => 'Party Wear', 'href' => route('categories.show', 'party-wear')],
-        ['label' => 'Sale', 'href' => route('deals')],
-    ];
+    $navLinks = app(\App\Services\CategoryCatalog::class)->navigationLinks();
     $cartService = app(\App\Services\CartService::class);
     $productCatalog = app(\App\Services\ProductCatalog::class);
     $cartItems = collect($cartService->items())->map(function ($item) use ($productCatalog) {
@@ -224,7 +218,7 @@
             @foreach ($navLinks as $link)
                 <a
                     href="{{ $link['href'] }}"
-                    class="text-sm font-medium text-ink-muted hover:text-brand-600 transition-colors {{ request()->routeIs('home') && $link['label'] === 'Home' ? 'text-brand-600' : '' }}"
+                    class="text-sm font-medium transition-colors {{ $link['active'] ? 'text-brand-600' : 'text-ink-muted hover:text-brand-600' }}"
                 >
                     {{ $link['label'] }}
                 </a>
@@ -243,7 +237,7 @@
             @foreach ($navLinks as $link)
                 <a
                     href="{{ $link['href'] }}"
-                    class="px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface hover:text-brand-600 transition-colors"
+                    class="px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $link['active'] ? 'bg-brand-50 text-brand-600' : 'text-ink-muted hover:bg-surface hover:text-brand-600' }}"
                     @click="mobileOpen = false"
                 >
                     {{ $link['label'] }}
