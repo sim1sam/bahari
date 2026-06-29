@@ -14,16 +14,18 @@
     <style>
         .main-sidebar .brand-link.admin-brand-link {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            padding: 0.85rem 0.75rem;
-            min-height: 5.75rem;
+            justify-content: flex-start;
+            gap: 0.5rem;
+            padding: 0 0.85rem;
+            height: 3.5rem;
+            min-height: 3.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
             line-height: 1.2;
-            white-space: normal;
-            text-align: center;
+            white-space: nowrap;
+            text-align: left;
+            overflow: hidden;
         }
 
         .main-sidebar .brand-link.admin-brand-link:hover {
@@ -33,8 +35,9 @@
 
         .admin-sidebar-logo {
             display: block;
-            max-height: 4.75rem;
-            max-width: calc(100% - 0.25rem);
+            flex: 0 0 auto;
+            max-height: 2rem;
+            max-width: 4.5rem;
             width: auto;
             height: auto;
             object-fit: contain;
@@ -42,22 +45,38 @@
 
         .admin-sidebar-logo-fallback {
             display: inline-flex;
+            flex: 0 0 auto;
             align-items: center;
             justify-content: center;
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.45rem;
             background: #17a2b8;
             color: #fff;
-            font-size: 1.35rem;
+            font-size: 0.85rem;
             font-weight: 700;
         }
 
         .admin-sidebar-brand-text {
             display: block;
+            flex: 1 1 auto;
+            min-width: 0;
             max-width: 100%;
-            font-size: 0.95rem;
-            line-height: 1.25;
+            font-size: 0.82rem;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .layout-fixed .main-header {
+            height: 3.5rem;
+        }
+
+        .layout-fixed .main-header .navbar {
+            height: 3.5rem;
+            padding-top: 0;
+            padding-bottom: 0;
         }
 
         .admin-header-title {
@@ -79,20 +98,33 @@
         .sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link.admin-brand-link,
         .sidebar-mini .main-sidebar .brand-link.admin-brand-link {
             justify-content: center;
+            padding: 0 0.5rem;
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .brand-link.admin-brand-link {
-            min-height: 4rem;
-            padding: 0.65rem 0.35rem;
+            height: 3.5rem;
+            min-height: 3.5rem;
+            padding: 0 0.35rem;
+            justify-content: center;
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-logo {
-            max-height: 2.75rem;
-            max-width: 3.25rem;
+            max-height: 1.75rem;
+            max-width: 2.25rem;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-logo-fallback {
+            width: 1.75rem;
+            height: 1.75rem;
+            font-size: 0.75rem;
         }
 
         .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .admin-sidebar-brand-text {
             display: none;
+        }
+
+        .sidebar-mini.sidebar-collapse .main-sidebar:hover .admin-sidebar-brand-text {
+            display: block;
         }
 
         @media (max-width: 991.98px) {
