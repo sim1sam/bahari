@@ -122,7 +122,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
-            'slug' => 'required|string|max:100|unique:products,slug,'.($product?->id ?? 'NULL'),
+            'slug' => 'nullable|string|max:100|unique:products,slug,'.($product?->id ?? 'NULL'),
             'name' => 'required|string|max:200',
             'brand' => 'nullable|string|max:120',
             'purchase_price' => 'nullable|numeric|min:0',
@@ -151,6 +151,10 @@ class ProductController extends Controller
 
         if (empty($validated['slug']) && ! empty($validated['name'])) {
             $validated['slug'] = Str::slug($validated['name']);
+        }
+
+        if (empty($validated['slug'])) {
+            $validated['slug'] = 'product-'.Str::random(8);
         }
 
         if (empty($validated['badge']) && ! empty($validated['original_price']) && $validated['original_price'] > $validated['price']) {

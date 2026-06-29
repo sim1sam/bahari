@@ -34,13 +34,24 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Name *</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $product->name) }}" {{ $isApiProduct ? 'readonly' : 'required' }}>
+                            <input type="text" name="name" id="product-name" class="form-control" value="{{ old('name', $product->name) }}" {{ $isApiProduct ? 'readonly' : 'required' }}>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Slug *</label>
-                            <input type="text" name="slug" class="form-control" value="{{ old('slug', $product->slug) }}" {{ $isApiProduct ? 'readonly' : 'required' }}>
+                            <label>Slug</label>
+                            <input
+                                type="text"
+                                name="slug"
+                                id="product-slug"
+                                class="form-control"
+                                value="{{ old('slug', $product->slug) }}"
+                                {{ $isApiProduct ? 'readonly' : 'readonly' }}
+                                placeholder="Auto-generated from name"
+                            >
+                            @unless ($isApiProduct)
+                                <small class="form-text text-muted">Generated from the product name. Click the field to edit manually.</small>
+                            @endunless
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -233,3 +244,47 @@
         </div>
     </form>
 @endsection
+
+@unless ($isApiProduct ?? false)
+    @push('scripts')
+        <script>
+            (function () {
+                var nameInput = document.getElementById('product-name');
+                var slugInput = document.getElementById('product-slug');
+                if (!nameInput || !slugInput) return;
+
+                var isNew = @json(! $product->exists);
+
+                function slugify(text) {
+                    return text.toString().toLowerCase().trim()
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/[\s_-]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                }
+
+                function syncSlugFromName() {
+                    if (!isNew || slugInput.dataset.manual === '1') {
+                        return;
+                    }
+
+                    slugInput.value = slugify(nameInput.value);
+                }
+
+                nameInput.addEventListener('input', syncSlugFromName);
+
+                slugInput.addEventListener('focus', function () {
+                    slugInput.readOnly = false;
+                });
+
+                slugInput.addEventListener('input', function () {
+                    slugInput.dataset.manual = '1';
+                    slugInput.readOnly = false;
+                });
+
+                if (isNew) {
+                    syncSlugFromName();
+                }
+            })();
+        </script>
+    @endpush
+@endunless
