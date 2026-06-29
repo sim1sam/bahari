@@ -78,11 +78,21 @@ class CartController extends Controller
             $validated['size'] ?? null,
             $validated['color'] ?? null,
         )) {
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'Product not found.'], 404);
+            $product = $this->catalog->find($validated['slug']);
+
+            if ($product && ($product['is_manual'] ?? false) && ! ($product['in_stock'] ?? true)) {
+                $message = 'This product is out of stock.';
+            } elseif ($product && ($product['is_manual'] ?? false)) {
+                $message = 'Not enough stock available.';
+            } else {
+                $message = 'Product not found.';
             }
 
-            return back()->with('error', 'Product not found.');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 404);
+            }
+
+            return back()->with('error', $message);
         }
 
         if ($request->expectsJson()) {

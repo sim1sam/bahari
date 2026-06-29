@@ -1,13 +1,15 @@
 @extends('layouts.admin')
 
-@section('title', 'Live Products')
-@section('page_title', 'Live Products — Storefront')
+@section('title', 'Products')
+@section('page_title', 'Storefront Products')
 
 @section('content')
-    <div class="mb-3">
-        <a href="{{ route('admin.processed.index') }}" class="btn btn-default btn-sm">Processed</a>
-        <a href="{{ route('admin.processed.live') }}" class="btn btn-success btn-sm">Live on Site</a>
-        <a href="{{ route('admin.content.index') }}" class="btn btn-outline-secondary btn-sm">Content</a>
+    <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+        <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Create Product
+        </a>
+        <a href="{{ route('admin.processed.index') }}" class="btn btn-default btn-sm">API Processed</a>
+        <a href="{{ route('admin.content.index') }}" class="btn btn-outline-secondary btn-sm">API Content</a>
     </div>
 
     <form id="delete-batch-form" action="{{ route('admin.products.destroy-batch') }}" method="POST" class="d-none">
@@ -17,7 +19,7 @@
 
     <div class="card">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-            <h3 class="card-title mb-0">Live Products (from API Go Live)</h3>
+            <h3 class="card-title mb-0">All Storefront Products</h3>
             @if ($products->count() > 0)
                 <div class="mt-2 mt-md-0 d-flex flex-wrap align-items-center">
                     <label class="mb-0 mr-3">
@@ -36,9 +38,11 @@
                         <th width="40"></th>
                         <th>Image</th>
                         <th>Name</th>
-                        <th>SKU</th>
+                        <th>Source</th>
+                        <th>Brand</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>Stock</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -54,19 +58,37 @@
                                     <img src="{{ $url }}" alt="" class="img-thumbnail" style="width:50px;height:60px;object-fit:cover">
                                 @endif
                             </td>
-                            <td>{{ $product->name }}</td>
-                            <td><code class="small">{{ $product->apiReceivedItem?->sku ?: '—' }}</code></td>
+                            <td>
+                                <strong>{{ $product->name }}</strong>
+                                <br><code class="small">{{ $product->slug }}</code>
+                            </td>
+                            <td>
+                                @if ($product->isManualProduct())
+                                    <span class="badge badge-primary">Manual</span>
+                                @else
+                                    <span class="badge badge-info">API</span>
+                                @endif
+                            </td>
+                            <td>{{ $product->brand ?: '—' }}</td>
                             <td>{{ $product->category?->name ?? '—' }}</td>
-                            <td>{{ money($product->price) }}</td>
+                            <td>
+                                {{ money($product->price) }}
+                                @if ($product->original_price)
+                                    <br><small class="text-muted"><s>{{ money($product->original_price) }}</s></small>
+                                @endif
+                            </td>
+                            <td>{{ $product->stock }}</td>
                             <td>
                                 <span class="badge badge-{{ $product->is_active ? 'success' : 'secondary' }}">
                                     {{ $product->is_active ? 'Live' : 'Hidden' }}
                                 </span>
                             </td>
                             <td class="text-nowrap">
-                                <a href="{{ route('products.show', $product->slug) }}" class="btn btn-xs btn-success" target="_blank" title="View on storefront">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
+                                @if ($product->is_active)
+                                    <a href="{{ route('products.show', $product->slug) }}" class="btn btn-xs btn-success" target="_blank" title="View on storefront">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                @endif
                                 <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-xs btn-info" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -80,8 +102,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-5">
-                                No live products yet. Process items in <a href="{{ route('admin.content.index') }}">Content</a>, then <strong>Go Live</strong> from <a href="{{ route('admin.processed.index') }}">Processed</a>.
+                            <td colspan="10" class="text-center text-muted py-5">
+                                No products yet. <a href="{{ route('admin.products.create') }}">Create a product</a> or publish from <a href="{{ route('admin.processed.index') }}">API Processed</a>.
                             </td>
                         </tr>
                     @endforelse

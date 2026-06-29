@@ -60,10 +60,19 @@
                         @if ($product['badge'] ?? null)
                             <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
                         @endif
-                        <span class="text-sm text-ink-muted">{{ $product['category'] }}</span>
+                        <div>
+                            @if ($product['brand'] ?? null)
+                                <p class="text-sm font-medium text-brand-600">{{ $product['brand'] }}</p>
+                            @endif
+                            <span class="text-sm text-ink-muted">{{ $product['category'] }}</span>
+                        </div>
                     </div>
 
                     <h1 class="mt-3 text-3xl lg:text-4xl font-bold tracking-tight text-ink">{{ $product['name'] }}</h1>
+
+                    @if ($product['short_description'] ?? null)
+                        <p class="mt-3 text-ink-muted leading-relaxed">{{ $product['short_description'] }}</p>
+                    @endif
 
                     @if ($product['rating'] ?? null)
                         <div class="flex items-center gap-2 mt-4">
@@ -86,6 +95,20 @@
                         @endif
                     </div>
 
+                    @php
+                        $productColors = array_values(array_filter($product['colors'] ?? [], fn ($value) => trim((string) $value) !== ''));
+                        $maxQty = ($product['is_manual'] ?? false)
+                            ? max(1, min(10, (int) ($product['stock'] ?? 0) ?: 1))
+                            : 10;
+                        $outOfStock = ($product['is_manual'] ?? false) && ! ($product['in_stock'] ?? true);
+                    @endphp
+
+                    @if ($outOfStock)
+                        <div class="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                            Out of stock
+                        </div>
+                    @endif
+
                     {{-- Add to cart --}}
                     <form action="{{ route('cart.add') }}" method="POST" class="mt-8" x-data="{ qty: 1 }" @submit.prevent="$dispatch('cart:add', { form: $el })">
                         @csrf
@@ -100,7 +123,8 @@
                                     name="quantity"
                                     x-model.number="qty"
                                     min="1"
-                                    max="10"
+                                    max="{{ $maxQty }}"
+                                    @disabled($outOfStock)
                                     class="w-16 rounded-lg border border-border bg-surface-elevated py-2.5 px-2 text-center text-sm font-semibold text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                                 >
                             </div>
@@ -113,14 +137,30 @@
                                         name="size"
                                         placeholder="{{ $sizeText }}"
                                         required
+                                        @disabled($outOfStock)
                                         class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                                     >
+                                </div>
+                            @endif
+                            @if ($productColors !== [])
+                                <div class="flex-1 min-w-[200px]">
+                                    <label for="product-color" class="block text-sm font-medium text-ink-muted mb-1.5">Color</label>
+                                    <select
+                                        id="product-color"
+                                        name="color"
+                                        @disabled($outOfStock)
+                                        class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                    >
+                                        @foreach ($productColors as $color)
+                                            <option value="{{ $color }}">{{ $color }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             @endif
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3">
-                        <x-ui.button type="submit" size="lg" class="flex-1">
+                        <x-ui.button type="submit" size="lg" class="flex-1" :disabled="$outOfStock">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
@@ -154,10 +194,27 @@
             </div>
 
             {{-- Description --}}
-            <div class="mt-12 lg:mt-16 pt-10 border-t border-border">
-                <h2 class="text-xl font-semibold text-ink">Description</h2>
-                <p class="mt-4 text-ink-muted leading-relaxed max-w-3xl">{{ $product['description'] }}</p>
-            </div>
+            @if ($product['description'] ?? null)
+                @push('styles')
+                    <style>
+                        .product-description p + p { margin-top: 0.75rem; }
+                        .product-description ul { list-style: disc; padding-left: 1.25rem; margin: 0.75rem 0; }
+                        .product-description ol { list-style: decimal; padding-left: 1.25rem; margin: 0.75rem 0; }
+                        .product-description li + li { margin-top: 0.25rem; }
+                        .product-description img { max-width: 100%; height: auto; border-radius: 0.75rem; margin: 1rem 0; }
+                        .product-description a { color: #0891b2; text-decoration: underline; }
+                        .product-description h1,
+                        .product-description h2,
+                        .product-description h3 { color: #18181b; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+                    </style>
+                @endpush
+                <div class="mt-12 lg:mt-16 pt-10 border-t border-border">
+                    <h2 class="text-xl font-semibold text-ink">Description</h2>
+                    <div class="product-description mt-4 text-ink-muted leading-relaxed max-w-3xl">
+                        {!! strip_tags($product['description'], '<p><br><strong><b><em><i><u><ul><ol><li><h1><h2><h3><h4><h5><h6><a><img><blockquote><span><hr>') !!}
+                    </div>
+                </div>
+            @endif
         </div>
     </section>
 

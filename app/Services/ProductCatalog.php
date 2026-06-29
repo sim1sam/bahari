@@ -71,6 +71,8 @@ class ProductCatalog
             ->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
                     ->orWhere('description', 'like', $term)
+                    ->orWhere('short_description', 'like', $term)
+                    ->orWhere('brand', 'like', $term)
                     ->orWhereHas('category', function ($category) use ($term) {
                         $category->where('name', 'like', $term);
                     });
@@ -118,15 +120,13 @@ class ProductCatalog
 
     private function storefrontQuery()
     {
-        return Product::with('category')
-            ->where('is_active', true)
-            ->liveFromApi();
+        return Product::with('category')->onStorefront();
     }
 
     private function usesStorefrontProducts(): bool
     {
         try {
-            return Product::liveFromApi()->where('is_active', true)->exists();
+            return Product::onStorefront()->exists();
         } catch (\Throwable) {
             return false;
         }

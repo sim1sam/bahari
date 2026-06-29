@@ -99,8 +99,22 @@ class CartService
             return false;
         }
 
+        if (($product['is_manual'] ?? false) && ! ($product['in_stock'] ?? true)) {
+            return false;
+        }
+
+        $maxStock = ($product['is_manual'] ?? false)
+            ? max(0, (int) ($product['stock'] ?? 0))
+            : null;
+
         $cart = $this->items();
         $key = $this->itemKey($slug, $size);
+        $currentQty = $cart[$key]['quantity'] ?? 0;
+        $newQty = $currentQty + $quantity;
+
+        if ($maxStock !== null && $newQty > $maxStock) {
+            return false;
+        }
 
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] += $quantity;

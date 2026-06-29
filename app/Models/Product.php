@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Product extends Model
 {
     protected $fillable = [
-        'category_id', 'slug', 'name', 'price', 'original_price', 'image', 'images',
-        'badge', 'badge_variant', 'rating', 'description', 'sizes', 'colors',
-        'is_featured', 'is_new_arrival', 'is_active',
+        'category_id', 'slug', 'name', 'brand', 'price', 'original_price', 'purchase_price',
+        'image', 'images', 'badge', 'badge_variant', 'rating', 'short_description', 'description',
+        'sizes', 'colors', 'stock', 'is_featured', 'is_new_arrival', 'is_active', 'is_manual',
     ];
 
     protected function casts(): array
@@ -21,13 +21,16 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'original_price' => 'decimal:2',
+            'purchase_price' => 'decimal:2',
             'rating' => 'decimal:1',
             'images' => 'array',
             'sizes' => 'array',
             'colors' => 'array',
+            'stock' => 'integer',
             'is_featured' => 'boolean',
             'is_new_arrival' => 'boolean',
             'is_active' => 'boolean',
+            'is_manual' => 'boolean',
         ];
     }
 
@@ -46,6 +49,18 @@ class Product extends Model
         return $query->whereHas('apiReceivedItem', function (Builder $relation) {
             $relation->where('status', ApiReceivedItem::STATUS_IMPORTED);
         });
+    }
+
+    public function scopeOnStorefront(Builder $query): Builder
+    {
+        return $query->where('is_active', true)->where(function (Builder $builder) {
+            $builder->liveFromApi()->orWhere('is_manual', true);
+        });
+    }
+
+    public function isManualProduct(): bool
+    {
+        return (bool) $this->is_manual;
     }
 
     public function isLiveFromApi(): bool
@@ -93,17 +108,23 @@ class Product extends Model
         return [
             'slug' => $this->slug,
             'name' => $this->name,
+            'brand' => $this->brand,
             'price' => (float) $this->price,
             'original_price' => $this->original_price ? (float) $this->original_price : null,
+            'purchase_price' => $this->purchase_price ? (float) $this->purchase_price : null,
             'image' => $image,
             'images' => $this->imageUrls() ?: ($image ? [$image] : []),
             'badge' => $this->badge,
             'badge_variant' => $this->badge_variant,
             'rating' => (float) $this->rating,
             'category' => $this->category?->name ?? 'Dresses',
+            'short_description' => $this->short_description,
             'description' => $this->description,
             'sizes' => $this->normalizedList($this->sizes),
             'colors' => $this->normalizedList($this->colors),
+            'stock' => (int) $this->stock,
+            'in_stock' => ! $this->is_manual || (int) $this->stock > 0,
+            'is_manual' => (bool) $this->is_manual,
         ];
     }
 

@@ -285,9 +285,8 @@ class ApiProcessedController extends Controller
     public function purgeManualProducts(): RedirectResponse
     {
         $deleted = Product::query()
-            ->whereDoesntHave('apiReceivedItem', function ($query) {
-                $query->where('status', ApiReceivedItem::STATUS_IMPORTED);
-            })
+            ->where('is_manual', false)
+            ->whereDoesntHave('apiReceivedItem')
             ->delete();
 
         return redirect()
