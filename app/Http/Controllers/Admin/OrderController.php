@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\MediaStorageService;
 use App\Services\OrderTransferService;
 use App\Services\SiteSettingsService;
+use App\Support\ShippingZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,10 @@ class OrderController extends Controller
         return view('admin.orders.create', [
             'banks' => config('payment.banks', []),
             'customers' => User::customers()->orderBy('name')->get(['id', 'name', 'email']),
+            'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
+            'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
+            'freeShippingThreshold' => $this->siteSettings->freeShippingThreshold(),
+            'shippingZones' => ShippingZone::labels(),
         ]);
     }
 
@@ -56,6 +61,7 @@ class OrderController extends Controller
             'subtotal' => 'required|numeric|min:0',
             'discount' => 'required|numeric|min:0',
             'shipping' => 'required|numeric|min:0',
+            'shipping_zone' => 'required|in:inside_dhaka,outside_dhaka',
             'total' => 'required|numeric|min:0',
             'amount_paid' => 'nullable|numeric|min:0',
             'payment_status' => 'nullable|in:pending,paid,partial,due',
@@ -108,6 +114,7 @@ class OrderController extends Controller
                 'subtotal' => round((float) $validated['subtotal'], 2),
                 'discount' => round((float) $validated['discount'], 2),
                 'shipping' => round((float) $validated['shipping'], 2),
+                'shipping_zone' => $validated['shipping_zone'],
                 'total' => round((float) $validated['total'], 2),
                 'payment_status' => $validated['payment_status'] ?? 'pending',
                 'amount_paid' => 0,
@@ -193,11 +200,26 @@ class OrderController extends Controller
         ]);
     }
 
+    public function invoice(Order $order): View
+    {
+        return view('admin.orders.invoice', [
+            'order' => $order->load('items'),
+            'settings' => $this->siteSettings->get(),
+            'siteName' => $this->siteSettings->siteName(),
+            'logoUrl' => $this->siteSettings->logoUrl(),
+            'logoInitial' => $this->siteSettings->logoInitial(),
+        ]);
+    }
+
     public function edit(Order $order): View
     {
         return view('admin.orders.edit', [
             'order' => $order->load(['items', 'payments']),
             'banks' => config('payment.banks', []),
+            'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
+            'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
+            'freeShippingThreshold' => $this->siteSettings->freeShippingThreshold(),
+            'shippingZones' => ShippingZone::labels(),
         ]);
     }
 
@@ -222,6 +244,7 @@ class OrderController extends Controller
             'subtotal' => 'required|numeric|min:0',
             'discount' => 'required|numeric|min:0',
             'shipping' => 'required|numeric|min:0',
+            'shipping_zone' => 'required|in:inside_dhaka,outside_dhaka',
             'total' => 'required|numeric|min:0',
             'amount_paid' => 'nullable|numeric|min:0',
             'payment_status' => 'nullable|in:pending,paid,partial,due',
@@ -385,6 +408,7 @@ class OrderController extends Controller
                 'subtotal' => round((float) $validated['subtotal'], 2),
                 'discount' => round((float) $validated['discount'], 2),
                 'shipping' => round((float) $validated['shipping'], 2),
+                'shipping_zone' => $validated['shipping_zone'],
                 'total' => round((float) $validated['total'], 2),
                 'payment_screenshot' => $screenshotPath,
             ]);

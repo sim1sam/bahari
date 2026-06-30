@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Services\CartService;
 use App\Services\ProductCatalog;
+use App\Services\SiteSettingsService;
+use App\Support\ShippingZone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ class CartController extends Controller
     public function __construct(
         private CartService $cart,
         private ProductCatalog $catalog,
+        private SiteSettingsService $settings,
     ) {}
 
     public function index(): View
@@ -32,6 +35,11 @@ class CartController extends Controller
             'subtotal' => $this->cart->subtotal(),
             'shipping' => $this->cart->shipping(),
             'total' => $this->cart->total(),
+            'shippingZone' => $this->cart->shippingZone(),
+            'shippingZones' => ShippingZone::labels(),
+            'shippingFeeInside' => $this->settings->shippingFeeInsideDhaka(),
+            'shippingFeeOutside' => $this->settings->shippingFeeOutsideDhaka(),
+            'freeShippingAt' => $this->settings->freeShippingThreshold(),
         ]);
     }
 
@@ -139,17 +147,48 @@ class CartController extends Controller
         return $redirect->with('success', 'Item removed from cart.');
     }
 
+    public function setShippingZone(Request $request): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'shipping_zone' => 'required|in:inside_dhaka,outside_dhaka',
+        ]);
+
+        $this->cart->setShippingZone($validated['shipping_zone']);
+
+        if ($request->expectsJson()) {
+            return response()->json($this->cartPayload());
+        }
+
+        $redirect = $request->boolean('cart_drawer')
+            ? back()->with('cart_drawer_open', true)
+            : redirect()->route('cart.index');
+
+        return $redirect;
+    }
+
     private function cartPayload(): array
     {
         $subtotal = $this->cart->subtotal();
-        $freeShippingAt = (float) config('currency.free_shipping_threshold', 2000);
+        $discount = $this->cart->discount();
+        $shipping = $this->cart->shipping();
+        $total = $this->cart->total();
+        $settings = $this->settings;
+        $freeShippingAt = $settings->freeShippingThreshold();
         $freeShippingRemaining = max(0, $freeShippingAt - $subtotal);
 
         return [
             'cart_count' => $this->cart->count(),
             'subtotal' => $subtotal,
             'subtotal_formatted' => money($subtotal),
-            'total_formatted' => money($subtotal),
+            'discount' => $discount,
+            'discount_formatted' => money($discount),
+            'shipping' => $shipping,
+            'shipping_formatted' => money_or_free($shipping),
+            'shipping_zone' => $this->cart->shippingZone(),
+            'shipping_zone_label' => ShippingZone::label($this->cart->shippingZone()),
+            'total' => $total,
+            'total_formatted' => money($total),
+            'free_shipping_threshold' => $freeShippingAt,
             'free_shipping_remaining' => $freeShippingRemaining,
             'free_shipping_remaining_formatted' => money($freeShippingRemaining),
             'items' => collect($this->cart->items())->map(function ($item) {

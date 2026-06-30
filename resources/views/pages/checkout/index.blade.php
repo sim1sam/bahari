@@ -51,6 +51,22 @@
                         zip: @js(old('zip', $checkoutDetails['zip'])),
                     },
                     payment: @js(old('payment', 'cod')),
+                    shippingZone: @js(old('shipping_zone', $shippingZone)),
+                    subtotal: {{ (float) $subtotal }},
+                    discount: {{ (float) $discount }},
+                    shippingFeeInside: {{ (float) $shippingFeeInside }},
+                    shippingFeeOutside: {{ (float) $shippingFeeOutside }},
+                    freeShippingThreshold: {{ (float) $freeShippingAt }},
+                    get shippingAmount() {
+                        if (this.subtotal <= 0 || this.subtotal >= this.freeShippingThreshold) {
+                            return 0;
+                        }
+
+                        return this.shippingZone === 'outside_dhaka' ? this.shippingFeeOutside : this.shippingFeeInside;
+                    },
+                    get orderTotal() {
+                        return Math.max(0, this.subtotal - this.discount) + this.shippingAmount;
+                    },
                     total: {{ (float) $total }},
                     showPaymentModal: false,
                     paymentConfirmed: false,
@@ -93,7 +109,7 @@
                         this.details.zip = '';
                     },
                     openPaymentModal() {
-                        this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.total;
+                        this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.orderTotal;
                         if (this.payment === 'bank_transfer') {
                             this.ensureBankSelected();
                         }
@@ -128,7 +144,7 @@
                     },
                     preparePaymentSubmit(event) {
                         if (this.payment === 'sslcommerz') {
-                            this.paymentAmount = this.total;
+                            this.paymentAmount = this.orderTotal;
                             this.paymentConfirmed = true;
                             return;
                         }
@@ -137,12 +153,28 @@
                             this.openPaymentModal();
                         }
                     },
+                    async syncShippingZone() {
+                        this.total = this.orderTotal;
+                        this.paymentAmount = this.orderTotal;
+                        try {
+                            await fetch(@js(route('cart.shipping-zone')), {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({ shipping_zone: this.shippingZone }),
+                            });
+                        } catch (e) {}
+                    },
                 }"
             >
                 @csrf
                 <input type="hidden" name="address_mode" :value="mode">
                 <input type="hidden" name="address_id" :value="mode === 'existing' ? selectedId : ''">
                 <input type="hidden" name="payment_amount" :value="paymentAmount">
+                <input type="hidden" name="shipping_zone" :value="shippingZone">
                 <div class="grid lg:grid-cols-3 gap-10">
                     {{-- Shipping form --}}
                     <div class="lg:col-span-2 space-y-8">
@@ -320,6 +352,26 @@
                                 @endforeach
                             </ul>
 
+                            <div class="mt-6 pt-6 border-t border-border">
+                                <p class="text-sm font-medium text-ink mb-3">Delivery Area</p>
+                                <div class="space-y-2">
+                                    @foreach ($shippingZones as $value => $label)
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                value="{{ $value }}"
+                                                x-model="shippingZone"
+                                                @change="syncShippingZone()"
+                                                class="text-brand-600 focus:ring-brand-500"
+                                            >
+                                            <span>{{ $label }}</span>
+                                            <span class="text-ink-muted">({{ money($value === 'outside_dhaka' ? $shippingFeeOutside : $shippingFeeInside) }})</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                @error('shipping_zone')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
                             {{-- Coupon --}}
                             <div class="mt-6 pt-6 border-t border-border">
                                 <p class="text-sm font-medium text-ink mb-3">Coupon Code</p>
@@ -361,12 +413,12 @@
                                     </div>
                                 @endif
                                 <div class="flex justify-between">
-                                    <dt class="text-ink-muted">Shipping</dt>
-                                    <dd class="font-medium">{{ money_or_free($shipping) }}</dd>
+                                    <dt class="text-ink-muted">Shipping <span class="text-xs" x-text="'(' + (shippingZone === 'outside_dhaka' ? 'Outside Dhaka' : 'Inside Dhaka') + ')'"></span></dt>
+                                    <dd class="font-medium" x-text="shippingAmount === 0 ? 'Free' : '৳' + shippingAmount.toFixed(2)">{{ money_or_free($shipping) }}</dd>
                                 </div>
                                 <div class="flex justify-between pt-3 border-t border-border text-base">
                                     <dt class="font-semibold text-ink">Total</dt>
-                                    <dd class="font-bold text-lg">{{ money($total) }}</dd>
+                                    <dd class="font-bold text-lg" x-text="'৳' + orderTotal.toFixed(2)">{{ money($total) }}</dd>
                                 </div>
                             </dl>
 

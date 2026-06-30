@@ -15,7 +15,11 @@
         return $item;
     })->values()->all();
     $cartSubtotal = $cartService->subtotal();
-    $freeShippingAt = (float) config('currency.free_shipping_threshold', 2000);
+    $cartShipping = $cartService->shipping();
+    $cartDiscount = $cartService->discount();
+    $cartTotal = $cartService->total();
+    $siteSettings = app(\App\Services\SiteSettingsService::class);
+    $freeShippingAt = $siteSettings->freeShippingThreshold();
     $freeShippingRemaining = max(0, $freeShippingAt - $cartSubtotal);
 @endphp
 
@@ -29,13 +33,19 @@
         cartItems: @js($cartItems),
         cartCount: {{ $cartCount ?? 0 }},
         cartSubtotal: @js(money($cartSubtotal)),
-        cartTotal: @js(money($cartSubtotal)),
+        cartDiscountAmount: {{ $cartDiscount }},
+        cartDiscount: @js(money($cartDiscount)),
+        cartShipping: @js(money_or_free($cartShipping)),
+        cartTotal: @js(money($cartTotal)),
         freeShippingRemaining: {{ $freeShippingRemaining }},
         freeShippingRemainingFormatted: @js(money($freeShippingRemaining)),
         applyCart(cart) {
             this.cartItems = cart.items;
             this.cartCount = cart.cart_count;
             this.cartSubtotal = cart.subtotal_formatted;
+            this.cartDiscountAmount = cart.discount;
+            this.cartDiscount = cart.discount_formatted;
+            this.cartShipping = cart.shipping_formatted;
             this.cartTotal = cart.total_formatted;
             this.freeShippingRemaining = cart.free_shipping_remaining;
             this.freeShippingRemainingFormatted = cart.free_shipping_remaining_formatted;
@@ -389,13 +399,17 @@
                         <span class="text-ink-muted">Sub Total (<span x-text="cartCount">{{ $cartCount ?? 0 }}</span> item<span x-show="cartCount !== 1">s</span>)</span>
                         <span class="font-medium text-ink" x-text="cartSubtotal">{{ money($cartSubtotal) }}</span>
                     </div>
-                    <div class="mb-2 flex items-center justify-between border-b border-border pb-2 text-xs">
+                    <div class="mb-1.5 flex items-center justify-between text-xs" x-show="cartDiscountAmount > 0">
                         <span class="text-ink-muted">Discount</span>
-                        <span class="font-medium text-ink">{{ money(0) }}</span>
+                        <span class="font-medium text-brand-600" x-text="cartDiscount">{{ money($cartDiscount) }}</span>
+                    </div>
+                    <div class="mb-2 flex items-center justify-between border-b border-border pb-2 text-xs">
+                        <span class="text-ink-muted">Shipping</span>
+                        <span class="font-medium text-ink" x-text="cartShipping">{{ money_or_free($cartShipping) }}</span>
                     </div>
                     <div class="mb-3 flex items-center justify-between text-sm">
                         <span class="font-bold text-ink">Total Amount</span>
-                        <span class="font-bold text-ink" x-text="cartTotal">{{ money($cartSubtotal) }}</span>
+                        <span class="font-bold text-ink" x-text="cartTotal">{{ money($cartTotal) }}</span>
                     </div>
                     <a href="{{ route('checkout.index') }}" class="block w-full rounded-full bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700">Continue</a>
                 </div>

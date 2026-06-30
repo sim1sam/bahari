@@ -20,6 +20,7 @@ class SiteSetting extends Model
         'newsletter_enabled', 'newsletter_success_message',
         'footer_shop_title', 'footer_support_title', 'footer_copyright',
         'theme_primary', 'theme_primary_dark', 'theme_footer_bg', 'theme_text', 'theme_background',
+        'shipping_fee_inside_dhaka', 'shipping_fee_outside_dhaka', 'free_shipping_threshold',
         'api_webhook_url', 'api_auto_publish', 'api_logo', 'api_logo_scale',
     ];
 
@@ -33,6 +34,9 @@ class SiteSetting extends Model
             'sslcommerz_enabled' => 'boolean',
             'sslcommerz_sandbox' => 'boolean',
             'sslcommerz_store_password' => 'encrypted',
+            'shipping_fee_inside_dhaka' => 'decimal:2',
+            'shipping_fee_outside_dhaka' => 'decimal:2',
+            'free_shipping_threshold' => 'decimal:2',
         ];
     }
 

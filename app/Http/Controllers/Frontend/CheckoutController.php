@@ -13,6 +13,7 @@ use App\Services\CartService;
 use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use App\Services\SslCommerzService;
+use App\Support\ShippingZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,11 @@ class CheckoutController extends Controller
             'discount' => $this->cart->discount(),
             'coupon' => $this->cart->coupon(),
             'total' => $this->cart->total(),
+            'shippingZone' => $this->cart->shippingZone(),
+            'shippingZones' => ShippingZone::labels(),
+            'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
+            'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
+            'freeShippingAt' => $this->siteSettings->freeShippingThreshold(),
             'addresses' => $addresses,
             'selectedAddress' => $selectedAddress,
             'addressTypes' => CustomerAddress::types(),
@@ -115,6 +121,7 @@ class CheckoutController extends Controller
             'address_label' => 'nullable|string|max:100',
             'save_address' => 'nullable|boolean',
             'make_default' => 'nullable|boolean',
+            'shipping_zone' => 'required|in:inside_dhaka,outside_dhaka',
         ]);
 
         $bank = null;
@@ -159,6 +166,8 @@ class CheckoutController extends Controller
             ]);
         }
 
+        $this->cart->setShippingZone($validated['shipping_zone']);
+
         $orderNumber = $this->siteSettings->generateOrderNumber();
         $items = array_values($this->cart->items());
         $subtotal = $this->cart->subtotal();
@@ -166,9 +175,10 @@ class CheckoutController extends Controller
         $discount = $this->cart->discount();
         $coupon = $this->cart->coupon();
         $total = $this->cart->total();
+        $shippingZone = $validated['shipping_zone'];
         $isSslCommerz = $validated['payment'] === 'sslcommerz';
 
-        $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz) {
+        $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $shippingZone, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz) {
             $isBankTransfer = $validated['payment'] === 'bank_transfer';
             $paymentAmount = $isSslCommerz ? $total : round((float) $validated['payment_amount'], 2);
 
@@ -192,6 +202,7 @@ class CheckoutController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'shipping' => $shipping,
+                'shipping_zone' => $shippingZone,
                 'total' => $total,
                 'coupon_code' => $coupon['code'] ?? null,
                 'status' => 'pending',

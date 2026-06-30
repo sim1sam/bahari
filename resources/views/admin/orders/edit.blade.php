@@ -186,8 +186,17 @@
                             <input type="number" name="discount" id="discount" class="form-control" min="0" step="0.01" value="{{ old('discount', $order->discount) }}" required>
                         </div>
                         <div class="form-group">
+                            <label>Delivery Zone</label>
+                            <select name="shipping_zone" id="shipping_zone" class="form-control" required>
+                                @foreach ($shippingZones as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('shipping_zone', $order->shipping_zone ?? 'inside_dhaka') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Shipping (BDT)</label>
                             <input type="number" name="shipping" id="shipping" class="form-control" min="0" step="0.01" value="{{ old('shipping', $order->shipping) }}" required>
+                            <small class="text-muted">Auto-calculated from items. Free above {{ money($freeShippingThreshold) }}.</small>
                         </div>
                         <div class="form-group">
                             <label>Coupon Code</label>
@@ -330,6 +339,22 @@
 (function () {
     var itemIndex = 0;
     var paymentIndex = 0;
+    var shippingFeeInside = {{ json_encode((float) $shippingFeeInside) }};
+    var shippingFeeOutside = {{ json_encode((float) $shippingFeeOutside) }};
+    var freeShippingThreshold = {{ json_encode((float) $freeShippingThreshold) }};
+
+    function zoneShippingFee() {
+        var zone = document.getElementById('shipping_zone').value;
+        return zone === 'outside_dhaka' ? shippingFeeOutside : shippingFeeInside;
+    }
+
+    function calcShipping(subtotal) {
+        if (subtotal <= 0 || subtotal >= freeShippingThreshold) {
+            return 0;
+        }
+
+        return zoneShippingFee();
+    }
 
     function addRow(templateId, bodyId, tableId, noMsgId) {
         var tpl = document.getElementById(templateId);
@@ -375,7 +400,9 @@
     }
 
     document.getElementById('calc-from-items').addEventListener('click', function () {
-        document.getElementById('subtotal').value = sumItems().toFixed(2);
+        var subtotal = sumItems();
+        document.getElementById('subtotal').value = subtotal.toFixed(2);
+        document.getElementById('shipping').value = calcShipping(subtotal).toFixed(2);
         recalcTotal();
     });
 
@@ -386,7 +413,28 @@
         document.getElementById('total').value = Math.max(0, sub - disc + ship).toFixed(2);
     }
 
-    document.getElementById('calc-total').addEventListener('click', recalcTotal);
+    document.getElementById('calc-total').addEventListener('click', function () {
+        var sub = parseFloat(document.getElementById('subtotal').value) || 0;
+        document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
+        recalcTotal();
+    });
+
+    document.getElementById('shipping_zone').addEventListener('change', function () {
+        var sub = parseFloat(document.getElementById('subtotal').value) || 0;
+        document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
+        recalcTotal();
+    });
+
+    document.getElementById('items-body').addEventListener('input', function (e) {
+        if (!e.target.classList.contains('item-qty') && !e.target.classList.contains('item-price')) {
+            return;
+        }
+
+        var subtotal = sumItems();
+        document.getElementById('subtotal').value = subtotal.toFixed(2);
+        document.getElementById('shipping').value = calcShipping(subtotal).toFixed(2);
+        recalcTotal();
+    });
 
     function toggleManualPaymentFields() {
         var hasPayments = document.querySelectorAll('#payments-body tr').length > 0;

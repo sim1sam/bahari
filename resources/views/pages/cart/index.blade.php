@@ -109,6 +109,20 @@
                         <div class="lg:sticky lg:top-28 p-4 sm:p-6 bg-surface-elevated rounded-2xl border border-border">
                             <h2 class="text-lg font-semibold text-ink">Order Summary</h2>
 
+                            <form action="{{ route('cart.shipping-zone') }}" method="POST" class="mt-4">
+                                @csrf
+                                <label class="block text-sm font-medium text-ink mb-2">Delivery Area</label>
+                                <select
+                                    name="shipping_zone"
+                                    class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+                                    onchange="this.form.submit()"
+                                >
+                                    @foreach ($shippingZones as $value => $label)
+                                        <option value="{{ $value }}" @selected($shippingZone === $value)>{{ $label }} — {{ money($value === 'outside_dhaka' ? $shippingFeeOutside : $shippingFeeInside) }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+
                             <dl class="mt-6 space-y-3 text-sm">
                                 <div class="flex justify-between">
                                     <dt class="text-ink-muted">Subtotal</dt>
@@ -124,7 +138,7 @@
                                         @endif
                                     </dd>
                                 </div>
-                                @php $freeShippingAt = config('currency.free_shipping_threshold', 2000); @endphp
+                                @php $freeShippingAt = $freeShippingAt ?? app(\App\Services\SiteSettingsService::class)->freeShippingThreshold(); @endphp
                                 @if ($subtotal < $freeShippingAt && $subtotal > 0)
                                     <p class="text-xs text-brand-600 bg-brand-50 rounded-lg px-3 py-2">
                                         Add {{ money($freeShippingAt - $subtotal) }} more for free shipping!

@@ -103,6 +103,9 @@
                         <div class="form-group">
                             <label>Purchase Price</label>
                             <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ old('purchase_price', $product->purchase_price) }}" {{ $isApiProduct ? 'readonly' : '' }}>
+                            @unless ($isApiProduct)
+                                <small class="form-text text-muted">When stock is added, an expense is auto-recorded: purchase price × quantity.</small>
+                            @endunless
                         </div>
                     </div>
                     <div class="col-md-3">

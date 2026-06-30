@@ -5,6 +5,9 @@
 
 @section('content')
     <div class="mb-3">
+        <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
+            <i class="fas fa-file-invoice mr-1"></i> Invoice
+        </a>
         <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-info btn-sm">Edit Order</a>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-sm">Back to Orders</a>
         <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-outline-primary btn-sm">API Transfer Setting</a>
@@ -109,7 +112,7 @@
                     @if ($order->discount > 0)
                         <p>Discount: -{{ money($order->discount) }}</p>
                     @endif
-                    <p>Shipping: {{ money_or_free($order->shipping) }}</p>
+                    <p>Shipping: {{ money_or_free($order->shipping) }} @if($order->shipping_zone) <span class="text-muted">({{ \App\Support\ShippingZone::label($order->shipping_zone) }})</span>@endif</p>
                     <p><strong>Total: {{ money($order->total) }}</strong></p>
                     <p>
                         <strong>Paid:</strong> {{ money($order->amount_paid) }} ·

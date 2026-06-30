@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\ApiProductImportService;
 use App\Services\MediaStorageService;
+use App\Services\ProductPurchaseExpenseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ class ProductController extends Controller
     public function __construct(
         private MediaStorageService $media,
         private ApiProductImportService $importer,
+        private ProductPurchaseExpenseService $purchaseExpenses,
     ) {}
 
     public function index(): View
@@ -44,9 +46,12 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         try {
+            $purchaseExpense = null;
             $validated = $this->validateProduct($request);
             $product = Product::create($validated);
             $product->update($this->syncImages($request, $product));
+            $product->refresh();
+            $purchaseExpense = $this->purchaseExpenses->recordForNewProduct($product);
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
@@ -57,7 +62,12 @@ class ProductController extends Controller
                 ->with('error', 'Product could not be created: '.$e->getMessage());
         }
 
-        return redirect()->route('admin.products.index')->with('success', 'Product created and published on storefront.');
+        $message = 'Product created and published on storefront.';
+        if ($purchaseExpense ?? null) {
+            $message .= ' Purchase expense of '.money($purchaseExpense->amount).' recorded.';
+        }
+
+        return redirect()->route('admin.products.index')->with('success', $message);
     }
 
     public function edit(Product $product): View
@@ -82,8 +92,19 @@ class ProductController extends Controller
         }
 
         try {
+            $purchaseExpense = null;
+            $previousStock = (int) $product->stock;
+            $previousPurchasePrice = (float) $product->purchase_price;
+
             $product->update($this->validateProduct($request, $product));
             $product->update($this->syncImages($request, $product));
+            $product->refresh();
+
+            $purchaseExpense = $this->purchaseExpenses->recordStockIncrease(
+                $product,
+                $previousStock,
+                $previousPurchasePrice
+            );
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
@@ -94,7 +115,12 @@ class ProductController extends Controller
                 ->with('error', 'Product could not be updated: '.$e->getMessage());
         }
 
-        return redirect()->route('admin.products.index')->with('success', 'Product updated.');
+        $message = 'Product updated.';
+        if ($purchaseExpense ?? null) {
+            $message .= ' Purchase expense of '.money($purchaseExpense->amount).' recorded for added stock.';
+        }
+
+        return redirect()->route('admin.products.index')->with('success', $message);
     }
 
     public function destroy(Product $product): RedirectResponse

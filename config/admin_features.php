@@ -55,6 +55,18 @@ return [
         'route' => 'admin.coupons.index',
         'active' => 'admin.coupons.*',
     ],
+    'shipping' => [
+        'label' => 'Shipping Fee (BDT)',
+        'icon' => 'fas fa-truck',
+        'route' => 'admin.shipping.edit',
+        'active' => 'admin.shipping.*',
+    ],
+    'reports' => [
+        'label' => 'Financial Reports',
+        'icon' => 'fas fa-chart-pie',
+        'route' => 'admin.reports.index',
+        'active' => 'admin.reports.*',
+    ],
     'transactions' => [
         'label' => 'Transactions',
         'icon' => 'fas fa-money-check-alt',

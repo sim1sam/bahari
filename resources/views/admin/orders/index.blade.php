@@ -69,6 +69,7 @@
                             <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
                             <td class="text-nowrap">
                                 <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-xs btn-primary">View</a>
+                                <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-xs btn-secondary" target="_blank" rel="noopener">Invoice</a>
                                 <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-xs btn-info">Edit</a>
                                 @if ($order->canBeDeleted())
                                     <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this order?')">

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\ShippingZone;
 use Illuminate\Support\Facades\Auth;
 
 class CartService
@@ -10,9 +11,12 @@ class CartService
 
     private const COUPON_KEY = 'cart_coupon';
 
+    private const SHIPPING_ZONE_KEY = 'cart_shipping_zone';
+
     public function __construct(
         private ProductCatalog $catalog,
         private CouponService $coupons,
+        private SiteSettingsService $settings,
     ) {}
 
     public function items(): array
@@ -30,12 +34,27 @@ class CartService
         return collect($this->items())->sum(fn ($item) => $item['price'] * $item['quantity']);
     }
 
+    public function shippingZone(): string
+    {
+        $zone = session(self::SHIPPING_ZONE_KEY);
+
+        return ShippingZone::isValid($zone) ? $zone : ShippingZone::INSIDE_DHAKA;
+    }
+
+    public function setShippingZone(string $zone): bool
+    {
+        if (! ShippingZone::isValid($zone)) {
+            return false;
+        }
+
+        session([self::SHIPPING_ZONE_KEY => $zone]);
+
+        return true;
+    }
+
     public function shipping(): float
     {
-        $threshold = (float) config('currency.free_shipping_threshold', 2000);
-        $fee = (float) config('currency.shipping_fee', 120);
-
-        return $this->subtotal() >= $threshold || $this->subtotal() == 0 ? 0 : $fee;
+        return $this->settings->calculateShipping($this->subtotal(), $this->shippingZone());
     }
 
     public function coupon(): ?array
@@ -189,7 +208,7 @@ class CartService
 
     public function clear(): void
     {
-        session()->forget([self::SESSION_KEY, self::COUPON_KEY]);
+        session()->forget([self::SESSION_KEY, self::COUPON_KEY, self::SHIPPING_ZONE_KEY]);
     }
 
     private function itemKey(string $slug, ?string $size): string

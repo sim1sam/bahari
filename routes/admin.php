@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountExpenseController;
 use App\Http\Controllers\Admin\ApiContentController;
 use App\Http\Controllers\Admin\ApiProcessedController;
 use App\Http\Controllers\Admin\ApiReceivedImageController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FinancialReportController;
 use App\Http\Controllers\Admin\FooterLinkController;
 use App\Http\Controllers\Admin\HomeBannerController;
 use App\Http\Controllers\Admin\HomeFeatureController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\Admin\PaymentBankController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\ShippingSettingsController;
 use App\Http\Controllers\Admin\StorageLinkController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
@@ -134,6 +137,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('orders/transfer-settings', [OrderTransferSettingController::class, 'update'])->name('orders.transfer-settings.update');
             Route::post('orders/transfer-settings/generate', [OrderTransferSettingController::class, 'generate'])->name('orders.transfer-settings.generate');
             Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
+            Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
             Route::put('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
             Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
             Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
@@ -144,6 +148,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:coupons')->group(function () {
             Route::resource('coupons', CouponController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:reports')->group(function () {
+            Route::get('reports', [FinancialReportController::class, 'index'])->name('reports.index');
+            Route::get('reports/profit-loss', [FinancialReportController::class, 'profitLoss'])->name('reports.profit-loss');
+            Route::get('reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+            Route::get('reports/ledger', [FinancialReportController::class, 'ledger'])->name('reports.ledger');
+            Route::resource('reports/expenses', AccountExpenseController::class)->except(['show'])->names('reports.expenses')->parameters(['expenses' => 'expense']);
+        });
+
+        Route::middleware('admin.feature:shipping')->group(function () {
+            Route::get('shipping', [ShippingSettingsController::class, 'edit'])->name('shipping.edit');
+            Route::put('shipping', [ShippingSettingsController::class, 'update'])->name('shipping.update');
         });
 
         Route::middleware('admin.feature:settings')->group(function () {

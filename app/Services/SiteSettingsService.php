@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SiteSetting;
+use App\Support\ShippingZone;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -252,5 +253,54 @@ class SiteSettingsService
     public function apiLogoUrl(): ?string
     {
         return $this->assetUrl($this->get()->api_logo);
+    }
+
+    public function shippingFeeInsideDhaka(): float
+    {
+        $settings = $this->get();
+
+        if ($settings->shipping_fee_inside_dhaka !== null) {
+            return (float) $settings->shipping_fee_inside_dhaka;
+        }
+
+        return (float) config('currency.shipping_fee_inside_dhaka', 80);
+    }
+
+    public function shippingFeeOutsideDhaka(): float
+    {
+        $settings = $this->get();
+
+        if ($settings->shipping_fee_outside_dhaka !== null) {
+            return (float) $settings->shipping_fee_outside_dhaka;
+        }
+
+        return (float) config('currency.shipping_fee_outside_dhaka', 150);
+    }
+
+    public function shippingFeeForZone(?string $zone): float
+    {
+        return $zone === ShippingZone::OUTSIDE_DHAKA
+            ? $this->shippingFeeOutsideDhaka()
+            : $this->shippingFeeInsideDhaka();
+    }
+
+    public function freeShippingThreshold(): float
+    {
+        $settings = $this->get();
+
+        if ($settings->free_shipping_threshold !== null) {
+            return (float) $settings->free_shipping_threshold;
+        }
+
+        return (float) config('currency.free_shipping_threshold', 2000);
+    }
+
+    public function calculateShipping(float $subtotal, ?string $zone = null): float
+    {
+        if ($subtotal <= 0 || $subtotal >= $this->freeShippingThreshold()) {
+            return 0.0;
+        }
+
+        return $this->shippingFeeForZone($zone);
     }
 }

@@ -39,6 +39,14 @@ return [
             'items' => [
                 'orders',
                 'coupons',
+                'shipping',
+            ],
+        ],
+        'finance' => [
+            'label' => 'Finance & Reports',
+            'icon' => 'fas fa-chart-line',
+            'items' => [
+                'reports',
             ],
         ],
         'customers' => [

@@ -15,3 +15,10 @@ if (! function_exists('money_or_free')) {
         return Money::formatOrFree($amount, $decimals);
     }
 }
+
+if (! function_exists('amount_in_words')) {
+    function amount_in_words(float|int|string|null $amount, ?string $currencyName = null): string
+    {
+        return \App\Support\AmountInWords::format($amount, $currencyName);
+    }
+}
