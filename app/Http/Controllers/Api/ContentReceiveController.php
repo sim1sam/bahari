@@ -109,6 +109,28 @@ class ContentReceiveController extends Controller
                 : null;
 
             if ($existing) {
+                if ($existing->isImported() && $existing->product_id) {
+                    $existing->update(ApiReceivedItem::withoutMissingBrandVendorColumns([
+                        'payload' => $itemData,
+                        'price' => $normalized['price'],
+                        'original_price' => $normalized['original_price'],
+                        'title' => $normalized['title'],
+                        'description' => $normalized['description'],
+                        'sizes' => $normalized['sizes'],
+                        'colors' => $normalized['colors'],
+                        'category_name' => $normalized['category_name'],
+                        'brand' => $normalized['brand'] ?? $existing->brand,
+                        'vendor' => $normalized['vendor'] ?? $existing->vendor,
+                    ]));
+
+                    $this->syncLiveProductFromApi($existing->fresh(['product']), $normalized);
+
+                    $received = $existing;
+                    $updated[] = $received->id;
+
+                    continue;
+                }
+
                 $resetAttributes = [
                     'payload' => $itemData,
                     'status' => ApiReceivedItem::STATUS_PENDING,
@@ -239,5 +261,23 @@ class ContentReceiveController extends Controller
         }
 
         return [];
+    }
+
+    private function syncLiveProductFromApi(ApiReceivedItem $item, array $normalized): void
+    {
+        $product = $item->product;
+
+        if (! $product) {
+            return;
+        }
+
+        $product->update([
+            'name' => $normalized['title'] ?: $product->name,
+            'price' => $normalized['price'] ?? $product->price,
+            'original_price' => $normalized['original_price'] ?? $product->original_price,
+            'description' => $normalized['description'] ?: $product->description,
+            'sizes' => $normalized['sizes'] ?: $product->sizes,
+            'colors' => $normalized['colors'] ?: $product->colors,
+        ]);
     }
 }
