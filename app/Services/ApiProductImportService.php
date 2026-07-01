@@ -31,6 +31,7 @@ class ApiProductImportService
             'name' => $item->title,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
+            'purchase_price' => $pricing['purchase_price'],
             'image' => $imageUrl,
             'images' => $imageUrl ? [$imageUrl] : [],
             'description' => $item->description ?: 'Imported via API.',
@@ -49,6 +50,7 @@ class ApiProductImportService
             'product_id' => $product->id,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
+            'purchase_price' => $pricing['purchase_price'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
@@ -65,6 +67,7 @@ class ApiProductImportService
             'name' => $item->title,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
+            'purchase_price' => $pricing['purchase_price'] ?? $product->purchase_price,
             'image' => $imageUrl ?: $product->image,
             'images' => $imageUrl ? [$imageUrl] : $product->images,
             'description' => $item->description ?: $product->description,
@@ -83,6 +86,7 @@ class ApiProductImportService
             'product_id' => $product->id,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
+            'purchase_price' => $pricing['purchase_price'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);

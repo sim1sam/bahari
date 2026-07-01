@@ -33,13 +33,13 @@
                             <input type="text" name="title" class="form-control" value="{{ old('title', $item->title) }}" required>
                         </div>
                         <div class="row">
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="form-group">
                                     <label>SKU</label>
                                     <input type="text" name="sku" class="form-control" value="{{ old('sku', $item->sku) }}">
                                 </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="form-group">
                                     <label>Price (BDT) *</label>
                                     <input type="number" name="price" class="form-control" step="0.01" value="{{ old('price', $item->price) }}" required>
@@ -48,6 +48,13 @@
                                             Price is 0 — sender may use another field name. Click <strong>Re-download Images & Sync Prices</strong> on Content, or enter price manually.
                                         </small>
                                     @endif
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label>Purchase Price (BDT)</label>
+                                    <input type="number" name="purchase_price" class="form-control" step="0.01" value="{{ old('purchase_price', $item->purchase_price) }}">
+                                    <small class="text-muted">API: <code>purchase_price_bdt</code></small>
                                 </div>
                             </div>
                         </div>

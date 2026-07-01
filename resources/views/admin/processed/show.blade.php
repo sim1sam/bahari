@@ -64,6 +64,9 @@
                         <p><strong>Brand:</strong> {{ $item->brand ?: '—' }}</p>
                         <p><strong>Vendor:</strong> {{ $item->vendor ?: '—' }}</p>
                         <p><strong>Price:</strong> {{ money($item->price) }}</p>
+                        @if ($item->purchase_price)
+                            <p><strong>Purchase Price:</strong> {{ money($item->purchase_price) }}</p>
+                        @endif
                         <p><strong>Category:</strong> {{ $item->product?->category?->name ?? $item->category_name ?: '—' }}</p>
                         <p><strong>Sizes:</strong> {{ implode(', ', $item->sizes ?? []) ?: '—' }}</p>
                         <p><strong>Colors:</strong> {{ ! empty($item->colors) ? implode(', ', $item->colors) : '—' }}</p>

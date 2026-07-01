@@ -38,7 +38,6 @@ class ApiReceivedPriceService
         'priceLabel',
         'formatted_price',
         'formattedPrice',
-        'cost',
     ];
 
     /** @var array<int, string> */
@@ -58,17 +57,26 @@ class ApiReceivedPriceService
         'compare_price',
     ];
 
-    /** @return array{price: float, original_price: ?float} */
+    /** @var array<int, string> */
+    private const PURCHASE_KEYS = [
+        'purchase_price_bdt',
+        'purchasePriceBdt',
+        'purchase_price',
+        'purchasePrice',
+    ];
+
+    /** @return array{price: float, original_price: ?float, purchase_price: ?float} */
     public function extract(mixed $data): array
     {
         if (! is_array($data)) {
-            return ['price' => 0, 'original_price' => null];
+            return ['price' => 0, 'original_price' => null, 'purchase_price' => null];
         }
 
         $data = $this->normalizeKeys($data);
 
         $sale = $this->firstAmount($data, self::SALE_KEYS, ignoreZero: true);
         $original = $this->firstAmount($data, self::ORIGINAL_KEYS, ignoreZero: true);
+        $purchase = $this->firstAmount($data, self::PURCHASE_KEYS, ignoreZero: true);
 
         foreach (['product', 'pricing', 'data', 'details'] as $nestedKey) {
             if (! isset($data[$nestedKey]) || ! is_array($data[$nestedKey])) {
@@ -78,11 +86,13 @@ class ApiReceivedPriceService
             $nested = $data[$nestedKey];
             $sale ??= $this->firstAmount($nested, self::SALE_KEYS, ignoreZero: true);
             $original ??= $this->firstAmount($nested, self::ORIGINAL_KEYS, ignoreZero: true);
+            $purchase ??= $this->firstAmount($nested, self::PURCHASE_KEYS, ignoreZero: true);
 
             if (isset($nested['pricing']) && is_array($nested['pricing'])) {
                 $pricing = $nested['pricing'];
                 $sale ??= $this->firstAmount($pricing, array_merge(self::SALE_KEYS, ['sale', 'sell', 'current']), ignoreZero: true);
                 $original ??= $this->firstAmount($pricing, array_merge(self::ORIGINAL_KEYS, ['regular', 'original', 'compare']), ignoreZero: true);
+                $purchase ??= $this->firstAmount($pricing, array_merge(self::PURCHASE_KEYS, ['purchase', 'cost']), ignoreZero: true);
             }
         }
 
@@ -90,6 +100,7 @@ class ApiReceivedPriceService
             $pricing = $data['pricing'];
             $sale ??= $this->firstAmount($pricing, array_merge(self::SALE_KEYS, ['sale', 'sell', 'current']), ignoreZero: true);
             $original ??= $this->firstAmount($pricing, array_merge(self::ORIGINAL_KEYS, ['regular', 'original', 'compare']), ignoreZero: true);
+            $purchase ??= $this->firstAmount($pricing, array_merge(self::PURCHASE_KEYS, ['purchase', 'cost']), ignoreZero: true);
         }
 
         if ($sale === null && $original !== null) {
@@ -104,6 +115,7 @@ class ApiReceivedPriceService
         return [
             'price' => round((float) ($sale ?? 0), 2),
             'original_price' => $original !== null ? round((float) $original, 2) : null,
+            'purchase_price' => $purchase !== null ? round((float) $purchase, 2) : null,
         ];
     }
 
@@ -119,20 +131,27 @@ class ApiReceivedPriceService
             $item['original_price'] = $prices['original_price'];
         }
 
+        if ($prices['purchase_price'] !== null) {
+            $item['purchase_price'] = $prices['purchase_price'];
+            $item['purchase_price_bdt'] = $prices['purchase_price'];
+        }
+
         return $item;
     }
 
-    /** @return array{price: float, original_price: ?float} */
+    /** @return array{price: float, original_price: ?float, purchase_price: ?float} */
     public function resolve(ApiReceivedItem $item): array
     {
         $fromPayload = $this->extract($item->payloadData());
         $manualPrice = (float) $item->price;
         $manualOriginal = $item->original_price !== null ? (float) $item->original_price : null;
+        $manualPurchase = $item->purchase_price !== null ? (float) $item->purchase_price : null;
 
         if ($manualPrice > 0) {
             return [
                 'price' => round($manualPrice, 2),
                 'original_price' => $manualOriginal,
+                'purchase_price' => $manualPurchase ?? $fromPayload['purchase_price'],
             ];
         }
 
@@ -156,12 +175,13 @@ class ApiReceivedPriceService
 
         $prices = $this->extract($payload);
 
-        if ($prices['price'] <= 0 && $prices['original_price'] === null) {
+        if ($prices['price'] <= 0 && $prices['original_price'] === null && $prices['purchase_price'] === null) {
             return false;
         }
 
         $changed = (float) $item->price !== $prices['price']
-            || ($item->original_price === null ? $prices['original_price'] !== null : (float) $item->original_price !== (float) ($prices['original_price'] ?? 0));
+            || ($item->original_price === null ? $prices['original_price'] !== null : (float) $item->original_price !== (float) ($prices['original_price'] ?? 0))
+            || ($item->purchase_price === null ? $prices['purchase_price'] !== null : (float) $item->purchase_price !== (float) ($prices['purchase_price'] ?? 0));
 
         if (! $changed) {
             return false;
@@ -170,13 +190,20 @@ class ApiReceivedPriceService
         $item->update([
             'price' => $prices['price'],
             'original_price' => $prices['original_price'],
+            'purchase_price' => $prices['purchase_price'],
         ]);
 
         if ($item->product_id && $item->product) {
-            $item->product->update([
+            $productUpdate = [
                 'price' => $prices['price'],
                 'original_price' => $prices['original_price'],
-            ]);
+            ];
+
+            if ($prices['purchase_price'] !== null) {
+                $productUpdate['purchase_price'] = $prices['purchase_price'];
+            }
+
+            $item->product->update($productUpdate);
         }
 
         return true;
@@ -240,6 +267,8 @@ class ApiReceivedPriceService
             'displayPrice' => 'display_price',
             'priceText' => 'price_text',
             'formattedPrice' => 'formatted_price',
+            'purchasePriceBdt' => 'purchase_price_bdt',
+            'purchasePrice' => 'purchase_price',
         ];
 
         foreach ($aliases as $from => $to) {

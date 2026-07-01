@@ -117,6 +117,7 @@ class ApiProcessedController extends Controller
             'slug' => 'nullable|string|max:100',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:5000',
             'category_name' => 'nullable|string|max:100',
             'brand' => 'nullable|string|max:100',
@@ -134,6 +135,7 @@ class ApiProcessedController extends Controller
             'slug' => $validated['slug'] ?? null,
             'price' => $validated['price'],
             'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
+            'purchase_price' => filled($validated['purchase_price'] ?? null) ? $validated['purchase_price'] : null,
             'description' => $validated['description'] ?? null,
             'category_name' => $validated['category_name'] ?? null,
             'brand' => filled($validated['brand'] ?? null) ? $validated['brand'] : null,
@@ -152,6 +154,7 @@ class ApiProcessedController extends Controller
                 'name' => $validated['title'],
                 'price' => $validated['price'],
                 'original_price' => filled($validated['original_price'] ?? null) ? $validated['original_price'] : null,
+                'purchase_price' => filled($validated['purchase_price'] ?? null) ? $validated['purchase_price'] : $item->product->purchase_price,
             ]);
         }
 

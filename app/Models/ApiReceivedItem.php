@@ -18,7 +18,7 @@ class ApiReceivedItem extends Model
     public const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
-        'api_source_id', 'source_id', 'sku', 'slug', 'title', 'price', 'original_price',
+        'api_source_id', 'source_id', 'sku', 'slug', 'title', 'price', 'original_price', 'purchase_price',
         'image', 'processed_image', 'images', 'description', 'category_name', 'brand', 'vendor',
         'sizes', 'colors', 'badge', 'badge_variant', 'rating',
         'payload', 'status', 'product_id', 'reviewed_by', 'reviewed_at', 'admin_notes',
@@ -29,6 +29,7 @@ class ApiReceivedItem extends Model
         return [
             'price' => 'decimal:2',
             'original_price' => 'decimal:2',
+            'purchase_price' => 'decimal:2',
             'rating' => 'decimal:1',
             'images' => 'array',
             'sizes' => 'array',

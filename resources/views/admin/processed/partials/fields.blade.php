@@ -17,7 +17,7 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="form-group">
             <label>Price (BDT) *</label>
             <input type="number" name="price" class="form-control" step="0.01" value="{{ old('price', $item->price) }}" required>
@@ -34,10 +34,17 @@
             @endif
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="form-group">
             <label>Original Price</label>
             <input type="number" name="original_price" class="form-control" step="0.01" value="{{ old('original_price', $item->original_price) }}">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>Purchase Price (BDT)</label>
+            <input type="number" name="purchase_price" class="form-control" step="0.01" value="{{ old('purchase_price', $item->purchase_price) }}">
+            <small class="text-muted">From API field <code>purchase_price_bdt</code></small>
         </div>
     </div>
 </div>
