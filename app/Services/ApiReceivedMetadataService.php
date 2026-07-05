@@ -51,6 +51,10 @@ class ApiReceivedMetadataService
 
         $item->update($updates);
 
+        if (isset($updates['brand'])) {
+            app(ApiReceivedBrandService::class)->attachToItem($item->fresh(), $updates['brand']);
+        }
+
         return true;
     }
 

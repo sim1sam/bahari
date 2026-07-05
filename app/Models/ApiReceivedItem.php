@@ -19,7 +19,7 @@ class ApiReceivedItem extends Model
 
     protected $fillable = [
         'api_source_id', 'source_id', 'sku', 'slug', 'title', 'price', 'original_price', 'purchase_price',
-        'image', 'processed_image', 'images', 'description', 'category_name', 'brand', 'vendor',
+        'image', 'processed_image', 'images', 'description', 'category_name', 'brand', 'api_received_brand_id', 'vendor',
         'sizes', 'colors', 'badge', 'badge_variant', 'rating',
         'payload', 'status', 'product_id', 'reviewed_by', 'reviewed_at', 'admin_notes',
     ];
@@ -49,6 +49,13 @@ class ApiReceivedItem extends Model
         static $hasColumns = null;
 
         return $hasColumns ??= Schema::hasColumn((new self)->getTable(), 'brand');
+    }
+
+    public static function hasReceivedBrandRelationColumn(): bool
+    {
+        static $hasColumn = null;
+
+        return $hasColumn ??= Schema::hasColumn((new self)->getTable(), 'api_received_brand_id');
     }
 
     public static function hasProcessedImageBlobColumn(): bool
@@ -114,6 +121,11 @@ class ApiReceivedItem extends Model
     public function source(): BelongsTo
     {
         return $this->belongsTo(ApiSource::class, 'api_source_id');
+    }
+
+    public function receivedBrand(): BelongsTo
+    {
+        return $this->belongsTo(ApiReceivedBrand::class, 'api_received_brand_id');
     }
 
     public function product(): BelongsTo

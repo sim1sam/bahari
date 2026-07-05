@@ -91,6 +91,12 @@ return [
         'route' => 'admin.content.index',
         'active' => 'admin.content.*',
     ],
+    'api_brands' => [
+        'label' => 'Brands',
+        'icon' => 'fas fa-copyright',
+        'route' => 'admin.api-brands.index',
+        'active' => 'admin.api-brands.*',
+    ],
     'api_processed' => [
         'label' => 'Processed',
         'icon' => 'fas fa-check-circle',

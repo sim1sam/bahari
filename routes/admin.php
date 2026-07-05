@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountExpenseController;
+use App\Http\Controllers\Admin\ApiReceivedBrandController;
 use App\Http\Controllers\Admin\ApiContentController;
 use App\Http\Controllers\Admin\ApiProcessedController;
 use App\Http\Controllers\Admin\ApiReceivedImageController;
@@ -112,12 +113,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->name('content.reject');
         });
 
+        Route::middleware('admin.feature:api_brands')->group(function () {
+            Route::post('api-brands/sync', [ApiReceivedBrandController::class, 'syncFromReceived'])->name('api-brands.sync');
+            Route::resource('api-brands', ApiReceivedBrandController::class)->except(['show'])->parameters(['api-brands' => 'apiBrand']);
+        });
+
         Route::middleware('admin.feature:api_processed')->group(function () {
             Route::get('processed', [ApiProcessedController::class, 'index'])->name('processed.index');
             Route::get('processed/live/all', [ApiProcessedController::class, 'liveIndex'])->name('processed.live');
             Route::delete('processed/live/{item}', [ApiProcessedController::class, 'destroyLive'])->name('processed.destroy-live');
             Route::post('processed/live-batch', [ApiProcessedController::class, 'liveBatch'])->name('processed.live-batch');
             Route::post('processed/download-images', [ApiProcessedController::class, 'downloadImages'])->name('processed.download-images');
+            Route::post('processed/download-filtered', [ApiProcessedController::class, 'downloadFiltered'])->name('processed.download-filtered');
             Route::get('received-images/{item}/processed', [ApiReceivedImageController::class, 'processed'])->name('received-images.processed');
             Route::delete('processed/batch', [ApiProcessedController::class, 'destroyBatch'])->name('processed.destroy-batch');
             Route::post('processed/purge-manual-products', [ApiProcessedController::class, 'purgeManualProducts'])->name('processed.purge-manual-products');

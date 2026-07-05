@@ -21,6 +21,7 @@ return [
                 'products',
                 'categories',
                 'api_content',
+                'api_brands',
                 'api_processed',
             ],
         ],

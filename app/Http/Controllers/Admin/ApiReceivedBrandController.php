@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\ApiReceivedBrand;
+use App\Services\ApiReceivedBrandService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class ApiReceivedBrandController extends Controller
+{
+    public function index(): View
+    {
+        return view('admin.api-brands.index', [
+            'brands' => ApiReceivedBrand::query()
+                ->withCount('receivedItems')
+                ->orderBy('name')
+                ->paginate(20),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('admin.api-brands.form', ['brand' => new ApiReceivedBrand]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        ApiReceivedBrand::create($this->validateBrand($request));
+
+        return redirect()
+            ->route('admin.api-brands.index')
+            ->with('success', 'Brand created.');
+    }
+
+    public function edit(ApiReceivedBrand $apiBrand): View
+    {
+        return view('admin.api-brands.form', ['brand' => $apiBrand]);
+    }
+
+    public function update(Request $request, ApiReceivedBrand $apiBrand): RedirectResponse
+    {
+        $apiBrand->update($this->validateBrand($request, $apiBrand));
+
+        return redirect()
+            ->route('admin.api-brands.index')
+            ->with('success', 'Brand updated.');
+    }
+
+    public function destroy(ApiReceivedBrand $apiBrand): RedirectResponse
+    {
+        $apiBrand->receivedItems()->update(['api_received_brand_id' => null]);
+        $apiBrand->delete();
+
+        return redirect()
+            ->route('admin.api-brands.index')
+            ->with('success', 'Brand deleted.');
+    }
+
+    public function syncFromReceived(ApiReceivedBrandService $brands): RedirectResponse
+    {
+        $synced = $brands->syncFromReceivedItems();
+
+        return redirect()
+            ->route('admin.api-brands.index')
+            ->with('success', "Synced {$synced} received item(s) to saved brands.");
+    }
+
+    private function validateBrand(Request $request, ?ApiReceivedBrand $brand = null): array
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100|unique:api_received_brands,name,'.($brand?->id ?? 'NULL'),
+            'slug' => 'nullable|string|max:100|unique:api_received_brands,slug,'.($brand?->id ?? 'NULL'),
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'boolean',
+        ]);
+
+        $slug = trim((string) ($validated['slug'] ?? ''));
+        $validated['slug'] = $slug !== '' ? $slug : Str::slug($validated['name']);
+        $validated['is_active'] = $request->boolean('is_active', true);
+
+        if ($validated['slug'] === '') {
+            $validated['slug'] = 'brand-'.Str::lower(Str::random(6));
+        }
+
+        return $validated;
+    }
+}

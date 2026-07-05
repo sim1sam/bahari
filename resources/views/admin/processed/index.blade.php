@@ -31,6 +31,12 @@
         <input type="hidden" name="layout" id="download-layout" value="brand">
     </form>
 
+    <form id="download-filtered-form" action="{{ route('admin.processed.download-filtered') }}" method="POST" class="d-none">
+        @csrf
+        <input type="hidden" name="brand" value="{{ $brand }}">
+        <input type="hidden" name="date" value="{{ $date }}">
+    </form>
+
     <div class="card card-outline card-secondary mb-3">
         <div class="card-body py-3">
             <form action="{{ route('admin.processed.index') }}" method="GET" class="form-inline flex-wrap">
@@ -42,9 +48,20 @@
                     @endforeach
                 </select>
                 <input type="date" name="date" class="form-control form-control-sm mr-2 mb-2 mb-md-0" value="{{ $date }}" aria-label="Processed date">
+                <label class="mr-1 mb-2 mb-md-0 text-muted small">Show</label>
+                <select name="per_page" class="form-control form-control-sm mr-2 mb-2 mb-md-0" style="width:auto" aria-label="Items per page">
+                    @foreach ([20, 50, 100] as $size)
+                        <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
+                    @endforeach
+                </select>
                 <button type="submit" class="btn btn-sm btn-outline-secondary mr-2 mb-2 mb-md-0">Apply</button>
-                @if ($brand || $date)
+                @if ($brand || $date || $perPage !== 20)
                     <a href="{{ route('admin.processed.index') }}" class="btn btn-sm btn-link mb-2 mb-md-0">Clear</a>
+                @endif
+                @if ($brand || $date)
+                    <button type="button" class="btn btn-sm btn-primary mb-2 mb-md-0 ml-md-2" id="btn-download-filtered">
+                        <i class="fas fa-file-archive"></i> ZIP filtered (by brand folder)
+                    </button>
                 @endif
             </form>
         </div>
@@ -60,9 +77,13 @@
                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
-                <label class="mb-0 mr-3">
-                    <input type="checkbox" id="select-all"> Select all
+                <label class="mb-0 mr-2">
+                    <input type="checkbox" id="select-page"> This page
                 </label>
+                <label class="mb-0 mr-3">
+                    <input type="checkbox" id="select-all-pages"> All pages
+                </label>
+                <span id="select-all-status" class="small text-info mr-3 d-none"></span>
                 <button type="button" class="btn btn-outline-primary btn-sm mr-1 mb-2 mb-md-0" id="btn-download-flat" disabled>
                     <i class="fas fa-download"></i> Download Selected
                 </button>
@@ -138,8 +159,15 @@
                 </tbody>
             </table>
         </div>
-        @if ($items->hasPages())
-            <div class="card-footer">{{ $items->links() }}</div>
+        @if ($items->hasPages() || $items->total() > 0)
+            <div class="card-footer d-flex flex-wrap justify-content-between align-items-center">
+                <span class="text-muted small mb-2 mb-md-0">
+                    Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
+                </span>
+                @if ($items->hasPages())
+                    <div>{{ $items->links() }}</div>
+                @endif
+            </div>
         @endif
     </div>
 @endsection
@@ -148,16 +176,25 @@
 <script>
 (function () {
     var checks = document.querySelectorAll('.item-check');
-    var selectAll = document.getElementById('select-all');
+    var selectPage = document.getElementById('select-page');
+    var selectAllPagesCheckbox = document.getElementById('select-all-pages');
+    var selectAllStatus = document.getElementById('select-all-status');
     var liveBtn = document.getElementById('btn-live-selected');
     var deleteBtn = document.getElementById('btn-delete-selected');
     var downloadFlatBtn = document.getElementById('btn-download-flat');
     var downloadBrandBtn = document.getElementById('btn-download-brand');
+    var downloadFilteredBtn = document.getElementById('btn-download-filtered');
     var liveForm = document.getElementById('batch-form');
     var deleteForm = document.getElementById('delete-batch-form');
     var downloadForm = document.getElementById('download-form');
+    var downloadFilteredForm = document.getElementById('download-filtered-form');
     var downloadLayout = document.getElementById('download-layout');
     var categorySelect = document.getElementById('live-category-id');
+    var filteredTotal = {{ (int) $items->total() }};
+    var pageTotal = checks.length;
+    var filterBrand = @json($brand);
+    var filterDate = @json($date);
+    var selectAllPages = false;
 
     function selectedCategoryId() {
         return categorySelect ? categorySelect.value : '';
@@ -179,41 +216,155 @@
         return Array.from(checks).filter(function (c) { return c.checked; });
     }
 
+    function hasSelection() {
+        return selectAllPages || selectedChecks().length > 0;
+    }
+
+    function updateSelectAllStatus() {
+        if (!selectAllStatus) return;
+        if (selectAllPages && filteredTotal > 0) {
+            selectAllStatus.textContent = 'All ' + filteredTotal + ' matching items selected (all pages)';
+            selectAllStatus.classList.remove('d-none');
+        } else if (selectedChecks().length > 0) {
+            selectAllStatus.textContent = selectedChecks().length + ' on this page selected';
+            selectAllStatus.classList.remove('d-none');
+        } else {
+            selectAllStatus.textContent = '';
+            selectAllStatus.classList.add('d-none');
+        }
+    }
+
+    function syncPageCheckbox() {
+        if (!selectPage || selectAllPages) return;
+        var allPageChecked = pageTotal > 0 && selectedChecks().length === pageTotal;
+        selectPage.checked = allPageChecked;
+    }
+
+    function clearMasterSelection() {
+        selectAllPages = false;
+        if (selectAllPagesCheckbox) selectAllPagesCheckbox.checked = false;
+        if (selectPage) selectPage.checked = false;
+    }
+
+    function selectionCountLabel() {
+        if (selectAllPages) {
+            return 'all ' + filteredTotal + ' matching';
+        }
+        if (selectPage && selectPage.checked) {
+            return selectedChecks().length + ' on this page';
+        }
+        return selectedChecks().length + ' selected';
+    }
+
     function updateBtns() {
-        var any = selectedChecks().length > 0;
+        var any = hasSelection();
         if (liveBtn) liveBtn.disabled = !any;
         if (deleteBtn) deleteBtn.disabled = !any;
         if (downloadFlatBtn) downloadFlatBtn.disabled = !any;
         if (downloadBrandBtn) downloadBrandBtn.disabled = !any;
+        updateSelectAllStatus();
+    }
+
+    function clearBatchInputs(form) {
+        form.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="select_all"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_brand"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_date"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="category_id"]').forEach(function (el) { el.remove(); });
+    }
+
+    function appendFilterInputs(form) {
+        if (!selectAllPages) return;
+
+        var selectInput = document.createElement('input');
+        selectInput.type = 'hidden';
+        selectInput.name = 'select_all';
+        selectInput.value = '1';
+        form.appendChild(selectInput);
+
+        if (filterBrand) {
+            var brandInput = document.createElement('input');
+            brandInput.type = 'hidden';
+            brandInput.name = 'filter_brand';
+            brandInput.value = filterBrand;
+            form.appendChild(brandInput);
+        }
+
+        if (filterDate) {
+            var dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'filter_date';
+            dateInput.value = filterDate;
+            form.appendChild(dateInput);
+        }
+    }
+
+    function submitBatchForm(form, itemChecks) {
+        clearBatchInputs(form);
+        appendFilterInputs(form);
+
+        if (!selectAllPages) {
+            itemChecks.forEach(function (c) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'items[]';
+                input.value = c.value;
+                form.appendChild(input);
+            });
+        }
     }
 
     function submitDownload(layout) {
-        var selected = selectedChecks();
-        if (!selected.length) {
+        if (!hasSelection()) {
             alert('Please select at least one processed item.');
             return;
         }
 
-        downloadForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
-        selected.forEach(function (c) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'items[]';
-            input.value = c.value;
-            downloadForm.appendChild(input);
-        });
+        if (selectAllPages && layout === 'flat') {
+            if (!confirm('Download all ' + filteredTotal + ' matching items as a flat ZIP?')) {
+                return;
+            }
+        }
 
-        if (downloadLayout) downloadLayout.value = layout;
+        submitBatchForm(downloadForm, selectedChecks());
+        if (downloadLayout) downloadLayout.value = (selectAllPages || layout === 'brand') ? 'brand' : layout;
         downloadForm.submit();
     }
 
-    checks.forEach(function (c) { c.addEventListener('change', updateBtns); });
-    if (selectAll) {
-        selectAll.addEventListener('change', function () {
-            checks.forEach(function (c) { c.checked = selectAll.checked; });
+    checks.forEach(function (c) {
+        c.addEventListener('change', function () {
+            if (!c.checked) {
+                clearMasterSelection();
+            }
+            syncPageCheckbox();
+            updateBtns();
+        });
+    });
+
+    if (selectPage) {
+        selectPage.addEventListener('change', function () {
+            selectAllPages = false;
+            if (selectAllPagesCheckbox) selectAllPagesCheckbox.checked = false;
+            checks.forEach(function (check) { check.checked = selectPage.checked; });
             updateBtns();
         });
     }
+
+    if (selectAllPagesCheckbox) {
+        selectAllPagesCheckbox.addEventListener('change', function () {
+            selectAllPages = selectAllPagesCheckbox.checked && filteredTotal > 0;
+            checks.forEach(function (check) { check.checked = selectAllPagesCheckbox.checked; });
+            if (selectPage) selectPage.checked = selectAllPagesCheckbox.checked;
+            updateBtns();
+        });
+    }
+
+    if (downloadFilteredBtn && downloadFilteredForm) {
+        downloadFilteredBtn.addEventListener('click', function () {
+            downloadFilteredForm.submit();
+        });
+    }
+
     if (downloadFlatBtn) {
         downloadFlatBtn.addEventListener('click', function () {
             submitDownload('flat');
@@ -232,18 +383,11 @@
                 if (categorySelect) categorySelect.focus();
                 return;
             }
-            if (!confirm('Publish selected products in this category?')) {
+            var countLabel = selectionCountLabel();
+            if (!confirm('Publish ' + countLabel + ' products in this category?')) {
                 return;
             }
-            liveForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
-            liveForm.querySelectorAll('input[name="category_id"]').forEach(function (el) { el.remove(); });
-            selectedChecks().forEach(function (c) {
-                var itemInput = document.createElement('input');
-                itemInput.type = 'hidden';
-                itemInput.name = 'items[]';
-                itemInput.value = c.value;
-                liveForm.appendChild(itemInput);
-            });
+            submitBatchForm(liveForm, selectedChecks());
             var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'category_id';
@@ -254,17 +398,11 @@
     }
     if (deleteBtn && deleteForm) {
         deleteBtn.addEventListener('click', function () {
-            if (!confirm('Delete selected processed items permanently?')) {
+            var countLabel = selectionCountLabel();
+            if (!confirm('Delete ' + countLabel + ' processed items permanently?')) {
                 return;
             }
-            deleteForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
-            selectedChecks().forEach(function (c) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'items[]';
-                input.value = c.value;
-                deleteForm.appendChild(input);
-            });
+            submitBatchForm(deleteForm, selectedChecks());
             deleteForm.submit();
         });
     }

@@ -78,17 +78,27 @@
             <h3 class="card-title mb-0">Received Images</h3>
             <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0">
                 <form action="{{ route('admin.content.index') }}" method="GET" class="form-inline mr-3 mb-2 mb-md-0">
+                    <select name="brand" class="form-control form-control-sm mr-1" style="min-width:160px" aria-label="Brand">
+                        <option value="">All brands</option>
+                        @foreach ($brands as $brandOption)
+                            <option value="{{ $brandOption }}" @selected($brand === $brandOption)>{{ $brandOption }}</option>
+                        @endforeach
+                    </select>
                     <input type="date" name="date_from" class="form-control form-control-sm mr-1" value="{{ $dateFrom }}" aria-label="From date">
                     <span class="text-muted mx-1">to</span>
                     <input type="date" name="date_to" class="form-control form-control-sm mr-1" value="{{ $dateTo }}" aria-label="To date">
                     <button type="submit" class="btn btn-sm btn-outline-secondary mr-1">Filter</button>
-                    @if ($dateFrom || $dateTo)
+                    @if ($brand || $dateFrom || $dateTo)
                         <a href="{{ route('admin.content.index') }}" class="btn btn-sm btn-link">Clear</a>
                     @endif
                 </form>
-                <label class="mb-0">
-                    <input type="checkbox" id="select-all"> Select all
+                <label class="mb-0 mr-2">
+                    <input type="checkbox" id="select-page"> This page
                 </label>
+                <label class="mb-0 mr-3">
+                    <input type="checkbox" id="select-all-pages"> All pages
+                </label>
+                <span id="select-all-status" class="small text-info mr-3 d-none"></span>
             </div>
         </div>
         <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
@@ -134,8 +144,15 @@
                     </div>
                 @endif
             </div>
-            @if ($items->hasPages())
-                <div class="card-footer">{{ $items->links() }}</div>
+            @if ($items->hasPages() || $items->total() > 0)
+                <div class="card-footer d-flex flex-wrap justify-content-between align-items-center">
+                    <span class="text-muted small mb-2 mb-md-0">
+                        Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
+                    </span>
+                    @if ($items->hasPages())
+                        <div>{{ $items->links() }}</div>
+                    @endif
+                </div>
             @endif
         </form>
     </div>
@@ -146,27 +163,144 @@
 <script>
 (function () {
     var checks = document.querySelectorAll('.item-check');
-    var selectAll = document.getElementById('select-all');
+    var selectPage = document.getElementById('select-page');
+    var selectAllPagesCheckbox = document.getElementById('select-all-pages');
+    var selectAllStatus = document.getElementById('select-all-status');
     var btn = document.getElementById('btn-process-selected');
     var form = document.getElementById('batch-form');
+    var filteredTotal = {{ (int) $items->total() }};
+    var pageTotal = checks.length;
+    var filterBrand = @json($brand);
+    var filterDateFrom = @json($dateFrom);
+    var filterDateTo = @json($dateTo);
+    var selectAllPages = false;
 
-    function updateBtn() {
-        var any = Array.from(checks).some(function (c) { return c.checked; });
-        if (btn) btn.disabled = !any;
+    function selectedChecks() {
+        return Array.from(checks).filter(function (c) { return c.checked; });
     }
 
-    checks.forEach(function (c) { c.addEventListener('change', updateBtn); });
-    if (selectAll) {
-        selectAll.addEventListener('change', function () {
-            checks.forEach(function (c) { c.checked = selectAll.checked; });
+    function hasSelection() {
+        return selectAllPages || selectedChecks().length > 0;
+    }
+
+    function updateSelectAllStatus() {
+        if (!selectAllStatus) return;
+        if (selectAllPages && filteredTotal > 0) {
+            selectAllStatus.textContent = 'All ' + filteredTotal + ' matching items selected (all pages)';
+            selectAllStatus.classList.remove('d-none');
+        } else if (selectedChecks().length > 0) {
+            selectAllStatus.textContent = selectedChecks().length + ' on this page selected';
+            selectAllStatus.classList.remove('d-none');
+        } else {
+            selectAllStatus.textContent = '';
+            selectAllStatus.classList.add('d-none');
+        }
+    }
+
+    function syncPageCheckbox() {
+        if (!selectPage || selectAllPages) return;
+        selectPage.checked = pageTotal > 0 && selectedChecks().length === pageTotal;
+    }
+
+    function clearMasterSelection() {
+        selectAllPages = false;
+        if (selectAllPagesCheckbox) selectAllPagesCheckbox.checked = false;
+        if (selectPage) selectPage.checked = false;
+    }
+
+    function selectionCountLabel() {
+        if (selectAllPages) {
+            return 'all ' + filteredTotal + ' matching';
+        }
+        if (selectPage && selectPage.checked) {
+            return selectedChecks().length + ' on this page';
+        }
+        return selectedChecks().length + ' selected';
+    }
+
+    function updateBtn() {
+        if (btn) btn.disabled = !hasSelection();
+        updateSelectAllStatus();
+    }
+
+    function prepareBatchSubmit() {
+        form.querySelectorAll('input[name="select_all"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_brand"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_date_from"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_date_to"]').forEach(function (el) { el.remove(); });
+
+        if (selectAllPages) {
+            checks.forEach(function (c) { c.disabled = true; });
+
+            var selectInput = document.createElement('input');
+            selectInput.type = 'hidden';
+            selectInput.name = 'select_all';
+            selectInput.value = '1';
+            form.appendChild(selectInput);
+
+            if (filterBrand) {
+                var brandInput = document.createElement('input');
+                brandInput.type = 'hidden';
+                brandInput.name = 'filter_brand';
+                brandInput.value = filterBrand;
+                form.appendChild(brandInput);
+            }
+            if (filterDateFrom) {
+                var fromInput = document.createElement('input');
+                fromInput.type = 'hidden';
+                fromInput.name = 'filter_date_from';
+                fromInput.value = filterDateFrom;
+                form.appendChild(fromInput);
+            }
+            if (filterDateTo) {
+                var toInput = document.createElement('input');
+                toInput.type = 'hidden';
+                toInput.name = 'filter_date_to';
+                toInput.value = filterDateTo;
+                form.appendChild(toInput);
+            }
+        } else {
+            checks.forEach(function (c) { c.disabled = false; });
+        }
+    }
+
+    checks.forEach(function (c) {
+        c.addEventListener('change', function () {
+            if (!c.checked) clearMasterSelection();
+            syncPageCheckbox();
+            updateBtn();
+        });
+    });
+
+    if (selectPage) {
+        selectPage.addEventListener('change', function () {
+            selectAllPages = false;
+            if (selectAllPagesCheckbox) selectAllPagesCheckbox.checked = false;
+            checks.forEach(function (check) { check.checked = selectPage.checked; });
             updateBtn();
         });
     }
+
+    if (selectAllPagesCheckbox) {
+        selectAllPagesCheckbox.addEventListener('change', function () {
+            selectAllPages = selectAllPagesCheckbox.checked && filteredTotal > 0;
+            checks.forEach(function (check) { check.checked = selectAllPagesCheckbox.checked; });
+            if (selectPage) selectPage.checked = selectAllPagesCheckbox.checked;
+            updateBtn();
+        });
+    }
+
     if (btn && form) {
         btn.addEventListener('click', function () {
-            if (confirm('Apply logo and process selected images?')) {
-                form.submit();
+            if (!hasSelection()) {
+                alert('Please select at least one received item.');
+                return;
             }
+            if (!confirm('Apply logo and process ' + selectionCountLabel() + ' images?')) {
+                return;
+            }
+            prepareBatchSubmit();
+            form.submit();
         });
     }
 })();

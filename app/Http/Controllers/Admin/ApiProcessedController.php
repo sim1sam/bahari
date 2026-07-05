@@ -7,6 +7,7 @@ use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\ApiProductImportService;
+use App\Services\ApiReceivedBrandService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use App\Services\MediaStorageService;
@@ -19,26 +20,19 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ApiProcessedController extends Controller
 {
+    private const PER_PAGE_OPTIONS = [20, 50, 100];
+
     public function index(Request $request): View
     {
-        $query = ApiReceivedItem::queryForLists()
-            ->with(['source', 'product'])
-            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
-            ->latest();
-
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
-
-        if ($request->filled('brand')) {
-            $this->applyBrandFilter($query, $request->string('brand')->toString());
-        }
+        $query = $this->processedIndexQuery($request);
+        $perPage = $this->perPage($request);
 
         return view('admin.processed.index', [
-            'items' => $query->paginate(20)->withQueryString(),
+            'items' => $query->paginate($perPage)->withQueryString(),
             'date' => $request->query('date'),
             'brand' => $request->query('brand'),
-            'brands' => $this->processedBrands(),
+            'perPage' => $perPage,
+            'brands' => app(ApiReceivedBrandService::class)->activeBrandNames(),
             'processedCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)->count(),
             'liveCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_IMPORTED)->count(),
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->get(),
@@ -158,6 +152,10 @@ class ApiProcessedController extends Controller
             ]);
         }
 
+        if (filled($validated['brand'] ?? null)) {
+            app(ApiReceivedBrandService::class)->attachToItem($item->fresh(), $validated['brand']);
+        }
+
         return back()->with('success', 'Product information updated.');
     }
 
@@ -190,18 +188,22 @@ class ApiProcessedController extends Controller
     public function liveBatch(Request $request, ApiProductImportService $importer, ApiReceivedPriceService $prices): RedirectResponse
     {
         $validated = $request->validate([
-            'items' => 'required|array|min:1',
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:100',
+            'filter_date' => 'nullable|date',
+            'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
             'category_id' => 'required|exists:categories,id',
         ]);
 
+        $items = $this->resolveBatchItems($request);
+        $this->extendBatchTimeLimit($request);
         $published = 0;
         $skippedZeroPrice = 0;
         $categoryId = (int) $validated['category_id'];
 
-        foreach ($validated['items'] as $id) {
-            $item = ApiReceivedItem::find($id);
-            if (! $item || ! $item->canPublish()) {
+        foreach ($items as $item) {
+            if (! $item->canPublish()) {
                 continue;
             }
 
@@ -262,17 +264,19 @@ class ApiProcessedController extends Controller
 
     public function destroyBatch(Request $request, MediaStorageService $media): RedirectResponse
     {
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
+        $request->validate([
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:100',
+            'filter_date' => 'nullable|date',
+            'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
         ]);
 
         $deleted = 0;
+        $this->extendBatchTimeLimit($request);
 
-        foreach ($validated['items'] as $id) {
-            $item = ApiReceivedItem::find($id);
-
-            if (! $item || ! $item->isProcessed()) {
+        foreach ($this->resolveBatchItems($request) as $item) {
+            if (! $item->isProcessed()) {
                 continue;
             }
 
@@ -317,35 +321,121 @@ class ApiProcessedController extends Controller
     public function downloadImages(Request $request, ProcessedImageDownloadService $downloader): BinaryFileResponse|RedirectResponse
     {
         $validated = $request->validate([
-            'items' => 'required|array|min:1',
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:100',
+            'filter_date' => 'nullable|date',
+            'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
             'layout' => 'required|in:flat,brand',
         ]);
 
-        $items = ApiReceivedItem::query()
-            ->whereIn('id', $validated['items'])
-            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
-            ->get();
+        $items = $this->resolveBatchItems($request);
+        $this->extendBatchTimeLimit($request);
 
         if ($items->isEmpty()) {
             return back()->with('error', 'No processed items found for download.');
         }
 
-        if ($items->count() === 1 && $validated['layout'] === 'flat') {
+        $layout = $validated['layout'];
+        if ($request->boolean('select_all') || filled($validated['filter_brand'] ?? null)) {
+            $layout = 'brand';
+        }
+
+        if ($items->count() === 1 && $layout === 'flat') {
             return $this->downloadImage($items->first(), $downloader);
         }
 
         try {
-            $zipPath = $downloader->createZip($items, $validated['layout']);
+            $zipPath = $downloader->createZip($items, $layout);
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage() ?: 'Could not prepare download archive.');
         }
 
-        $suffix = $validated['layout'] === 'brand' ? 'by-brand' : 'selected';
+        $suffix = $layout === 'brand' ? 'by-brand' : 'selected';
 
         return response()
             ->download($zipPath, 'processed-images-'.$suffix.'-'.now()->format('Y-m-d-His').'.zip')
             ->deleteFileAfterSend(true);
+    }
+
+    public function downloadFiltered(Request $request, ProcessedImageDownloadService $downloader): BinaryFileResponse|RedirectResponse
+    {
+        $request->merge(['select_all' => true]);
+        $request->merge([
+            'filter_brand' => $request->query('brand', $request->input('brand')),
+            'filter_date' => $request->query('date', $request->input('date')),
+        ]);
+
+        if (! $request->filled('filter_brand') && ! $request->filled('filter_date')) {
+            return back()->with('error', 'Apply a brand or date filter first, or use Select all with batch download.');
+        }
+
+        $request->merge(['layout' => 'brand']);
+
+        return $this->downloadImages($request, $downloader);
+    }
+
+    private function processedIndexQuery(Request $request)
+    {
+        $query = ApiReceivedItem::queryForLists()
+            ->with(['source', 'product'])
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->latest();
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->filled('brand')) {
+            $this->applyBrandFilter($query, $request->string('brand')->toString());
+        }
+
+        return $query;
+    }
+
+    private function perPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', 20);
+
+        return in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : 20;
+    }
+
+    /** @return Collection<int, ApiReceivedItem> */
+    private function resolveBatchItems(Request $request): Collection
+    {
+        if ($request->boolean('select_all')) {
+            return $this->processedBatchQuery($request)->get();
+        }
+
+        $ids = $request->input('items', []);
+
+        return ApiReceivedItem::query()
+            ->whereIn('id', $ids)
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->get();
+    }
+
+    private function processedBatchQuery(Request $request)
+    {
+        $query = ApiReceivedItem::query()
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED);
+
+        if ($request->filled('filter_brand')) {
+            $this->applyBrandFilter($query, $request->string('filter_brand')->toString());
+        }
+
+        if ($request->filled('filter_date')) {
+            $query->whereDate('created_at', $request->filter_date);
+        }
+
+        return $query;
+    }
+
+    private function extendBatchTimeLimit(Request $request): void
+    {
+        if ($request->boolean('select_all')) {
+            @set_time_limit(300);
+        }
     }
 
     private function applyBrandFilter($query, string $brand): void
@@ -358,19 +448,6 @@ class ApiProcessedController extends Controller
             $brandQuery->orWhere('payload->brand_name', $brand)
                 ->orWhere('payload->brand', $brand);
         });
-    }
-
-    /** @return Collection<int, string> */
-    private function processedBrands(): Collection
-    {
-        return ApiReceivedItem::query()
-            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
-            ->get(['id', 'brand', 'payload'])
-            ->map(fn (ApiReceivedItem $item) => $item->brand)
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values();
     }
 
     private function deleteProcessedItem(ApiReceivedItem $item, MediaStorageService $media): void

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
+use App\Services\ApiReceivedBrandService;
 use App\Services\ApiReceivedImageService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
@@ -12,7 +13,7 @@ use Illuminate\Http\Request;
 
 class ContentReceiveController extends Controller
 {
-    public function receive(Request $request, ApiReceivedImageService $images, ApiReceivedPriceService $prices): JsonResponse
+    public function receive(Request $request, ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedBrandService $brands): JsonResponse
     {
         $this->preprocessIncomingPrices($request, $prices);
 
@@ -133,6 +134,10 @@ class ContentReceiveController extends Controller
                     $received = $existing;
                     $updated[] = $received->id;
 
+                    if (filled($normalized['brand'] ?? null)) {
+                        $brands->attachToItem($received->fresh(), $normalized['brand']);
+                    }
+
                     continue;
                 }
 
@@ -156,6 +161,10 @@ class ContentReceiveController extends Controller
                     'status' => ApiReceivedItem::STATUS_PENDING,
                 ])));
                 $created[] = $received->id;
+            }
+
+            if (filled($normalized['brand'] ?? null)) {
+                $brands->attachToItem($received->fresh(), $normalized['brand']);
             }
         }
 

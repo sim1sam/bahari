@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\SiteSetting;
+use App\Services\ApiReceivedBrandService;
 use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
 use App\Services\ApiReceivedMetadataService;
@@ -35,10 +36,16 @@ class ApiContentController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
+        if ($request->filled('brand')) {
+            $this->applyBrandFilter($query, $request->string('brand')->toString());
+        }
+
         return view('admin.content.index', [
             'items' => $query->paginate(24)->withQueryString(),
             'dateFrom' => $request->query('date_from'),
             'dateTo' => $request->query('date_to'),
+            'brand' => $request->query('brand'),
+            'brands' => app(ApiReceivedBrandService::class)->activeBrandNames(),
             'pendingCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PENDING)->count(),
             'logoUrl' => $this->settings->apiLogoUrl(),
             'logoScale' => Schema::hasColumn((new SiteSetting)->getTable(), 'api_logo_scale')
@@ -98,7 +105,7 @@ class ApiContentController extends Controller
         return back()->with('success', 'Logo size updated to '.$settings->api_logo_scale.'% of image width.');
     }
 
-    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata): RedirectResponse
+    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata, ApiReceivedBrandService $brands): RedirectResponse
     {
         $fixed = 0;
         $failed = 0;
@@ -141,6 +148,11 @@ class ApiContentController extends Controller
         }
         if ($metadataSynced > 0) {
             $message .= " {$metadataSynced} brand/vendor field(s) synced from API payload.";
+        }
+
+        $brandsSynced = $brands->syncFromReceivedItems();
+        if ($brandsSynced > 0) {
+            $message .= " {$brandsSynced} brand link(s) saved.";
         }
         if ($failed > 0) {
             $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
@@ -190,6 +202,10 @@ class ApiContentController extends Controller
             'badge_variant' => filled($validated['badge_variant'] ?? null) ? $validated['badge_variant'] : null,
             'rating' => filled($validated['rating'] ?? null) ? $validated['rating'] : null,
         ]));
+
+        if (filled($validated['brand'] ?? null)) {
+            app(ApiReceivedBrandService::class)->attachToItem($item->fresh(), $validated['brand']);
+        }
 
         return back()->with('success', 'Content updated.');
     }
@@ -253,17 +269,25 @@ class ApiContentController extends Controller
         }
 
         $validated = $request->validate([
-            'items' => 'required|array|min:1',
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:100',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
+            'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
         ]);
 
         @set_time_limit(300);
 
+        $itemIds = $request->boolean('select_all')
+            ? $this->pendingBatchQuery($request)->pluck('id')
+            : collect($validated['items'] ?? []);
+
         $processed = 0;
         $missingImage = 0;
         $failed = 0;
 
-        foreach ($validated['items'] as $id) {
+        foreach ($itemIds as $id) {
             try {
                 $item = ApiReceivedItem::with('source')->find($id);
 
@@ -341,6 +365,38 @@ class ApiContentController extends Controller
         ]);
 
         return redirect()->route('admin.content.index')->with('success', 'Item rejected.');
+    }
+
+    private function pendingBatchQuery(Request $request)
+    {
+        $query = ApiReceivedItem::query()
+            ->where('status', ApiReceivedItem::STATUS_PENDING);
+
+        if ($request->filled('filter_brand')) {
+            $this->applyBrandFilter($query, $request->string('filter_brand')->toString());
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $query->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $query->whereDate('created_at', '<=', $request->filter_date_to);
+        }
+
+        return $query;
+    }
+
+    private function applyBrandFilter($query, string $brand): void
+    {
+        $query->where(function ($brandQuery) use ($brand) {
+            if (ApiReceivedItem::hasBrandVendorColumns()) {
+                $brandQuery->where('brand', $brand);
+            }
+
+            $brandQuery->orWhere('payload->brand_name', $brand)
+                ->orWhere('payload->brand', $brand);
+        });
     }
 
     /** @return array<int, string> */
