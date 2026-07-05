@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApiReceivedItem;
 use App\Models\Category;
+use App\Services\ApiReceivedCategoryService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +17,17 @@ class CategoryController extends Controller
 
     public function index(): View
     {
+        $query = Category::query()->orderBy('sort_order');
+
+        if (ApiReceivedItem::hasCategoryRelationColumn()) {
+            $query->withCount(['products', 'receivedItems']);
+        } else {
+            $query->withCount('products');
+        }
+
         return view('admin.categories.index', [
-            'categories' => Category::withCount('products')->orderBy('sort_order')->paginate(15),
+            'categories' => $query->paginate(15),
+            'canSyncReceived' => ApiReceivedItem::hasCategoryRelationColumn(),
         ]);
     }
 
@@ -51,6 +62,15 @@ class CategoryController extends Controller
         $category->delete();
 
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted.');
+    }
+
+    public function syncFromReceived(ApiReceivedCategoryService $categories): RedirectResponse
+    {
+        $synced = $categories->syncFromReceivedItems();
+
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', "Synced {$synced} received item(s) to categories.");
     }
 
     private function validateCategory(Request $request, ?Category $category = null): array

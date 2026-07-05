@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\ApiProductImportService;
 use App\Services\ApiReceivedBrandService;
+use App\Services\ApiReceivedCategoryService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
 use App\Services\MediaStorageService;
@@ -154,6 +155,10 @@ class ApiProcessedController extends Controller
 
         if (filled($validated['brand'] ?? null)) {
             app(ApiReceivedBrandService::class)->attachToItem($item->fresh(), $validated['brand']);
+        }
+
+        if (filled($validated['category_name'] ?? null)) {
+            app(ApiReceivedCategoryService::class)->attachToItem($item->fresh(), $validated['category_name']);
         }
 
         return back()->with('success', 'Product information updated.');

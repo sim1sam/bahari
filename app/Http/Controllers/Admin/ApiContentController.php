@@ -7,6 +7,7 @@ use App\Models\ApiReceivedItem;
 use App\Models\Category;
 use App\Models\SiteSetting;
 use App\Services\ApiReceivedBrandService;
+use App\Services\ApiReceivedCategoryService;
 use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
 use App\Services\ApiReceivedMetadataService;
@@ -105,7 +106,7 @@ class ApiContentController extends Controller
         return back()->with('success', 'Logo size updated to '.$settings->api_logo_scale.'% of image width.');
     }
 
-    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata, ApiReceivedBrandService $brands): RedirectResponse
+    public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata, ApiReceivedBrandService $brands, ApiReceivedCategoryService $categories): RedirectResponse
     {
         $fixed = 0;
         $failed = 0;
@@ -153,6 +154,11 @@ class ApiContentController extends Controller
         $brandsSynced = $brands->syncFromReceivedItems();
         if ($brandsSynced > 0) {
             $message .= " {$brandsSynced} brand link(s) saved.";
+        }
+
+        $categoriesSynced = $categories->syncFromReceivedItems();
+        if ($categoriesSynced > 0) {
+            $message .= " {$categoriesSynced} category link(s) saved to Categories.";
         }
         if ($failed > 0) {
             $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
@@ -205,6 +211,10 @@ class ApiContentController extends Controller
 
         if (filled($validated['brand'] ?? null)) {
             app(ApiReceivedBrandService::class)->attachToItem($item->fresh(), $validated['brand']);
+        }
+
+        if (filled($validated['category_name'] ?? null)) {
+            app(ApiReceivedCategoryService::class)->attachToItem($item->fresh(), $validated['category_name']);
         }
 
         return back()->with('success', 'Content updated.');

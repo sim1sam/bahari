@@ -725,6 +725,7 @@ namespace App\Models {
 	 * @property-read mixed $vendor
 	 * @property-read \App\Models\ApiSource $source
 	 * @property-read \App\Models\ApiReceivedBrand $receivedBrand
+	 * @property-read \App\Models\Category $category
 	 * @property-read \App\Models\Product $product
 	 * @property-read \App\Models\User $reviewer
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereId($value)
@@ -1431,6 +1432,8 @@ namespace App\Models {
 	 * @property int $id
 	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
 	 * @property-read int|null $products_count
+	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ApiReceivedItem> $receivedItems
+	 * @property-read int|null $received_items_count
 	 * @method static \Illuminate\Database\Eloquent\Builder<Category>|Category whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Category>|Category whereSlug($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Category>|Category whereName($value)

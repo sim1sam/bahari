@@ -26,6 +26,11 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function receivedItems(): HasMany
+    {
+        return $this->hasMany(ApiReceivedItem::class);
+    }
+
     public function imageUrl(): ?string
     {
         return app(MediaStorageService::class)->url($this->image);

@@ -61,6 +61,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::middleware('admin.feature:categories')->group(function () {
+            Route::post('categories/sync-received', [CategoryController::class, 'syncFromReceived'])->name('categories.sync-received');
             Route::resource('categories', CategoryController::class)->except(['show']);
         });
 

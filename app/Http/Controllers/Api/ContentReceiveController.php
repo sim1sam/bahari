@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ApiReceivedItem;
 use App\Services\ApiReceivedBrandService;
+use App\Services\ApiReceivedCategoryService;
 use App\Services\ApiReceivedImageService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
 
 class ContentReceiveController extends Controller
 {
-    public function receive(Request $request, ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedBrandService $brands): JsonResponse
+    public function receive(Request $request, ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedBrandService $brands, ApiReceivedCategoryService $categories): JsonResponse
     {
         $this->preprocessIncomingPrices($request, $prices);
 
@@ -140,6 +141,10 @@ class ContentReceiveController extends Controller
                         $brands->attachToItem($received->fresh(), $normalized['brand']);
                     }
 
+                    if (filled($normalized['category_name'] ?? null)) {
+                        $categories->attachToItem($received->fresh(), $normalized['category_name']);
+                    }
+
                     continue;
                 }
 
@@ -167,6 +172,10 @@ class ContentReceiveController extends Controller
 
             if (filled($normalized['brand'] ?? null)) {
                 $brands->attachToItem($received->fresh(), $normalized['brand']);
+            }
+
+            if (filled($normalized['category_name'] ?? null)) {
+                $categories->attachToItem($received->fresh(), $normalized['category_name']);
             }
         }
 

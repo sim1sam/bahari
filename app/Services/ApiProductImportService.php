@@ -13,6 +13,7 @@ class ApiProductImportService
     public function __construct(
         private MediaStorageService $media,
         private ApiReceivedPriceService $prices,
+        private ApiReceivedCategoryService $categories,
     ) {}
 
     public function import(ApiReceivedItem $item, ?int $categoryId = null): Product
@@ -163,34 +164,12 @@ class ApiProductImportService
 
     private function resolveCategoryId(?int $categoryId, ?string $name): ?int
     {
-        if ($categoryId) {
-            return Category::query()
-                ->where('is_active', true)
-                ->where('id', $categoryId)
-                ->value('id');
-        }
-
-        if (! $name) {
-            return $this->defaultCategoryId();
-        }
-
-        $category = Category::query()
-            ->where('is_active', true)
-            ->where(function ($q) use ($name) {
-                $q->where('name', $name)->orWhere('slug', Str::slug($name));
-            })
-            ->first();
-
-        return $category?->id ?? $this->defaultCategoryId();
+        return $this->categories->resolveCategoryId($categoryId, $name);
     }
 
     private function defaultCategoryId(): ?int
     {
-        return Category::query()
-            ->where('is_active', true)
-            ->where('slug', 'new-in')
-            ->value('id')
-            ?? Category::query()->where('is_active', true)->orderBy('sort_order')->value('id');
+        return $this->categories->defaultCategoryId();
     }
 
     private function uniqueSlug(string $base): string
