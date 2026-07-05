@@ -173,12 +173,18 @@ class ApiProcessedController extends Controller
         }
 
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
+        $categoryId = filled($validated['category_id'] ?? null) ? (int) $validated['category_id'] : null;
+
+        if ($categoryId === null && ! filled($item->category_name)) {
+            return back()->with('error', 'No category from API. Set ecommerce_category_name in the payload or select a category manually.');
+        }
+
         $product = $item->product_id
-            ? $importer->syncProduct($item, $item->product, (int) $validated['category_id'])
-            : $importer->import($item, (int) $validated['category_id']);
+            ? $importer->syncProduct($item, $item->product, $categoryId)
+            : $importer->import($item, $categoryId);
 
         return redirect()
             ->route('admin.processed.show', $item)
@@ -193,14 +199,15 @@ class ApiProcessedController extends Controller
             'filter_date' => 'nullable|date',
             'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
         $items = $this->resolveBatchItems($request);
         $this->extendBatchTimeLimit($request);
         $published = 0;
         $skippedZeroPrice = 0;
-        $categoryId = (int) $validated['category_id'];
+        $skippedNoCategory = 0;
+        $overrideCategoryId = filled($validated['category_id'] ?? null) ? (int) $validated['category_id'] : null;
 
         foreach ($items as $item) {
             if (! $item->canPublish()) {
@@ -216,19 +223,30 @@ class ApiProcessedController extends Controller
                 continue;
             }
 
+            if ($overrideCategoryId === null && ! filled($item->category_name)) {
+                $skippedNoCategory++;
+
+                continue;
+            }
+
             if ($item->product_id) {
-                $importer->syncProduct($item, $item->product, $categoryId);
+                $importer->syncProduct($item, $item->product, $overrideCategoryId);
             } else {
-                $importer->import($item, $categoryId);
+                $importer->import($item, $overrideCategoryId);
             }
             $published++;
         }
 
-        $categoryName = Category::find($categoryId)?->name ?? 'selected category';
-        $message = "{$published} product(s) are now live under {$categoryName}.";
+        $message = "{$published} product(s) are now live.";
+        if ($overrideCategoryId) {
+            $message = "{$published} product(s) are now live under ".(Category::find($overrideCategoryId)?->name ?? 'selected category').'.';
+        }
 
         if ($skippedZeroPrice > 0) {
             $message .= " {$skippedZeroPrice} item(s) skipped because price is 0. Send price_bdt or enter price manually.";
+        }
+        if ($skippedNoCategory > 0) {
+            $message .= " {$skippedNoCategory} item(s) skipped — no ecommerce_category_name and no override category selected.";
         }
 
         return redirect()

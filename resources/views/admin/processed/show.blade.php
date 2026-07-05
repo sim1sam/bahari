@@ -80,22 +80,31 @@
             @if (! $isLive)
                 <div class="card card-success">
                     <div class="card-header"><h3 class="card-title">Go Live on Storefront</h3></div>
-                    <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" onsubmit="return confirm('Publish this product in the selected category?')">
+                    <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" onsubmit="return confirm('Publish this product{{ $item->category_name ? ' using API category: '.$item->category_name : '' }}?')">
                         @csrf
                         <div class="card-body">
-                            <div class="form-group">
-                                <label>Category *</label>
-                                <select name="category_id" class="form-control" required>
-                                    <option value="">Select category</option>
+                            @if ($item->category_name)
+                                <div class="alert alert-info py-2 mb-3">
+                                    <strong>API category:</strong> {{ $item->category_name }}
+                                    <span class="d-block small text-muted mb-0">Matched to your store category automatically when you click Go Live.</span>
+                                </div>
+                            @else
+                                <div class="alert alert-warning py-2 mb-3">
+                                    No <code>ecommerce_category_name</code> from API. Select a category below or edit the product category field.
+                                </div>
+                            @endif
+                            <div class="form-group mb-0">
+                                <label>Override category {{ $item->category_name ? '(optional)' : '*' }}</label>
+                                <select name="category_id" class="form-control" @unless($item->category_name) required @endunless>
+                                    <option value="">{{ $item->category_name ? 'Use API category' : 'Select category' }}</option>
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted">Product will appear in this category on the storefront.</small>
                             </div>
-                            <p class="text-muted small mb-0">The processed image with logo will be used on the product list and product page.</p>
+                            <p class="text-muted small mb-0 mt-2">The processed image with logo will be used on the product list and product page.</p>
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-success btn-block btn-lg">

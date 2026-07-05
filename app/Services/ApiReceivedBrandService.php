@@ -5,12 +5,23 @@ namespace App\Services;
 use App\Models\ApiReceivedBrand;
 use App\Models\ApiReceivedItem;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ApiReceivedBrandService
 {
+    public static function isAvailable(): bool
+    {
+        static $available = null;
+
+        return $available ??= Schema::hasTable('api_received_brands');
+    }
+
     public function register(?string $name): ?ApiReceivedBrand
     {
+        if (! self::isAvailable()) {
+            return null;
+        }
         $name = trim((string) $name);
 
         if ($name === '') {
@@ -39,6 +50,15 @@ class ApiReceivedBrandService
         }
 
         $brand = $this->register($brandName);
+
+        if (! $brand) {
+            if (($stored['brand'] ?? null) !== $brandName) {
+                $item->update(['brand' => $brandName]);
+            }
+
+            return;
+        }
+
         $stored = $item->getAttributes();
         $updates = [];
 
@@ -57,10 +77,19 @@ class ApiReceivedBrandService
 
     public function syncFromReceivedItems(): int
     {
+        if (! self::isAvailable()) {
+            return 0;
+        }
+
+        $columns = ['id', 'brand', 'payload'];
+        if (ApiReceivedItem::hasReceivedBrandRelationColumn()) {
+            $columns[] = 'api_received_brand_id';
+        }
+
         $synced = 0;
 
         ApiReceivedItem::query()
-            ->get(['id', 'brand', 'payload', 'api_received_brand_id'])
+            ->get($columns)
             ->each(function (ApiReceivedItem $item) use (&$synced) {
                 $brandName = $item->brand;
 
@@ -82,10 +111,26 @@ class ApiReceivedBrandService
     /** @return Collection<int, string> */
     public function activeBrandNames(): Collection
     {
+        if (! self::isAvailable()) {
+            return $this->brandNamesFromItems();
+        }
+
         return ApiReceivedBrand::query()
             ->active()
             ->orderBy('name')
             ->pluck('name');
+    }
+
+    /** @return Collection<int, string> */
+    private function brandNamesFromItems(): Collection
+    {
+        return ApiReceivedItem::query()
+            ->get(['id', 'brand', 'payload'])
+            ->map(fn (ApiReceivedItem $item) => $item->brand)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
     }
 
     private function uniqueSlug(string $name): string

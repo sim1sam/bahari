@@ -10,23 +10,28 @@ class ApiReceivedMetadataService
     private const BRAND_KEYS = ['brand', 'brand_name', 'brandName'];
 
     /** @var array<int, string> */
+    private const CATEGORY_KEYS = ['ecommerce_category_name', 'category_name', 'category', 'categoryName'];
+
+    /** @var array<int, string> */
     private const VENDOR_KEYS = ['vendor', 'vendor_name', 'vendorName', 'seller', 'seller_name', 'shop', 'shop_name', 'store', 'store_name'];
 
-    /** @return array{brand: ?string, vendor: ?string} */
+    /** @return array{brand: ?string, vendor: ?string, category_name: ?string} */
     public function extract(array $data): array
     {
         return [
             'brand' => $this->firstString($data, self::BRAND_KEYS),
             'vendor' => $this->firstString($data, self::VENDOR_KEYS),
+            'category_name' => $this->extractCategory($data),
         ];
+    }
+
+    public function extractCategory(array $data): ?string
+    {
+        return $this->firstString($data, self::CATEGORY_KEYS);
     }
 
     public function syncItem(ApiReceivedItem $item): bool
     {
-        if (! ApiReceivedItem::hasBrandVendorColumns()) {
-            return false;
-        }
-
         $payload = $item->payloadData();
 
         if ($payload === []) {
@@ -37,12 +42,18 @@ class ApiReceivedMetadataService
         $stored = $item->getAttributes();
         $updates = [];
 
-        if ($metadata['brand'] !== null && ($stored['brand'] ?? null) !== $metadata['brand']) {
-            $updates['brand'] = $metadata['brand'];
+        if ($metadata['category_name'] !== null && ($stored['category_name'] ?? null) !== $metadata['category_name']) {
+            $updates['category_name'] = $metadata['category_name'];
         }
 
-        if ($metadata['vendor'] !== null && ($stored['vendor'] ?? null) !== $metadata['vendor']) {
-            $updates['vendor'] = $metadata['vendor'];
+        if (ApiReceivedItem::hasBrandVendorColumns()) {
+            if ($metadata['brand'] !== null && ($stored['brand'] ?? null) !== $metadata['brand']) {
+                $updates['brand'] = $metadata['brand'];
+            }
+
+            if ($metadata['vendor'] !== null && ($stored['vendor'] ?? null) !== $metadata['vendor']) {
+                $updates['vendor'] = $metadata['vendor'];
+            }
         }
 
         if ($updates === []) {

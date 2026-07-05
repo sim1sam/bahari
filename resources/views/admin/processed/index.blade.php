@@ -71,8 +71,8 @@
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <h3 class="card-title mb-0">Processed Products</h3>
             <div class="mt-2 mt-md-0 d-flex flex-wrap align-items-center">
-                <select id="live-category-id" class="form-control form-control-sm mr-2 mb-2 mb-md-0" style="min-width:180px" required>
-                    <option value="">Select category</option>
+                <select id="live-category-id" class="form-control form-control-sm mr-2 mb-2 mb-md-0" style="min-width:180px" title="Optional — uses API category when empty">
+                    <option value="">Use API category</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                     @endforeach
@@ -137,7 +137,7 @@
                                     <i class="fas fa-download"></i>
                                 </a>
                                 <a href="{{ route('admin.processed.show', $item) }}" class="btn btn-xs btn-primary">Review</a>
-                                <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" class="d-inline live-item-form" onsubmit="return submitLiveItem(this)">
+                                <form action="{{ route('admin.processed.live-item', $item) }}" method="POST" class="d-inline live-item-form" data-api-category="{{ $item->category_name }}" onsubmit="return submitLiveItem(this)">
                                     @csrf
                                     <input type="hidden" name="category_id" class="live-category-input" value="">
                                     <button type="submit" class="btn btn-xs btn-success">Go Live</button>
@@ -202,14 +202,16 @@
 
     window.submitLiveItem = function (form) {
         var categoryId = selectedCategoryId();
-        if (!categoryId) {
-            alert('Please select a category first.');
+        var apiCategory = form.getAttribute('data-api-category') || '';
+        if (!categoryId && !apiCategory) {
+            alert('No API category on this item. Select an override category or set ecommerce_category_name in the API payload.');
             if (categorySelect) categorySelect.focus();
             return false;
         }
         var input = form.querySelector('.live-category-input');
         if (input) input.value = categoryId;
-        return confirm('Publish this product in the selected category?');
+        var label = categoryId ? 'the selected category' : ('API category "' + apiCategory + '"');
+        return confirm('Publish this product using ' + label + '?');
     };
 
     function selectedChecks() {
@@ -378,21 +380,22 @@
     if (liveBtn && liveForm) {
         liveBtn.addEventListener('click', function () {
             var categoryId = selectedCategoryId();
-            if (!categoryId) {
-                alert('Please select a category first.');
-                if (categorySelect) categorySelect.focus();
-                return;
-            }
             var countLabel = selectionCountLabel();
-            if (!confirm('Publish ' + countLabel + ' products in this category?')) {
+            if (categoryId) {
+                if (!confirm('Publish ' + countLabel + ' products in the selected category?')) {
+                    return;
+                }
+            } else if (!confirm('No override category selected. Each item will use its API category (ecommerce_category_name). Publish ' + countLabel + ' products?')) {
                 return;
             }
             submitBatchForm(liveForm, selectedChecks());
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'category_id';
-            input.value = categoryId;
-            liveForm.appendChild(input);
+            if (categoryId) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'category_id';
+                input.value = categoryId;
+                liveForm.appendChild(input);
+            }
             liveForm.submit();
         });
     }

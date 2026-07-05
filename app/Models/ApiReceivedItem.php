@@ -100,6 +100,15 @@ class ApiReceivedItem extends Model
         return $attributes;
     }
 
+    public function getCategoryNameAttribute(?string $value): ?string
+    {
+        if (filled($value)) {
+            return $value;
+        }
+
+        return app(ApiReceivedMetadataService::class)->extractCategory($this->payloadData());
+    }
+
     public function getBrandAttribute(?string $value): ?string
     {
         if (filled($value)) {

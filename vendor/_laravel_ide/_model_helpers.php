@@ -353,8 +353,22 @@ namespace App\Models {
 	/**
 	 * App\Models\ApiReceivedBrand
 	 *
+	 * @property \Illuminate\Support\Carbon|null $updated_at
+	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property string|null $notes
+	 * @property boolean $is_active
+	 * @property string $slug
+	 * @property string $name
+	 * @property int $id
 	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ApiReceivedItem> $receivedItems
 	 * @property-read int|null $received_items_count
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereName($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereSlug($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereIsActive($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereNotes($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereCreatedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand newModelQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand newQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand query()
@@ -691,12 +705,13 @@ namespace App\Models {
 	 * @property string|null $badge
 	 * @property array|null $colors
 	 * @property array|null $sizes
-	 * @property string|null $category_name
+	 * @property int|null $api_received_brand_id
 	 * @property string|null $description
 	 * @property array|null $images
 	 * @property string|null $processed_image_blob
 	 * @property string|null $processed_image
 	 * @property string|null $image
+	 * @property float|null $purchase_price
 	 * @property float|null $original_price
 	 * @property float $price
 	 * @property string $title
@@ -705,6 +720,7 @@ namespace App\Models {
 	 * @property string|null $source_id
 	 * @property int|null $api_source_id
 	 * @property int $id
+	 * @property-read mixed $category_name
 	 * @property-read mixed $brand
 	 * @property-read mixed $vendor
 	 * @property-read \App\Models\ApiSource $source
@@ -719,12 +735,13 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereTitle($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem wherePrice($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereOriginalPrice($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem wherePurchasePrice($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereImage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereProcessedImage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereProcessedImageBlob($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereImages($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereDescription($value)
-	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereCategoryName($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereApiReceivedBrandId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereSizes($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereColors($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereBadge($value)
