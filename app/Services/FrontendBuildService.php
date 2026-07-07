@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
+use ZipArchive;
 
 class FrontendBuildService
 {
-    /** @return array{node_available: bool, npm_available: bool, node_version: ?string, npm_version: ?string, node_modules: bool, build_dir: bool, manifest_exists: bool, css_file: ?string, js_file: ?string, css_exists: bool, js_exists: bool, assets_count: int, last_built_at: ?string, project_path: string} */
+    /** @return array{node_available: bool, npm_available: bool, node_version: ?string, npm_version: ?string, node_modules: bool, build_dir: bool, assets_dir: bool, manifest_exists: bool, css_file: ?string, js_file: ?string, css_exists: bool, js_exists: bool, assets_count: int, last_built_at: ?string, project_path: string, is_broken: bool} */
     public function status(): array
     {
         $manifest = $this->readManifest();
@@ -15,6 +17,8 @@ class FrontendBuildService
         $jsFile = $manifest['resources/js/app.js']['file'] ?? null;
         $manifestPath = public_path('build/manifest.json');
         $assetsDir = public_path('build/assets');
+        $cssExists = $cssFile ? is_file(public_path('build/'.$cssFile)) : false;
+        $jsExists = $jsFile ? is_file(public_path('build/'.$jsFile)) : false;
 
         return [
             'node_available' => $this->commandWorks($this->nodeBinary(), ['--version']),
@@ -23,16 +27,18 @@ class FrontendBuildService
             'npm_version' => $this->commandVersion($this->npmBinary(), ['--version']),
             'node_modules' => is_dir(base_path('node_modules')),
             'build_dir' => is_dir(public_path('build')),
+            'assets_dir' => is_dir($assetsDir),
             'manifest_exists' => is_file($manifestPath),
             'css_file' => $cssFile,
             'js_file' => $jsFile,
-            'css_exists' => $cssFile ? is_file(public_path('build/'.$cssFile)) : false,
-            'js_exists' => $jsFile ? is_file(public_path('build/'.$jsFile)) : false,
+            'css_exists' => $cssExists,
+            'js_exists' => $jsExists,
             'assets_count' => is_dir($assetsDir) ? count(File::files($assetsDir)) : 0,
             'last_built_at' => is_file($manifestPath)
                 ? date('Y-m-d H:i:s', (int) filemtime($manifestPath))
                 : null,
             'project_path' => base_path(),
+            'is_broken' => is_file($manifestPath) && (! $cssExists || ! $jsExists),
         ];
     }
 
@@ -87,6 +93,113 @@ class FrontendBuildService
             return [
                 'success' => false,
                 'message' => 'Build failed: '.$e->getMessage(),
+                'output' => '',
+            ];
+        }
+    }
+
+    /** @return array{success: bool, message: string, output: string} */
+    public function uploadDeployZip(UploadedFile $file): array
+    {
+        if (! class_exists(ZipArchive::class)) {
+            return [
+                'success' => false,
+                'message' => 'PHP Zip extension is required to upload build files.',
+                'output' => '',
+            ];
+        }
+
+        $zip = new ZipArchive;
+        $opened = $zip->open($file->getRealPath());
+
+        if ($opened !== true) {
+            return [
+                'success' => false,
+                'message' => 'Could not open the uploaded zip file.',
+                'output' => '',
+            ];
+        }
+
+        $hasManifest = false;
+        $hasAssets = false;
+
+        for ($index = 0; $index < $zip->numFiles; $index++) {
+            $entry = (string) $zip->getNameIndex($index);
+
+            if (str_contains($entry, '..')) {
+                $zip->close();
+
+                return [
+                    'success' => false,
+                    'message' => 'Unsafe zip entry detected. Use deploy-build.zip from npm run deploy.',
+                    'output' => '',
+                ];
+            }
+
+            if (preg_match('#(^|/)manifest\.json$#', $entry)) {
+                $hasManifest = true;
+            }
+
+            if (preg_match('#(^|/)assets/#', $entry)) {
+                $hasAssets = true;
+            }
+        }
+
+        if (! $hasManifest || ! $hasAssets) {
+            $zip->close();
+
+            return [
+                'success' => false,
+                'message' => 'Invalid build zip. Upload deploy-build.zip created by npm run deploy on your computer.',
+                'output' => '',
+            ];
+        }
+
+        $buildDir = public_path('build');
+
+        try {
+            if (is_dir($buildDir)) {
+                File::cleanDirectory($buildDir);
+            } else {
+                File::ensureDirectoryExists($buildDir);
+            }
+
+            if (! $zip->extractTo($buildDir)) {
+                $zip->close();
+
+                return [
+                    'success' => false,
+                    'message' => 'Could not extract build files into public/build/. Check folder permissions.',
+                    'output' => '',
+                ];
+            }
+
+            $zip->close();
+            $status = $this->status();
+
+            if (! $status['css_exists'] || ! $status['js_exists']) {
+                return [
+                    'success' => false,
+                    'message' => 'Zip extracted but CSS/JS files are still missing. Re-create deploy-build.zip locally with npm run deploy.',
+                    'output' => 'Assets found: '.$status['assets_count'],
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Build files uploaded successfully. Hard refresh the storefront to see the design.',
+                'output' => trim(
+                    "CSS: {$status['css_file']}\n".
+                    "JS: {$status['js_file']}\n".
+                    "Assets: {$status['assets_count']} files"
+                ),
+            ];
+        } catch (\Throwable $e) {
+            $zip->close();
+
+            return [
+                'success' => false,
+                'message' => 'Upload failed: '.$e->getMessage(),
                 'output' => '',
             ];
         }

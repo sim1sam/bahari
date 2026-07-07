@@ -195,6 +195,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:npm_build')->group(function () {
             Route::get('frontend-build', [FrontendBuildController::class, 'index'])->name('frontend-build.index');
             Route::post('frontend-build', [FrontendBuildController::class, 'store'])->name('frontend-build.store');
+            Route::post('frontend-build/upload', [FrontendBuildController::class, 'upload'])->name('frontend-build.upload');
         });
     });
 });

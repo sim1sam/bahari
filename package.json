@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "build:deploy": "vite build && node scripts/verify-build.mjs",
+        "build:git": "npm run build:deploy && git add public/build",
         "package:deploy": "node scripts/package-build.mjs",
         "deploy": "npm run build:deploy && npm run package:deploy",
         "dev": "vite"
