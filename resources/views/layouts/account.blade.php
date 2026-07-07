@@ -3,9 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="{{ $siteSettings->theme_primary ?? '#0891b2' }}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <x-pwa.head />
     <x-site.meta
         :title="trim($__env->yieldContent('title')) ?: 'My Account'"
         :description="trim($__env->yieldContent('meta_description')) ?: null"
@@ -40,6 +38,7 @@
     </div>
 
     <x-account.mobile-tab-bar />
+    <x-pwa.install-banner />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('scripts')

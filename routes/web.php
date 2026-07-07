@@ -13,8 +13,14 @@ use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\SearchController;
 use App\Http\Controllers\Frontend\SslCommerzController;
+use App\Http\Controllers\Frontend\PwaController;
 use App\Http\Controllers\PublicStorageController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/pwa/icon/{size}', [PwaController::class, 'icon'])->whereNumber('size')->name('pwa.icon');
+
+Route::get('/offline', fn () => view('pages.offline'))->name('offline');
 
 Route::get('/media/{path}', [PublicStorageController::class, 'show'])
     ->where('path', '.*')

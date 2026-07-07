@@ -11,6 +11,7 @@
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <x-site.theme-styles />
+    <x-pwa.head />
     <x-site.google-tag-manager location="head" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     @stack('styles')
@@ -27,6 +28,7 @@
 
     <x-ecommerce.footer />
     <x-ecommerce.mobile-tab-bar />
+    <x-pwa.install-banner />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('scripts')
