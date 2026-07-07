@@ -31,6 +31,8 @@
     --color-ink: #1c1917;
     --color-ink-muted: #78716c;
     --color-border: #e7e5e4;
+
+    --spacing-17: 4.25rem;
 }
 
 @layer base {
@@ -129,6 +131,33 @@
     .storefront-body {
         -webkit-tap-highlight-color: transparent;
         overflow-x: hidden;
+    }
+
+    .pwa-install-banner {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(110%);
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+        pointer-events: none;
+    }
+
+    .pwa-install-banner.pwa-install-banner--visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    body.pwa-banner-visible .storefront-tab-bar,
+    body.pwa-banner-visible .account-tab-bar {
+        bottom: 5.75rem;
+    }
+
+    @media (min-width: 1024px) {
+        body.pwa-banner-visible .storefront-tab-bar,
+        body.pwa-banner-visible .account-tab-bar {
+            bottom: 0;
+        }
     }
 
     @media (max-width: 1023px) {

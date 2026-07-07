@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\HomepageController;
 use App\Http\Controllers\Admin\HomeSliderController;
 use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
+use App\Http\Controllers\Admin\FrontendBuildController;
 use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTransferSettingController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShippingSettingsController;
 use App\Http\Controllers\Admin\StorageLinkController;
+use App\Http\Controllers\Admin\TerminalController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -176,6 +178,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
         });
 
+        Route::middleware('admin.feature:terminal')->group(function () {
+            Route::get('terminal', [TerminalController::class, 'index'])->name('terminal.index');
+        });
+
         Route::middleware('admin.feature:storage_link')->group(function () {
             Route::get('storage-link', [StorageLinkController::class, 'index'])->name('storage-link.index');
             Route::post('storage-link', [StorageLinkController::class, 'store'])->name('storage-link.store');
@@ -184,6 +190,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:database_migration')->group(function () {
             Route::get('migration', [MigrationController::class, 'index'])->name('migration.index');
             Route::post('migration', [MigrationController::class, 'store'])->name('migration.store');
+        });
+
+        Route::middleware('admin.feature:npm_build')->group(function () {
+            Route::get('frontend-build', [FrontendBuildController::class, 'index'])->name('frontend-build.index');
+            Route::post('frontend-build', [FrontendBuildController::class, 'store'])->name('frontend-build.store');
         });
     });
 });

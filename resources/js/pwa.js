@@ -226,6 +226,14 @@ function initPwaInstallBanner() {
         return;
     }
 
+    const iosHint = banner.querySelector('[data-pwa-ios-hint]');
+    const desktopHint = banner.querySelector('[data-pwa-desktop-hint]');
+
+    if (iosHint && desktopHint) {
+        iosHint.classList.toggle('hidden', !isIos());
+        desktopHint.classList.toggle('hidden', isIos());
+    }
+
     window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();
         deferredPrompt = event;

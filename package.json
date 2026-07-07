@@ -4,6 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:deploy": "vite build && node scripts/verify-build.mjs",
+        "package:deploy": "node scripts/package-build.mjs",
+        "deploy": "npm run build:deploy && npm run package:deploy",
         "dev": "vite"
     },
     "devDependencies": {

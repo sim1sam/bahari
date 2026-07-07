@@ -109,11 +109,23 @@ return [
         'route' => 'admin.storage-link.index',
         'active' => 'admin.storage-link.*',
     ],
+    'terminal' => [
+        'label' => 'Overview',
+        'icon' => 'fas fa-terminal',
+        'route' => 'admin.terminal.index',
+        'active' => 'admin.terminal.*',
+    ],
     'database_migration' => [
         'label' => 'Migration',
         'icon' => 'fas fa-database',
         'route' => 'admin.migration.index',
         'active' => 'admin.migration.*',
+    ],
+    'npm_build' => [
+        'label' => 'NPM Build',
+        'icon' => 'fas fa-code',
+        'route' => 'admin.frontend-build.index',
+        'active' => 'admin.frontend-build.*',
     ],
     'settings' => [
         'label' => 'Site Settings',

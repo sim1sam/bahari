@@ -69,7 +69,9 @@ return [
             'label' => 'Terminal',
             'icon' => 'fas fa-terminal',
             'items' => [
+                'terminal',
                 'database_migration',
+                'npm_build',
                 'storage_link',
             ],
         ],

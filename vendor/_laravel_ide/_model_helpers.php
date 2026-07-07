@@ -706,6 +706,7 @@ namespace App\Models {
 	 * @property array|null $colors
 	 * @property array|null $sizes
 	 * @property int|null $api_received_brand_id
+	 * @property int|null $category_id
 	 * @property string|null $description
 	 * @property array|null $images
 	 * @property string|null $processed_image_blob
@@ -742,6 +743,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereProcessedImageBlob($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereImages($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereDescription($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereCategoryId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereApiReceivedBrandId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereSizes($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedItem>|ApiReceivedItem whereColors($value)
