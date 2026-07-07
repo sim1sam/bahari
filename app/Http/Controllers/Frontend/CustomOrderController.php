@@ -32,10 +32,20 @@ class CustomOrderController extends Controller
     {
         $banks = array_keys(config('payment.banks', []));
 
+        $request->merge([
+            'items' => collect($request->input('items', []))->map(function (array $item) {
+                if (blank($item['product_link'] ?? null)) {
+                    $item['product_link'] = null;
+                }
+
+                return $item;
+            })->all(),
+        ]);
+
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.name' => 'required|string|max:200',
-            'items.*.product_link' => 'nullable|url|max:500',
+            'items.*.product_link' => 'nullable|string|max:500',
             'items.*.size' => 'nullable|string|max:50',
             'items.*.image_file' => 'nullable|image|max:5120',
             'items.*.quantity' => 'required|integer|min:1|max:9999',

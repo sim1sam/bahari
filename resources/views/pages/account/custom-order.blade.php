@@ -217,7 +217,6 @@
                         x-model.number="paymentAmount"
                         min="0"
                         step="0.01"
-                        required
                         class="account-input"
                     >
                     <p class="text-xs text-ink-muted mt-1">Editable — adjust if needed</p>
@@ -225,7 +224,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Select Bank</label>
-                    <select name="bank_name" form="custom-order-form" x-model="bankName" required class="account-input">
+                    <select name="bank_name" form="custom-order-form" x-model="bankName" class="account-input">
                         <option value="">Choose bank...</option>
                         @foreach ($banks as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
@@ -241,7 +240,6 @@
                         form="custom-order-form"
                         accept="image/*"
                         @change="onScreenshot($event)"
-                        required
                         class="account-input file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700"
                     >
                     @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
