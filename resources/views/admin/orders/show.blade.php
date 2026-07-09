@@ -10,7 +10,7 @@
         </a>
         <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-info btn-sm">Edit Order</a>
         <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-sm">Back to Orders</a>
-        <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-outline-primary btn-sm">API Transfer Setting</a>
+        <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-outline-primary btn-sm">Order API Settings</a>
         @php $pendingTxn = $order->paymentTransactions->first(fn ($t) => $t->isPending()); @endphp
         @if ($pendingTxn)
             <a href="{{ route('admin.transactions.show', $pendingTxn) }}" class="btn btn-warning btn-sm">Review Payment Screenshot</a>

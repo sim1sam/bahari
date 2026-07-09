@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Order API Transfer Setting')
-@section('page_title', 'Order API Transfer Setting')
+@section('title', 'Order API Settings')
+@section('page_title', 'Order API Settings')
 
 @section('content')
     <div class="row">

@@ -19,7 +19,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">All Subscribers</h3>
-            <a href="{{ route('admin.settings.edit') }}" class="btn btn-default btn-sm float-right">Newsletter Settings</a>
+            <a href="{{ route('admin.settings.footer.edit') }}" class="btn btn-default btn-sm float-right">Newsletter Settings</a>
         </div>
         <div class="card-body border-bottom pb-3">
             <form action="{{ route('admin.newsletter.index') }}" method="GET" class="form-inline">

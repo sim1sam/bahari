@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CustomerLedgerController;
+use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinancialReportController;
 use App\Http\Controllers\Admin\FooterLinkController;
@@ -28,10 +30,12 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShippingSettingsController;
+use App\Http\Controllers\Admin\SslCommerzSettingsController;
 use App\Http\Controllers\Admin\StorageLinkController;
 use App\Http\Controllers\Admin\TerminalController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -74,6 +78,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:customers')->group(function () {
             Route::bind('customer', fn (string $value) => User::customers()->findOrFail($value));
             Route::resource('customers', CustomerController::class)->except(['show']);
+            Route::get('customers/{customer}/orders-for-payment', [CustomerPaymentController::class, 'customerOrders'])->name('customers.orders-for-payment');
+            Route::get('customer-ledgers', [CustomerLedgerController::class, 'index'])->name('customer-ledgers.index');
+            Route::get('customer-ledgers/{customer}', [CustomerLedgerController::class, 'show'])->name('customer-ledgers.show');
         });
 
         Route::middleware('admin.feature:roles')->group(function () {
@@ -86,6 +93,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
             Route::post('transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('transactions.approve');
             Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
+            Route::get('bank-payments/create', [CustomerPaymentController::class, 'create'])->name('bank-payments.create');
+            Route::post('bank-payments', [CustomerPaymentController::class, 'store'])->name('bank-payments.store');
         });
 
         Route::middleware('admin.feature:payment_banks')->group(function () {
@@ -174,8 +183,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::middleware('admin.feature:settings')->group(function () {
-            Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
-            Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+            Route::get('settings', fn () => redirect()->route('admin.settings.branding.edit'))->name('settings.edit');
+
+            foreach (array_keys(SettingsController::SECTIONS) as $section) {
+                $routeKey = str_replace('-', '_', $section);
+
+                Route::get("settings/{$section}", fn () => app(SettingsController::class)->edit($section))
+                    ->name("settings.{$routeKey}.edit");
+                Route::put("settings/{$section}", fn (Request $request) => app(SettingsController::class)->update($request, $section))
+                    ->name("settings.{$routeKey}.update");
+            }
+
+            Route::get('ssl-settings', [SslCommerzSettingsController::class, 'edit'])->name('ssl-settings.edit');
+            Route::put('ssl-settings', [SslCommerzSettingsController::class, 'update'])->name('ssl-settings.update');
         });
 
         Route::middleware('admin.feature:terminal')->group(function () {

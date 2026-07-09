@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Services\CustomerLedgerService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
 
 class AccountController extends Controller
 {
+    public function __construct(private CustomerLedgerService $ledger) {}
+
     public function dashboard(): View
     {
         $user = auth()->user();
@@ -75,6 +78,16 @@ class AccountController extends Controller
             'transactions' => (clone $baseQuery)->latest()->simplePaginate(15),
             'transactionsCount' => (clone $baseQuery)->count(),
             'totalSpent' => (clone $baseQuery)->where('status', PaymentTransaction::STATUS_APPROVED)->sum('amount'),
+        ]);
+    }
+
+    public function ledger(): View
+    {
+        $user = auth()->user();
+
+        return view('pages.account.ledger', [
+            'entries' => $this->ledger->entriesForUser($user),
+            'totals' => $this->ledger->totalsForUser($user),
         ]);
     }
 

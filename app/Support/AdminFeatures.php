@@ -13,7 +13,33 @@ class AdminFeatures
 
     public static function keys(): array
     {
-        return array_keys(self::all());
+        return array_keys(self::assignable());
+    }
+
+    public static function assignable(): array
+    {
+        return array_filter(
+            self::all(),
+            fn (array $feature) => ! isset($feature['permission'])
+        );
+    }
+
+    public static function permissionFor(string $key): string
+    {
+        $features = self::all();
+
+        return $features[$key]['permission'] ?? $key;
+    }
+
+    public static function featureForNavigation(string $key): ?array
+    {
+        $feature = self::all()[$key] ?? null;
+
+        if (! $feature) {
+            return null;
+        }
+
+        return collect($feature)->except('permission')->all();
     }
 
     public static function routeFor(string $key): ?string
@@ -46,34 +72,30 @@ class AdminFeatures
      */
     public static function navigationFor(User $user): array
     {
-        $features = self::all();
         $menu = self::menuConfig();
         $navigation = [];
 
-        foreach ($menu['standalone'] ?? [] as $key) {
-            if (! isset($features[$key]) || ! $user->canAccessAdminFeature($key)) {
-                continue;
-            }
+        foreach ($menu['standalone'] ?? [] as $item) {
+            $navItem = self::resolveMenuItem($item, $user);
 
-            $navigation[] = [
-                'type' => 'item',
-                'key' => $key,
-                'feature' => $features[$key],
-            ];
+            if ($navItem) {
+                $navigation[] = [
+                    'type' => 'item',
+                    'key' => $navItem['key'],
+                    'feature' => $navItem['feature'],
+                ];
+            }
         }
 
         foreach ($menu['groups'] ?? [] as $groupKey => $group) {
             $items = [];
 
-            foreach ($group['items'] ?? [] as $key) {
-                if (! isset($features[$key]) || ! $user->canAccessAdminFeature($key)) {
-                    continue;
-                }
+            foreach ($group['items'] ?? [] as $item) {
+                $navItem = self::resolveMenuItem($item, $user);
 
-                $items[] = [
-                    'key' => $key,
-                    'feature' => $features[$key],
-                ];
+                if ($navItem) {
+                    $items[] = $navItem;
+                }
             }
 
             if ($items === []) {
@@ -102,9 +124,31 @@ class AdminFeatures
         return $navigation;
     }
 
+    /**
+     * @param  string  $item
+     * @return array{key: string, feature: array}|null
+     */
+    private static function resolveMenuItem(string $item, User $user): ?array
+    {
+        if (! isset(self::all()[$item]) || ! $user->canAccessAdminFeature(self::permissionFor($item))) {
+            return null;
+        }
+
+        return [
+            'key' => $item,
+            'feature' => self::featureForNavigation($item),
+        ];
+    }
+
     public static function isNavigationItemActive(array $feature): bool
     {
-        return request()->routeIs($feature['active']);
+        $active = $feature['active'];
+
+        if (str_contains($active, '|')) {
+            return request()->routeIs(explode('|', $active));
+        }
+
+        return request()->routeIs($active);
     }
 
     public static function isNavigationGroupActive(array $items): bool

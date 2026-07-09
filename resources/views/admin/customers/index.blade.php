@@ -56,6 +56,8 @@
                             <td>{{ $customer->orders_count }}</td>
                             <td>{{ $customer->created_at->format('M d, Y') }}</td>
                             <td>
+                                <a href="{{ route('admin.customer-ledgers.show', $customer) }}" class="btn btn-xs btn-secondary"><i class="fas fa-book"></i></a>
+                                <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-xs btn-success"><i class="fas fa-money-bill-wave"></i></a>
                                 <a href="{{ route('admin.customers.edit', $customer) }}" class="btn btn-xs btn-info"><i class="fas fa-edit"></i></a>
                                 <form action="{{ route('admin.customers.destroy', $customer) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this customer?')">
                                     @csrf @method('DELETE')

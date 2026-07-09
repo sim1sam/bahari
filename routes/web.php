@@ -43,6 +43,7 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
     Route::delete('/orders/{order}', [AccountController::class, 'destroyOrder'])->name('orders.destroy');
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
+    Route::get('/ledger', [AccountController::class, 'ledger'])->name('ledger');
     Route::get('/custom-order', [CustomOrderController::class, 'create'])->name('custom-order');
     Route::post('/custom-order', [CustomOrderController::class, 'store'])->name('custom-order.store');
     Route::get('/addresses', [CustomerAddressController::class, 'index'])->name('addresses.index');

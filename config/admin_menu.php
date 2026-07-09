@@ -6,48 +6,22 @@ return [
     ],
 
     'groups' => [
-        'settings' => [
-            'label' => 'Settings',
-            'icon' => 'fas fa-cog',
-            'items' => [
-                'settings',
-            ],
-        ],
-        'product_content' => [
-            'label' => 'Product & Content',
-            'icon' => 'fas fa-box-open',
-            'items' => [
-                'homepage',
-                'products',
-                'categories',
-                'api_content',
-                'api_brands',
-                'api_processed',
-            ],
-        ],
-        'payment' => [
-            'label' => 'Payment',
-            'icon' => 'fas fa-credit-card',
-            'items' => [
-                'transactions',
-                'payment_banks',
-                'api_settings',
-            ],
-        ],
         'orders' => [
             'label' => 'Order Management',
             'icon' => 'fas fa-shopping-cart',
             'items' => [
-                'orders',
-                'coupons',
-                'shipping',
+                'orders_create',
+                'orders_list',
             ],
         ],
-        'finance' => [
-            'label' => 'Finance & Reports',
-            'icon' => 'fas fa-chart-line',
+        'payment' => [
+            'label' => 'Payment Settings',
+            'icon' => 'fas fa-credit-card',
             'items' => [
-                'reports',
+                'payment_banks',
+                'bank_payments',
+                'customer_ledgers',
+                'transactions',
             ],
         ],
         'customers' => [
@@ -55,6 +29,47 @@ return [
             'icon' => 'fas fa-users',
             'items' => [
                 'customers',
+            ],
+        ],
+        'product_content' => [
+            'label' => 'Ecommerce',
+            'icon' => 'fas fa-box-open',
+            'items' => [
+                'products',
+                'categories',
+                'api_brands',
+                'api_content',
+                'api_processed',
+            ],
+        ],
+        'finance' => [
+            'label' => 'Reports',
+            'icon' => 'fas fa-chart-line',
+            'items' => [
+                'reports',
+            ],
+        ],
+        'api' => [
+            'label' => 'API Settings',
+            'icon' => 'fas fa-plug',
+            'items' => [
+                'order_api_settings',
+                'api_settings',
+                'ssl_settings',
+            ],
+        ],
+        'settings' => [
+            'label' => 'Settings',
+            'icon' => 'fas fa-cog',
+            'items' => [
+                'homepage',
+                'settings_branding',
+                'settings_footer',
+                'settings_top_bar',
+                'settings_website_colors',
+                'settings_gtm',
+                'coupons',
+                'shipping',
             ],
         ],
         'users' => [

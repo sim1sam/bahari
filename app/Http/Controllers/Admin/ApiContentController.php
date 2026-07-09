@@ -161,7 +161,7 @@ class ApiContentController extends Controller
             $message .= " {$categoriesSynced} category link(s) saved to Categories.";
         }
         if ($failed > 0) {
-            $message .= " {$failed} item(s) still missing images — set the sender Site URL in API Settings.";
+            $message .= " {$failed} item(s) still missing images — set the sender Site URL in Content API Settings.";
         }
 
         return back()->with($fixed > 0 || $pricesSynced > 0 || $metadataSynced > 0 ? 'success' : 'warning', $message);
@@ -245,7 +245,7 @@ class ApiContentController extends Controller
         $imagePath = $images->resolveProcessableImagePath($item);
 
         if (! $imagePath) {
-            return back()->with('error', 'Could not load product image. Set sender Site URL in API Settings, then click Re-download Images.');
+            return back()->with('error', 'Could not load product image. Set sender Site URL in Content API Settings, then click Re-download Images.');
         }
 
         try {
@@ -348,7 +348,7 @@ class ApiContentController extends Controller
 
         $message = 'No items were processed.';
         if ($missingImage > 0) {
-            $message .= " {$missingImage} item(s) have no downloadable image — set sender Site URL in API Settings and click Re-download Images.";
+            $message .= " {$missingImage} item(s) have no downloadable image — set sender Site URL in Content API Settings and click Re-download Images.";
         }
         if ($failed > 0) {
             $message .= " {$failed} item(s) failed during logo processing.";

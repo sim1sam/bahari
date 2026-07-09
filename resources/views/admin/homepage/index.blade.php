@@ -58,7 +58,7 @@
     </div>
     <div class="card mt-3">
         <div class="card-body">
-            <p class="mb-0 text-muted">Newsletter text and footer description are managed in <a href="{{ route('admin.settings.edit') }}">Site Settings</a>.</p>
+            <p class="mb-0 text-muted">Newsletter text and footer description are managed in <a href="{{ route('admin.settings.footer.edit') }}">Settings → Footer</a>.</p>
         </div>
     </div>
 @endsection

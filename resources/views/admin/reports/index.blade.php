@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Financial Reports')
-@section('page_title', 'Financial Reports')
+@section('title', 'Reports')
+@section('page_title', 'Reports')
 
 @section('content')
     @include('admin.reports.partials.nav')

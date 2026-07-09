@@ -12,7 +12,7 @@
                     <i class="fas fa-plus mr-1"></i> Create Order
                 </a>
                 <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-plug mr-1"></i> API Order Transfer Setting
+                    <i class="fas fa-plug mr-1"></i> Order API Settings
                 </a>
             </div>
         </div>

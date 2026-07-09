@@ -6,7 +6,7 @@
 @section('content')
     <div class="mb-3">
         <a href="{{ route('admin.processed.index') }}" class="btn btn-default btn-sm">Back to Processed</a>
-        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">API Settings</a>
+        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">Content API Settings</a>
     </div>
 
     <div class="card">

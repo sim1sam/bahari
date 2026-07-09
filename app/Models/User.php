@@ -84,6 +84,11 @@ class User extends Authenticatable
         return $query->whereHas('role', fn ($q) => $q->where('can_access_admin', true));
     }
 
+    public function customerPayments(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
+
     public function avatarUrl(): ?string
     {
         if (! $this->avatar) {

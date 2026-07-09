@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'API Settings')
-@section('page_title', 'API Settings')
+@section('title', 'Content API Settings')
+@section('page_title', 'Content API Settings')
 
 @section('content')
     @if (session('generated_credentials'))
@@ -169,7 +169,7 @@
     </div>
 
     <div class="text-muted small">
-        <a href="{{ route('admin.content.index') }}">Content</a> ·
+        <a href="{{ route('admin.content.index') }}">Content API</a> ·
         <a href="{{ route('admin.processed.index') }}">Processed</a>
     </div>
 @endsection

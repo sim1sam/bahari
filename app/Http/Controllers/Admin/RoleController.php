@@ -24,7 +24,7 @@ class RoleController extends Controller
     {
         return view('admin.roles.form', [
             'role' => new Role,
-            'features' => AdminFeatures::all(),
+            'features' => AdminFeatures::assignable(),
         ]);
     }
 
@@ -39,7 +39,7 @@ class RoleController extends Controller
     {
         return view('admin.roles.form', [
             'role' => $role,
-            'features' => AdminFeatures::all(),
+            'features' => AdminFeatures::assignable(),
         ]);
     }
 

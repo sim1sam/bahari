@@ -6,7 +6,7 @@
 @section('content')
     <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
         <a href="{{ route('admin.content.index') }}" class="btn btn-default btn-sm">Content</a>
-        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">API Settings</a>
+        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">Content API Settings</a>
         <a href="{{ route('admin.processed.live') }}" class="btn btn-success btn-sm">Live on Site</a>
         <form action="{{ route('admin.processed.purge-manual-products') }}" method="POST" class="d-inline" onsubmit="return confirm('Delete all old products that were NOT published from Processed? API Go Live products will stay.')">
             @csrf
