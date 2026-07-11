@@ -128,13 +128,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('content/logo', [ApiContentController::class, 'uploadLogo'])->name('content.logo');
             Route::put('content/logo-scale', [ApiContentController::class, 'updateLogoScale'])->name('content.logo-scale');
             Route::post('content/repair-images', [ApiContentController::class, 'repairImages'])->name('content.repair-images');
-            Route::post('content/process-batch', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
+            Route::post('content/batch/process', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
             Route::delete('content/batch', [ApiContentController::class, 'destroyBatch'])->name('content.destroy-batch');
-            Route::get('content/{item}', [ApiContentController::class, 'show'])->name('content.show');
-            Route::put('content/{item}', [ApiContentController::class, 'update'])->name('content.update');
-            Route::delete('content/{item}', [ApiContentController::class, 'destroy'])->name('content.destroy');
-            Route::post('content/{item}/process', [ApiContentController::class, 'process'])->name('content.process');
-            Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->name('content.reject');
+            Route::get('content/{item}', [ApiContentController::class, 'show'])->whereNumber('item')->name('content.show');
+            Route::put('content/{item}', [ApiContentController::class, 'update'])->whereNumber('item')->name('content.update');
+            Route::delete('content/{item}', [ApiContentController::class, 'destroy'])->whereNumber('item')->name('content.destroy');
+            Route::post('content/{item}/process', [ApiContentController::class, 'process'])->whereNumber('item')->name('content.process');
+            Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->whereNumber('item')->name('content.reject');
         });
 
         Route::middleware('admin.feature:api_brands')->group(function () {
@@ -152,11 +152,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('received-images/{item}/processed', [ApiReceivedImageController::class, 'processed'])->name('received-images.processed');
             Route::delete('processed/batch', [ApiProcessedController::class, 'destroyBatch'])->name('processed.destroy-batch');
             Route::post('processed/purge-manual-products', [ApiProcessedController::class, 'purgeManualProducts'])->name('processed.purge-manual-products');
-            Route::get('processed/{item}/download-image', [ApiProcessedController::class, 'downloadImage'])->name('processed.download-image');
-            Route::get('processed/{item}', [ApiProcessedController::class, 'show'])->name('processed.show');
-            Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->name('processed.update');
-            Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->name('processed.live-item');
-            Route::delete('processed/{item}', [ApiProcessedController::class, 'destroy'])->name('processed.destroy');
+            Route::get('processed/{item}/download-image', [ApiProcessedController::class, 'downloadImage'])->whereNumber('item')->name('processed.download-image');
+            Route::get('processed/{item}', [ApiProcessedController::class, 'show'])->whereNumber('item')->name('processed.show');
+            Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->whereNumber('item')->name('processed.update');
+            Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->whereNumber('item')->name('processed.live-item');
+            Route::delete('processed/{item}', [ApiProcessedController::class, 'destroy'])->whereNumber('item')->name('processed.destroy');
         });
 
         Route::middleware('admin.feature:account_heads')->group(function () {
