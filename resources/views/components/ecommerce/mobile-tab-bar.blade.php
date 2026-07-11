@@ -1,5 +1,9 @@
 @php
-    $accountHref = auth()->check() && ! auth()->user()->isAdmin()
+    $accountUser = auth()->user();
+    $accountLabel = $accountUser && ! $accountUser->isAdmin()
+        ? (strtok($accountUser->name, ' ') ?: $accountUser->name)
+        : null;
+    $accountHref = $accountLabel
         ? route('account.dashboard')
         : route('login');
 
@@ -23,7 +27,7 @@
             'active' => request()->routeIs('deals') || (request()->routeIs('categories.show') && request()->route('slug') === 'sale'),
         ],
         [
-            'label' => 'Account',
+            'label' => $accountLabel ?: 'Account',
             'href' => $accountHref,
             'icon' => 'account',
             'active' => request()->routeIs('account.*') || request()->routeIs('login', 'register'),

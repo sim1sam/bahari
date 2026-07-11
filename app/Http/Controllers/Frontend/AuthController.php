@@ -43,7 +43,14 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('account.dashboard'))->with('success', 'Welcome back!');
+        $intended = session()->pull('url.intended');
+        $destination = $intended && (
+            str_contains($intended, '/checkout') ||
+            str_contains($intended, '/cart') ||
+            str_contains($intended, '/account')
+        ) ? $intended : route('account.dashboard');
+
+        return redirect()->to($destination)->with('success', 'Welcome back!');
     }
 
     public function showRegister(): View|RedirectResponse

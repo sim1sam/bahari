@@ -22,6 +22,11 @@
     $freeShippingAt = $siteSettings->freeShippingThreshold();
     $freeShippingRemaining = max(0, $freeShippingAt - $cartSubtotal);
     $hideFloatingCart = request()->routeIs('checkout.*');
+    $canUseCartDrawer = ! $hideFloatingCart;
+    $accountUser = auth()->user();
+    $accountLabel = $accountUser && ! $accountUser->isAdmin()
+        ? (strtok($accountUser->name, ' ') ?: $accountUser->name)
+        : null;
 @endphp
 
 <header
@@ -30,7 +35,7 @@
     x-data="{
         mobileOpen: false,
         searchOpen: false,
-        cartOpen: {{ session('cart_drawer_open') && ! $hideFloatingCart ? 'true' : 'false' }},
+        cartOpen: {{ session('cart_drawer_open') && $canUseCartDrawer ? 'true' : 'false' }},
         cartItems: @js($cartItems),
         cartCount: {{ $cartCount ?? 0 }},
         cartSubtotal: @js(money($cartSubtotal)),
@@ -75,7 +80,9 @@
                 }
 
                 this.applyCart(cart);
-                this.cartOpen = true;
+                if ({{ $canUseCartDrawer ? 'true' : 'false' }}) {
+                    this.cartOpen = true;
+                }
             } catch (error) {
                 form.submit();
             }
@@ -181,38 +188,35 @@
                     </svg>
                 </a>
 
-                @auth
-                    @if (! auth()->user()->isAdmin())
-                        <a href="{{ route('account.dashboard') }}" class="p-2 text-ink-muted hover:text-ink transition-colors {{ request()->routeIs('account.*') ? 'text-brand-600' : '' }}" aria-label="My Account" title="{{ auth()->user()->name }}">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                        </a>
-                    @endif
-                @else
-                    <a href="{{ route('login') }}" class="p-2 text-ink-muted hover:text-ink transition-colors hidden sm:block" aria-label="Account">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                @if ($accountLabel)
+                    <a
+                        href="{{ route('account.dashboard') }}"
+                        class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('account.*') ? 'text-brand-600 bg-brand-50' : 'text-ink-muted hover:text-brand-600 hover:bg-surface' }}"
+                        aria-label="My Account"
+                        title="{{ $accountUser->name }}"
+                    >
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
+                        <span class="max-w-[7rem] truncate">{{ $accountLabel }}</span>
                     </a>
-                @endauth
-
-                @auth
-                    @if (! auth()->user()->isAdmin())
-                        <button type="button" class="relative p-2 text-ink-muted hover:text-ink transition-colors" aria-label="Cart" @click="cartOpen = true">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                            <span x-show="cartCount > 0" class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-brand-600 text-white rounded-full" x-text="cartCount">{{ $cartCount ?? 0 }}</span>
-                        </button>
-                    @endif
                 @else
-                    <a href="{{ route('login') }}" class="relative p-2 text-ink-muted hover:text-ink transition-colors" aria-label="Cart">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 p-2 text-ink-muted hover:text-ink transition-colors" aria-label="Sign in">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
+                        <span class="hidden sm:inline text-sm font-medium">Sign In</span>
                     </a>
-                @endauth
+                @endif
+
+                @if ($canUseCartDrawer)
+                <button type="button" class="relative p-2 text-ink-muted hover:text-ink transition-colors" aria-label="Cart" @click="cartOpen = true">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span x-show="cartCount > 0" class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-brand-600 text-white rounded-full" x-text="cartCount">{{ $cartCount ?? 0 }}</span>
+                </button>
+                @endif
             </div>
         </div>
 
@@ -254,57 +258,38 @@
                     {{ $link['label'] }}
                 </a>
             @endforeach
-            @guest
+            @if ($accountLabel)
+                <a href="{{ route('account.dashboard') }}" class="px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors" @click="mobileOpen = false">
+                    {{ $accountUser->name }}
+                </a>
+            @else
                 <a href="{{ route('login') }}" class="px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface hover:text-brand-600 transition-colors" @click="mobileOpen = false">Sign In</a>
                 <a href="{{ route('register') }}" class="px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors" @click="mobileOpen = false">Register</a>
-            @else
-                @if (! auth()->user()->isAdmin())
-                    <a href="{{ route('account.dashboard') }}" class="px-3 py-2.5 rounded-lg text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors" @click="mobileOpen = false">My Account</a>
-                @endif
-            @endguest
+            @endif
         </nav>
     </div>
 
-    @unless ($hideFloatingCart)
+    @if ($canUseCartDrawer)
     {{-- Cart drawer --}}
     <template x-teleport="body">
     <div>
-        @auth
-            @if (! auth()->user()->isAdmin())
-                <button
-                    type="button"
-                    x-show="!cartOpen"
-                    x-cloak
-                    class="fixed top-1/2 flex min-w-20 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white text-xs font-semibold text-ink shadow-xl ring-1 ring-black/5"
-                    style="right: 0.5rem; z-index: 9998;"
-                    @click="cartOpen = true"
-                    aria-label="Open cart"
-                >
-                    <span class="flex w-full flex-col items-center justify-center gap-1 bg-brand-600 px-3 py-3 text-white hover:bg-brand-700">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                        </svg>
-                        <span class="whitespace-nowrap px-1"><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Items</span>
-                    </span>
-                    <span class="w-full whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold text-ink" x-text="cartSubtotal">{{ money($cartSubtotal) }}</span>
-                </button>
-            @endif
-        @else
-            <a
-                href="{{ route('login') }}"
-                class="fixed top-1/2 flex min-w-20 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white text-xs font-semibold text-ink shadow-xl ring-1 ring-black/5"
-                style="right: 0.5rem; z-index: 9998;"
-                aria-label="Open cart"
-            >
-                <span class="flex w-full flex-col items-center justify-center gap-1 bg-brand-600 px-3 py-3 text-white hover:bg-brand-700">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                    </svg>
-                    <span class="whitespace-nowrap px-1">0 Items</span>
-                </span>
-                <span class="w-full whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold text-ink">{{ money(0) }}</span>
-            </a>
-        @endauth
+        <button
+            type="button"
+            x-show="!cartOpen"
+            x-cloak
+            class="fixed top-1/2 flex min-w-20 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white text-xs font-semibold text-ink shadow-xl ring-1 ring-black/5"
+            style="right: 0.5rem; z-index: 9998;"
+            @click="cartOpen = true"
+            aria-label="Open cart"
+        >
+            <span class="flex w-full flex-col items-center justify-center gap-1 bg-brand-600 px-3 py-3 text-white hover:bg-brand-700">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                </svg>
+                <span class="whitespace-nowrap px-1"><span x-text="cartCount">{{ $cartCount ?? 0 }}</span> Items</span>
+            </span>
+            <span class="w-full whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold text-ink" x-text="cartSubtotal">{{ money($cartSubtotal) }}</span>
+        </button>
 
     <div x-show="cartOpen" x-cloak class="fixed inset-0" style="z-index: 9999;" aria-modal="true" role="dialog">
         <div class="absolute inset-0 bg-black/45" @click="cartOpen = false"></div>
@@ -420,5 +405,5 @@
     </div>
     </div>
     </template>
-    @endunless
+    @endif
 </header>
