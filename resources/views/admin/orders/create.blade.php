@@ -4,13 +4,46 @@
 @section('page_title', 'Create Order')
 
 @section('content')
-    <form action="{{ route('admin.orders.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('admin.orders.store') }}" method="POST" enctype="multipart/form-data" class="order-create-form">
         @csrf
 
+        <div class="order-create-hero">
+            <div>
+                <span class="order-create-eyebrow">Order management</span>
+                <h2>Create a new order</h2>
+                <p>Enter customer information, add products, review totals, and record payment details.</p>
+            </div>
+            <div class="order-create-hero-actions">
+                <a href="{{ route('admin.orders.index') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left mr-1"></i> All Orders
+                </a>
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-check mr-1"></i> Create Order
+                </button>
+            </div>
+        </div>
+
+        @if ($errors->any())
+            <div class="order-form-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <strong>Please check the form.</strong>
+                    <span>{{ $errors->count() }} {{ Str::plural('field', $errors->count()) }} need your attention.</span>
+                </div>
+            </div>
+        @endif
+
         <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header"><h3 class="card-title">Customer & Shipping</h3></div>
+            <div class="col-xl-8">
+                <div class="card order-form-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--cyan"><i class="fas fa-user"></i></span>
+                        <div>
+                            <h3 class="card-title">Customer & Shipping</h3>
+                            <p>Select an existing customer or enter details manually.</p>
+                        </div>
+                        <span class="order-section-number">01</span>
+                    </div>
                     <div class="card-body">
                         <div class="form-group">
                             <label>Link to Customer (optional)</label>
@@ -66,20 +99,28 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="card-title mb-0">Order Items</h3>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-item-row">+ Add Item</button>
+                <div class="card order-form-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--violet"><i class="fas fa-box-open"></i></span>
+                        <div>
+                            <h3 class="card-title">Order Items</h3>
+                            <p>Add every product included in this order.</p>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary ml-auto" id="add-item-row">
+                            <i class="fas fa-plus mr-1"></i> Add Item
+                        </button>
+                        <span class="order-section-number">02</span>
                     </div>
-                    <div class="card-body table-responsive p-0">
+                    <div class="card-body p-0">
                         @error('items')<div class="text-danger px-3 pt-2">{{ $message }}</div>@enderror
-                        <table class="table mb-0" id="items-table">
+                        <div class="table-responsive order-items-scroll">
+                        <table class="table mb-0 order-form-table" id="items-table">
                             <thead>
                                 <tr>
                                     <th style="width:18%">Product *</th>
                                     <th style="width:12%">Slug</th>
                                     <th style="width:15%">Link</th>
-                                    <th style="width:15%">Image URL</th>
+                                    <th style="width:15%">Image</th>
                                     <th style="width:8%">Size</th>
                                     <th style="width:8%">Color</th>
                                     <th style="width:7%">Qty</th>
@@ -89,17 +130,32 @@
                             </thead>
                             <tbody id="items-body"></tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="card-title mb-0">Payment History</h3>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-payment-row">+ Add Payment</button>
+                <div class="card order-form-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--emerald"><i class="fas fa-wallet"></i></span>
+                        <div>
+                            <h3 class="card-title">Payment History</h3>
+                            <p>Optionally record one or more payments now.</p>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary ml-auto" id="add-payment-row">
+                            <i class="fas fa-plus mr-1"></i> Add Payment
+                        </button>
+                        <span class="order-section-number">03</span>
                     </div>
                     <div class="card-body p-0">
-                        <p class="text-muted p-3 mb-0" id="no-payments-msg">No payments recorded. Add one below or set amount paid in the sidebar.</p>
-                        <table class="table mb-0 d-none" id="payments-table">
+                        <div class="order-empty-state" id="no-payments-msg">
+                            <span><i class="fas fa-receipt"></i></span>
+                            <div>
+                                <strong>No payment rows added</strong>
+                                <p>Add a payment here, or set the amount paid in Payment Details.</p>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                        <table class="table mb-0 d-none order-form-table" id="payments-table">
                             <thead>
                                 <tr>
                                     <th>Amount</th>
@@ -111,13 +167,21 @@
                             </thead>
                             <tbody id="payments-body"></tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header"><h3 class="card-title">Totals</h3></div>
+            <div class="col-xl-4">
+                <div class="order-create-sidebar">
+                <div class="card order-form-card order-total-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--amber"><i class="fas fa-calculator"></i></span>
+                        <div>
+                            <h3 class="card-title">Order Summary</h3>
+                            <p>Review pricing and delivery.</p>
+                        </div>
+                    </div>
                     <div class="card-body">
                         <div class="form-group">
                             <label>Subtotal (BDT)</label>
@@ -148,13 +212,27 @@
                             <label>Total (BDT)</label>
                             <input type="number" name="total" id="total" class="form-control" min="0" step="0.01" value="{{ old('total', 0) }}" required>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-block mb-2" id="calc-from-items">Recalculate from items</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-block" id="calc-total">Recalculate total</button>
+                        <div class="order-total-preview">
+                            <span>Order total</span>
+                            <strong id="total-preview">{{ money(old('total', 0)) }}</strong>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-info btn-block mb-2" id="calc-from-items">
+                            <i class="fas fa-sync-alt mr-1"></i> Calculate from items
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-block" id="calc-total">
+                            Recalculate total
+                        </button>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header"><h3 class="card-title">Payment Info</h3></div>
+                <div class="card order-form-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--emerald"><i class="fas fa-credit-card"></i></span>
+                        <div>
+                            <h3 class="card-title">Payment Details</h3>
+                            <p>Method and payment status.</p>
+                        </div>
+                    </div>
                     <div class="card-body">
                         <div class="form-group">
                             <label>Payment Method</label>
@@ -203,8 +281,14 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header"><h3 class="card-title">Order Status</h3></div>
+                <div class="card order-form-card">
+                    <div class="card-header order-form-card-header">
+                        <span class="order-section-icon order-section-icon--blue"><i class="fas fa-clipboard-check"></i></span>
+                        <div>
+                            <h3 class="card-title">Order Status</h3>
+                            <p>Choose the initial workflow state.</p>
+                        </div>
+                    </div>
                     <div class="card-body">
                         <div class="form-group mb-0">
                             <select name="status" class="form-control">
@@ -215,9 +299,12 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary btn-block">Create Order</button>
+                        <button type="submit" class="btn btn-info btn-block">
+                            <i class="fas fa-check-circle mr-1"></i> Create Order
+                        </button>
                         <a href="{{ route('admin.orders.index') }}" class="btn btn-default btn-block">Cancel</a>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -225,15 +312,21 @@
 
     <template id="item-row-template">
         <tr>
-            <td><input type="text" name="items[__INDEX__][product_name]" class="form-control form-control-sm item-name" required></td>
-            <td><input type="text" name="items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto from name" readonly></td>
-            <td><input type="text" name="items[__INDEX__][product_link]" class="form-control form-control-sm"></td>
-            <td><input type="text" name="items[__INDEX__][image]" class="form-control form-control-sm"></td>
-            <td><input type="text" name="items[__INDEX__][size]" class="form-control form-control-sm"></td>
-            <td><input type="text" name="items[__INDEX__][color]" class="form-control form-control-sm"></td>
+            <td><input type="text" name="items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
+            <td><input type="text" name="items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
+            <td><input type="text" name="items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
+            <td>
+                <label class="order-item-upload">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Upload</span>
+                    <input type="file" name="items[__INDEX__][image]" accept="image/*">
+                </label>
+            </td>
+            <td><input type="text" name="items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
+            <td><input type="text" name="items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
             <td><input type="number" name="items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
             <td><input type="number" name="items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
-            <td class="text-center"><button type="button" class="btn btn-xs btn-danger remove-row">&times;</button></td>
+            <td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 
@@ -255,11 +348,347 @@
                     @endforeach
                 </select>
             </td>
-            <td><input type="text" name="payments[__INDEX__][notes]" class="form-control form-control-sm"></td>
-            <td class="text-center align-middle"><button type="button" class="btn btn-xs btn-danger remove-row">&times;</button></td>
+            <td><input type="text" name="payments[__INDEX__][notes]" class="form-control form-control-sm" placeholder="Optional note"></td>
+            <td class="text-center align-middle"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove payment"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 @endsection
+
+@push('styles')
+<style>
+    .order-create-form {
+        --order-ink: #0f172a;
+        --order-muted: #64748b;
+        --order-border: #e2e8f0;
+        --order-soft: #f8fafc;
+        --order-accent: #0891b2;
+    }
+
+    .order-create-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+        padding: 1.35rem 1.5rem;
+        border-radius: 1.1rem;
+        color: #fff;
+        background:
+            radial-gradient(circle at 88% 15%, rgba(103, 232, 249, 0.25), transparent 35%),
+            linear-gradient(135deg, #0f3d47 0%, #0e7490 55%, #0891b2 100%);
+        box-shadow: 0 14px 32px rgba(8, 145, 178, 0.18);
+    }
+
+    .order-create-eyebrow {
+        display: block;
+        margin-bottom: 0.2rem;
+        color: #a5f3fc;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+
+    .order-create-hero h2 {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+    }
+
+    .order-create-hero p {
+        margin: 0.4rem 0 0;
+        max-width: 38rem;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .order-create-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        flex-shrink: 0;
+    }
+
+    .order-form-alert {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 0.85rem;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .order-form-alert > i {
+        font-size: 1.2rem;
+    }
+
+    .order-form-alert span {
+        display: block;
+        color: #b91c1c;
+        font-size: 0.83rem;
+    }
+
+    .order-form-card {
+        border: 1px solid var(--order-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+        overflow: hidden;
+    }
+
+    .order-form-card-header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        min-height: 4.4rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #eef2f7;
+        background: #fff;
+    }
+
+    .order-form-card-header .card-title {
+        float: none;
+        margin: 0;
+        color: var(--order-ink);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .order-form-card-header p {
+        margin: 0.15rem 0 0;
+        color: var(--order-muted);
+        font-size: 0.78rem;
+        line-height: 1.25;
+    }
+
+    .order-section-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.75rem;
+        flex: 0 0 auto;
+    }
+
+    .order-section-icon--cyan { color: #0891b2; background: #ecfeff; }
+    .order-section-icon--violet { color: #7c3aed; background: #f5f3ff; }
+    .order-section-icon--emerald { color: #059669; background: #ecfdf5; }
+    .order-section-icon--amber { color: #d97706; background: #fffbeb; }
+    .order-section-icon--blue { color: #2563eb; background: #eff6ff; }
+
+    .order-section-number {
+        position: absolute;
+        top: 0.55rem;
+        right: 0.75rem;
+        color: #e2e8f0;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+    }
+
+    .order-form-card-header .btn + .order-section-number {
+        display: none;
+    }
+
+    .order-create-form label {
+        margin-bottom: 0.35rem;
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .order-create-form .form-control {
+        min-height: 2.55rem;
+        border-color: #dbe3ed;
+        border-radius: 0.55rem;
+        color: var(--order-ink);
+        box-shadow: none;
+    }
+
+    .order-create-form .form-control-sm {
+        min-height: 2.15rem;
+        border-radius: 0.45rem;
+    }
+
+    .order-create-form .form-control:focus {
+        border-color: #22d3ee;
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+    }
+
+    .order-form-table thead th {
+        border-top: 0;
+        border-bottom: 1px solid #e2e8f0;
+        background: var(--order-soft);
+        color: var(--order-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.045em;
+        text-transform: uppercase;
+        vertical-align: middle;
+    }
+
+    .order-form-table td {
+        padding: 0.55rem 0.35rem;
+        border-top-color: #eef2f7;
+        vertical-align: middle;
+    }
+
+    .order-item-upload {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        min-height: 2.15rem;
+        margin: 0;
+        padding: 0.35rem 0.5rem;
+        border: 1px dashed #94a3b8;
+        border-radius: 0.45rem;
+        background: #f8fafc;
+        color: #64748b !important;
+        cursor: pointer;
+        font-size: 0.72rem !important;
+        white-space: nowrap;
+    }
+
+    .order-item-upload:hover {
+        border-color: #0891b2;
+        background: #ecfeff;
+        color: #0e7490 !important;
+    }
+
+    .order-item-upload input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .order-item-upload.has-file {
+        border-style: solid;
+        border-color: #10b981;
+        background: #ecfdf5;
+        color: #047857 !important;
+    }
+
+    .order-form-table th:first-child,
+    .order-form-table td:first-child {
+        padding-left: 0.75rem;
+    }
+
+    .order-form-table th:last-child,
+    .order-form-table td:last-child {
+        padding-right: 0.75rem;
+    }
+
+    .order-items-scroll {
+        min-height: 7rem;
+    }
+
+    .order-items-scroll table {
+        min-width: 980px;
+    }
+
+    .order-empty-state {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1.15rem;
+        color: var(--order-muted);
+    }
+
+    .order-empty-state > span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.7rem;
+        color: #059669;
+        background: #ecfdf5;
+    }
+
+    .order-empty-state strong {
+        display: block;
+        color: #334155;
+        font-size: 0.87rem;
+    }
+
+    .order-empty-state p {
+        margin: 0.1rem 0 0;
+        font-size: 0.78rem;
+    }
+
+    .order-total-card {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .order-total-preview {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 0.25rem 0 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 0.75rem;
+        color: #fff;
+        background: linear-gradient(135deg, #0f3d47, #0891b2);
+    }
+
+    .order-total-preview span {
+        font-size: 0.82rem;
+        opacity: 0.85;
+    }
+
+    .order-total-preview strong {
+        font-size: 1.15rem;
+    }
+
+    .order-create-sidebar .card-footer {
+        border-top-color: #eef2f7;
+        background: #f8fafc;
+    }
+
+    @media (min-width: 1200px) {
+        .order-create-sidebar {
+            position: sticky;
+            top: 4.25rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .order-create-hero {
+            align-items: flex-start;
+            padding: 1.1rem;
+        }
+
+        .order-create-hero h2 {
+            font-size: 1.3rem;
+        }
+
+        .order-create-hero-actions {
+            width: 100%;
+        }
+
+        .order-create-hero-actions .btn {
+            flex: 1;
+        }
+
+        .order-form-card-header {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .order-form-card-header .btn {
+            width: 100%;
+            margin-left: 0 !important;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -343,7 +772,18 @@
         var sub = parseFloat(document.getElementById('subtotal').value) || 0;
         var disc = parseFloat(document.getElementById('discount').value) || 0;
         var ship = parseFloat(document.getElementById('shipping').value) || 0;
-        document.getElementById('total').value = Math.max(0, sub - disc + ship).toFixed(2);
+        var total = Math.max(0, sub - disc + ship);
+        document.getElementById('total').value = total.toFixed(2);
+        updateTotalPreview(total);
+    }
+
+    function updateTotalPreview(total) {
+        var preview = document.getElementById('total-preview');
+        if (!preview) return;
+        preview.textContent = '৳' + Number(total || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     document.getElementById('calc-total').addEventListener('click', function () {
@@ -356,6 +796,10 @@
         var sub = parseFloat(document.getElementById('subtotal').value) || 0;
         document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
         recalcTotal();
+    });
+
+    document.getElementById('total').addEventListener('input', function () {
+        updateTotalPreview(parseFloat(this.value) || 0);
     });
 
     document.getElementById('items-body').addEventListener('input', function (e) {
@@ -397,6 +841,21 @@
         e.target.readOnly = false;
     });
 
+    document.getElementById('items-body').addEventListener('change', function (e) {
+        if (e.target.type !== 'file') return;
+        var label = e.target.closest('.order-item-upload');
+        var text = label ? label.querySelector('span') : null;
+        if (!label || !text) return;
+
+        if (e.target.files && e.target.files[0]) {
+            text.textContent = e.target.files[0].name;
+            label.classList.add('has-file');
+        } else {
+            text.textContent = 'Upload';
+            label.classList.remove('has-file');
+        }
+    });
+
     document.getElementById('items-body').addEventListener('input', function (e) {
         if (!e.target.classList.contains('item-slug')) return;
         e.target.dataset.manual = '1';
@@ -405,6 +864,7 @@
 
     addRow('item-row-template', 'items-body');
     toggleManualPaymentFields();
+    updateTotalPreview(parseFloat(document.getElementById('total').value) || 0);
 })();
 </script>
 @endpush

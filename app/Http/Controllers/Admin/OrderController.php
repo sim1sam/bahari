@@ -24,8 +24,18 @@ class OrderController extends Controller
 
     public function index(): View
     {
+        $today = now()->startOfDay();
+
         return view('admin.orders.index', [
             'orders' => Order::query()->latest()->paginate(20),
+            'stats' => [
+                'total' => Order::count(),
+                'pending' => Order::where('status', 'pending')->count(),
+                'processing' => Order::where('status', 'processing')->count(),
+                'today' => Order::where('created_at', '>=', $today)->count(),
+                'revenue' => (float) Order::sum('total'),
+                'collected' => (float) Order::sum('amount_paid'),
+            ],
         ]);
     }
 
@@ -70,7 +80,7 @@ class OrderController extends Controller
             'items.*.product_name' => 'required|string|max:255',
             'items.*.product_slug' => 'nullable|string|max:255',
             'items.*.product_link' => 'nullable|string|max:500',
-            'items.*.image' => 'nullable|string|max:500',
+            'items.*.image' => 'nullable|image|max:5120',
             'items.*.size' => 'nullable|string|max:50',
             'items.*.color' => 'nullable|string|max:50',
             'items.*.quantity' => 'required|integer|min:1',
@@ -120,9 +130,18 @@ class OrderController extends Controller
                 'amount_paid' => 0,
             ]);
 
-            foreach ($validated['items'] as $itemData) {
+            foreach ($validated['items'] as $index => $itemData) {
                 if (empty($itemData['product_name'])) {
                     continue;
+                }
+
+                $itemImage = null;
+                if ($request->hasFile("items.{$index}.image")) {
+                    $itemImage = $media->storeUpload(
+                        $request->file("items.{$index}.image"),
+                        'orders/items',
+                        field: "items.{$index}.image"
+                    );
                 }
 
                 OrderItem::create([
@@ -130,7 +149,7 @@ class OrderController extends Controller
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $itemData['image'] ?? null,
+                    'image' => $itemImage,
                     'size' => $itemData['size'] ?? null,
                     'color' => $itemData['color'] ?? null,
                     'quantity' => (int) $itemData['quantity'],

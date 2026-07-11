@@ -2467,10 +2467,32 @@ namespace App\Models {
 	/**
 	 * App\Models\CustomerPayment
 	 *
+	 * @property \Illuminate\Support\Carbon|null $updated_at
+	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property \Illuminate\Support\Carbon $payment_date
+	 * @property string|null $notes
+	 * @property string|null $bank_name
+	 * @property float $amount
+	 * @property int|null $recorded_by
+	 * @property int|null $payment_bank_id
+	 * @property int|null $order_id
+	 * @property int $user_id
+	 * @property int $id
 	 * @property-read \App\Models\User $user
 	 * @property-read \App\Models\Order $order
 	 * @property-read \App\Models\PaymentBank $paymentBank
 	 * @property-read \App\Models\User $recorder
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereUserId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereOrderId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment wherePaymentBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereRecordedBy($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereBankName($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereNotes($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment wherePaymentDate($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereCreatedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment newModelQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment newQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment query()

@@ -308,6 +308,136 @@
             background: #fff;
             font-size: 1rem;
         }
+
+        /* —— Admin sidebar menu —— */
+        .main-sidebar.admin-sidebar {
+            background: linear-gradient(180deg, #0c1222 0%, #111827 48%, #0f3d47 100%);
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .admin-sidebar .sidebar {
+            padding-bottom: 1rem;
+        }
+
+        .admin-sidebar .nav-sidebar {
+            padding: 0.35rem 0.5rem 0.75rem;
+        }
+
+        .admin-sidebar .nav-sidebar > .nav-item {
+            margin-bottom: 0.2rem;
+        }
+
+        .admin-sidebar .nav-sidebar .nav-link {
+            border-radius: 0.55rem;
+            margin: 0.1rem 0.35rem;
+            padding: 0.62rem 0.85rem;
+            color: rgba(255, 255, 255, 0.82);
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .admin-sidebar .nav-sidebar .nav-link p {
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        .admin-sidebar .nav-sidebar .nav-icon {
+            color: rgba(165, 243, 252, 0.9);
+            font-size: 0.95rem;
+            width: 1.6rem;
+            margin-right: 0.55rem;
+            text-align: center;
+        }
+
+        .admin-sidebar .nav-sidebar .nav-link:hover {
+            background: rgba(8, 145, 178, 0.18);
+            color: #fff;
+        }
+
+        .admin-sidebar .nav-sidebar .nav-link.active {
+            background: linear-gradient(90deg, rgba(8, 145, 178, 0.35) 0%, rgba(8, 145, 178, 0.12) 100%);
+            color: #fff;
+            box-shadow: inset 3px 0 0 #22d3ee;
+        }
+
+        .admin-sidebar .admin-nav-parent {
+            font-weight: 600;
+        }
+
+        .admin-sidebar .admin-nav-parent > p {
+            font-weight: 600;
+        }
+
+        .admin-sidebar .admin-nav-chevron {
+            font-size: 0.7rem;
+            opacity: 0.75;
+            transition: transform 0.2s ease;
+        }
+
+        .admin-sidebar .menu-open > .nav-link .admin-nav-chevron {
+            transform: rotate(180deg);
+        }
+
+        .admin-sidebar .admin-nav-submenu {
+            margin: 0.15rem 0.35rem 0.35rem 1.15rem;
+            padding: 0.2rem 0 0.25rem 0.65rem;
+            border-left: 2px solid rgba(34, 211, 238, 0.28);
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 0 0.45rem 0.45rem 0;
+        }
+
+        .admin-sidebar .admin-nav-submenu .nav-item {
+            margin-bottom: 0.05rem;
+        }
+
+        .admin-sidebar .admin-nav-child {
+            padding: 0.48rem 0.65rem 0.48rem 0.75rem !important;
+            margin: 0.05rem 0 !important;
+            font-size: 0.84rem;
+            color: rgba(255, 255, 255, 0.68) !important;
+            border-radius: 0.4rem !important;
+        }
+
+        .admin-sidebar .admin-nav-child .nav-icon {
+            font-size: 0.72rem;
+            width: 1.15rem;
+            margin-right: 0.45rem;
+            opacity: 0.85;
+            color: rgba(165, 243, 252, 0.65);
+        }
+
+        .admin-sidebar .admin-nav-child p {
+            font-weight: 400;
+            font-size: 0.84rem;
+        }
+
+        .admin-sidebar .admin-nav-child:hover {
+            background: rgba(8, 145, 178, 0.14) !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        .admin-sidebar .admin-nav-child.active {
+            background: rgba(8, 145, 178, 0.22) !important;
+            color: #fff !important;
+            box-shadow: inset 2px 0 0 #22d3ee;
+        }
+
+        .admin-sidebar .admin-nav-child.active .nav-icon {
+            color: #67e8f9;
+        }
+
+        .admin-sidebar .admin-nav-group.menu-open > .admin-nav-parent {
+            background: rgba(8, 145, 178, 0.12);
+            color: #e0f2fe;
+        }
+
+        .admin-sidebar .brand-link.admin-brand-link {
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom-color: rgba(34, 211, 238, 0.15);
+        }
+
+        .sidebar-mini.sidebar-collapse .admin-sidebar:not(:hover) .admin-nav-submenu {
+            display: none;
+        }
     </style>
     @stack('styles')
 </head>
@@ -335,7 +465,7 @@
         </ul>
     </nav>
 
-    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <aside class="main-sidebar sidebar-dark-primary elevation-4 admin-sidebar">
         @php
             $adminHomeRoute = \App\Support\AdminFeatures::firstAccessibleRoute(auth()->user()) ?? 'admin.dashboard';
         @endphp
@@ -349,26 +479,26 @@
                         @if ($nav['type'] === 'item')
                             @php $feature = $nav['feature']; @endphp
                             <li class="nav-item">
-                                <a href="{{ route($feature['route']) }}" class="nav-link {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
+                                <a href="{{ route($feature['route']) }}" class="nav-link admin-nav-single {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
                                     <i class="nav-icon {{ $feature['icon'] }}"></i>
                                     <p>{{ $feature['label'] }}</p>
                                 </a>
                             </li>
                         @else
                             @php $groupActive = \App\Support\AdminFeatures::isNavigationGroupActive($nav['items']); @endphp
-                            <li class="nav-item has-treeview {{ $groupActive ? 'menu-open' : '' }}">
-                                <a href="#" class="nav-link {{ $groupActive ? 'active' : '' }}">
+                            <li class="nav-item admin-nav-group has-treeview {{ $groupActive ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link admin-nav-parent {{ $groupActive ? 'active' : '' }}">
                                     <i class="nav-icon {{ $nav['icon'] }}"></i>
                                     <p>
                                         {{ $nav['label'] }}
-                                        <i class="right fas fa-angle-left"></i>
+                                        <i class="right fas fa-chevron-down admin-nav-chevron"></i>
                                     </p>
                                 </a>
-                                <ul class="nav nav-treeview">
+                                <ul class="nav nav-treeview admin-nav-submenu">
                                     @foreach ($nav['items'] as $item)
                                         @php $feature = $item['feature']; @endphp
                                         <li class="nav-item">
-                                            <a href="{{ route($feature['route']) }}" class="nav-link {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
+                                            <a href="{{ route($feature['route']) }}" class="nav-link admin-nav-child {{ \App\Support\AdminFeatures::isNavigationItemActive($feature) ? 'active' : '' }}">
                                                 <i class="nav-icon {{ $feature['icon'] }}"></i>
                                                 <p>{{ $feature['label'] }}</p>
                                             </a>
