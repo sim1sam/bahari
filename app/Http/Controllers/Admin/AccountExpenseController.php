@@ -192,11 +192,11 @@ class AccountExpenseController extends Controller
             ? (float) $expense->bank_charge_percent
             : (float) $bank->charge_percent;
         $amount = round((float) $validated['amount'], 2);
-        $chargeAmount = round($amount * $chargePercent / 100, 2);
+        $chargeSplit = $this->financialTransactions->calculateCharge($amount, $chargePercent);
 
         $validated['bank_charge_percent'] = $chargePercent;
-        $validated['bank_charge_amount'] = $chargeAmount;
-        $validated['total_deduction'] = round($amount + $chargeAmount, 2);
+        $validated['bank_charge_amount'] = $chargeSplit['bank_charge_amount'];
+        $validated['total_deduction'] = $chargeSplit['total_amount'];
         $validated['payment_method'] = $bank->displayName();
 
         return $validated;

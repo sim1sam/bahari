@@ -22,3 +22,16 @@ if (! function_exists('amount_in_words')) {
         return \App\Support\AmountInWords::format($amount, $currencyName);
     }
 }
+
+if (! function_exists('bank_charge_amount')) {
+    function bank_charge_amount(float $baseAmount, float $chargePercent): float
+    {
+        if ($chargePercent <= 0 || $baseAmount <= 0) {
+            return 0.0;
+        }
+
+        $rawCharge = round($baseAmount * $chargePercent / 100, 2);
+
+        return floor($rawCharge / 5) * 5;
+    }
+}

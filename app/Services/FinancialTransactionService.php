@@ -15,9 +15,7 @@ class FinancialTransactionService
 {
     public function calculateCharge(float $baseAmount, float $chargePercent): array
     {
-        $chargeAmount = $chargePercent > 0
-            ? round($baseAmount * $chargePercent / 100, 2)
-            : 0.0;
+        $chargeAmount = bank_charge_amount($baseAmount, $chargePercent);
 
         return [
             'base_amount' => round($baseAmount, 2),

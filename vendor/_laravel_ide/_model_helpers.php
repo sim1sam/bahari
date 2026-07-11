@@ -2113,9 +2113,27 @@ namespace App\Models {
 	/**
 	 * App\Models\BankInterTransfer
 	 *
+	 * @property \Illuminate\Support\Carbon|null $updated_at
+	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property int|null $recorded_by
+	 * @property string|null $notes
+	 * @property \Illuminate\Support\Carbon $transfer_date
+	 * @property float $amount
+	 * @property int $to_bank_id
+	 * @property int $from_bank_id
+	 * @property int $id
 	 * @property-read \App\Models\PaymentBank $fromBank
 	 * @property-read \App\Models\PaymentBank $toBank
 	 * @property-read \App\Models\User $recorder
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereFromBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereToBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereTransferDate($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereNotes($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereRecordedBy($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereCreatedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer newModelQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer newQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<BankInterTransfer>|BankInterTransfer query()
@@ -3490,6 +3508,9 @@ namespace App\Models {
 	 * @property \Illuminate\Support\Carbon $payment_date
 	 * @property string|null $notes
 	 * @property string|null $bank_name
+	 * @property float $bank_charge_amount
+	 * @property float $bank_charge_percent
+	 * @property float|null $sale_amount
 	 * @property float $amount
 	 * @property int|null $recorded_by
 	 * @property int|null $payment_bank_id
@@ -3506,6 +3527,9 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment wherePaymentBankId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereRecordedBy($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereSaleAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereBankChargePercent($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereBankChargeAmount($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereBankName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment whereNotes($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<CustomerPayment>|CustomerPayment wherePaymentDate($value)
@@ -3833,12 +3857,52 @@ namespace App\Models {
 	/**
 	 * App\Models\FinancialTransaction
 	 *
+	 * @property \Illuminate\Support\Carbon|null $updated_at
+	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property int|null $recorded_by
+	 * @property string|null $description
+	 * @property string|null $reference
+	 * @property float $total_amount
+	 * @property float $bank_charge_amount
+	 * @property float $bank_charge_percent
+	 * @property float $base_amount
+	 * @property int|null $account_head_id
+	 * @property int|null $counterparty_bank_id
+	 * @property int|null $payment_bank_id
+	 * @property int|null $user_id
+	 * @property int|null $order_id
+	 * @property int $source_id
+	 * @property string $source_type
+	 * @property string $direction
+	 * @property string $type
+	 * @property \Illuminate\Support\Carbon $transaction_date
+	 * @property int $id
 	 * @property-read \App\Models\Order $order
 	 * @property-read \App\Models\User $user
 	 * @property-read \App\Models\PaymentBank $paymentBank
 	 * @property-read \App\Models\PaymentBank $counterpartyBank
 	 * @property-read \App\Models\AccountHead $accountHead
 	 * @property-read \App\Models\User $recorder
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereTransactionDate($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereType($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereDirection($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereSourceType($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereSourceId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereOrderId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereUserId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction wherePaymentBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereCounterpartyBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereAccountHeadId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereBaseAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereBankChargePercent($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereBankChargeAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereTotalAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereReference($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereDescription($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereRecordedBy($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereCreatedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction newModelQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction newQuery()
 	 * @method static \Illuminate\Database\Eloquent\Builder<FinancialTransaction>|FinancialTransaction query()
@@ -6615,8 +6679,13 @@ namespace App\Models {
 	 * @property string|null $screenshot
 	 * @property string|null $bank_name
 	 * @property string $payment_method
+	 * @property float $bank_charge_amount
+	 * @property float $bank_charge_percent
+	 * @property float|null $sale_amount
 	 * @property float $amount
 	 * @property int|null $recorded_by
+	 * @property int|null $payment_transaction_id
+	 * @property int|null $payment_bank_id
 	 * @property int $order_id
 	 * @property int $id
 	 * @property-read \App\Models\PaymentBank $paymentBank
@@ -6625,8 +6694,13 @@ namespace App\Models {
 	 * @property-read \App\Models\User $recorder
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereOrderId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment wherePaymentBankId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment wherePaymentTransactionId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereRecordedBy($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereSaleAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereBankChargePercent($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereBankChargeAmount($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment wherePaymentMethod($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereBankName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<OrderPayment>|OrderPayment whereScreenshot($value)
@@ -7300,6 +7374,7 @@ namespace App\Models {
 	 * @property integer $sort_order
 	 * @property boolean $is_active
 	 * @property string|null $image
+	 * @property float $opening_balance
 	 * @property float $charge_percent
 	 * @property string|null $instructions
 	 * @property string|null $branch
@@ -7316,6 +7391,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereBranch($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereInstructions($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereChargePercent($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereOpeningBalance($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereImage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereIsActive($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereSortOrder($value)
@@ -7651,7 +7727,11 @@ namespace App\Models {
 	 * @property string $status
 	 * @property string|null $screenshot
 	 * @property string|null $bank_name
+	 * @property float $bank_charge_amount
+	 * @property float $bank_charge_percent
+	 * @property float|null $sale_amount
 	 * @property float $amount
+	 * @property int|null $payment_bank_id
 	 * @property int|null $user_id
 	 * @property int $order_id
 	 * @property int $id
@@ -7662,7 +7742,11 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereOrderId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereUserId($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction wherePaymentBankId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereSaleAmount($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereBankChargePercent($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereBankChargeAmount($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereBankName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereScreenshot($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentTransaction>|PaymentTransaction whereStatus($value)

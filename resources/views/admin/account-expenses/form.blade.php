@@ -213,12 +213,23 @@
             });
         }
 
+        function roundChargeToPreviousFive(charge) {
+            if (charge <= 0) {
+                return 0;
+            }
+
+            var rounded = Math.round(charge * 100) / 100;
+
+            return Math.floor(rounded / 5) * 5;
+        }
+
         function calculate() {
             var option = bank.options[bank.selectedIndex];
             var chargePercent = Number(option && option.dataset.charge || 0);
             var balance = Number(option && option.dataset.balance || 0);
             var expenseAmount = Number(amount.value || 0);
-            var chargeAmount = Math.round((expenseAmount * chargePercent / 100) * 100) / 100;
+            var rawCharge = Math.round((expenseAmount * chargePercent / 100) * 100) / 100;
+            var chargeAmount = roundChargeToPreviousFive(rawCharge);
             var total = expenseAmount + chargeAmount;
 
             document.getElementById('bank_balance').textContent = option && option.value ? money(balance) : '—';
