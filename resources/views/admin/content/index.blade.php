@@ -5,9 +5,11 @@
 
 @section('content')
     <div class="ecom-page content-page">
+        <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST" class="d-none">
+            @csrf
+        </form>
         <form id="delete-batch-form" action="{{ route('admin.content.destroy-batch') }}" method="POST" class="d-none">
             @csrf
-            @method('DELETE')
         </form>
 
         @if (session('generated_credentials'))
@@ -245,33 +247,30 @@
                 @endif
             </div>
 
-            <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
-                @csrf
-                <div class="content-grid-body">
-                    @if ($items->isEmpty())
-                        <div class="content-empty">
-                            <i class="fas fa-cloud-download-alt"></i>
-                            <strong>No received images</strong>
-                            <p>Items sent from the Content API will appear here for review and processing.</p>
-                            <a href="{{ route('admin.api-settings.index') }}" class="btn btn-sm btn-outline-secondary mt-2">
-                                <i class="fas fa-cog mr-1"></i> Content API Settings
-                            </a>
-                        </div>
-                    @else
-                        <div class="content-gallery-grid">
-                            @foreach ($items as $item)
-                                <article class="content-gallery-card {{ $item->imageUrl() ? '' : 'content-gallery-card--missing' }}" data-item-id="{{ $item->id }}">
-                                    <label class="content-gallery-select">
-                                        <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
-                                        <span class="content-gallery-select-mark"><i class="fas fa-check"></i></span>
-                                    </label>
-                                    <form action="{{ route('admin.content.destroy', $item) }}" method="POST" class="content-gallery-delete" onsubmit="return confirm('Delete this received item permanently?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="content-gallery-delete-btn" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+            <div class="content-grid-body">
+                @if ($items->isEmpty())
+                    <div class="content-empty">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        <strong>No received images</strong>
+                        <p>Items sent from the Content API will appear here for review and processing.</p>
+                        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-sm btn-outline-secondary mt-2">
+                            <i class="fas fa-cog mr-1"></i> Content API Settings
+                        </a>
+                    </div>
+                @else
+                    <div class="content-gallery-grid">
+                        @foreach ($items as $item)
+                            <article class="content-gallery-card {{ $item->imageUrl() ? '' : 'content-gallery-card--missing' }}" data-item-id="{{ $item->id }}">
+                                <label class="content-gallery-select">
+                                    <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
+                                    <span class="content-gallery-select-mark"><i class="fas fa-check"></i></span>
+                                </label>
+                                <form action="{{ route('admin.content.destroy', $item) }}" method="POST" class="content-gallery-delete" onsubmit="return confirm('Delete this received item permanently?')">
+                                    @csrf
+                                    <button type="submit" class="content-gallery-delete-btn" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                                     <a href="{{ route('admin.content.show', $item) }}" class="content-gallery-media">
                                         @if ($item->imageUrl())
                                             <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}">
@@ -314,7 +313,6 @@
                 @if ($items->hasPages())
                     <div class="ecom-card-footer">{{ $items->links() }}</div>
                 @endif
-            </form>
         </div>
     </div>
 @endsection

@@ -129,10 +129,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('content/logo-scale', [ApiContentController::class, 'updateLogoScale'])->name('content.logo-scale');
             Route::post('content/repair-images', [ApiContentController::class, 'repairImages'])->name('content.repair-images');
             Route::post('content/batch/process', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
-            Route::delete('content/batch', [ApiContentController::class, 'destroyBatch'])->name('content.destroy-batch');
+            Route::post('content/process-batch', [ApiContentController::class, 'processBatch']);
+            Route::post('content/batch/delete', [ApiContentController::class, 'destroyBatch'])->name('content.destroy-batch');
             Route::get('content/{item}', [ApiContentController::class, 'show'])->whereNumber('item')->name('content.show');
             Route::put('content/{item}', [ApiContentController::class, 'update'])->whereNumber('item')->name('content.update');
-            Route::delete('content/{item}', [ApiContentController::class, 'destroy'])->whereNumber('item')->name('content.destroy');
+            Route::post('content/{item}/delete', [ApiContentController::class, 'destroy'])->whereNumber('item')->name('content.destroy');
             Route::post('content/{item}/process', [ApiContentController::class, 'process'])->whereNumber('item')->name('content.process');
             Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->whereNumber('item')->name('content.reject');
         });
