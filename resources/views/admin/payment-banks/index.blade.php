@@ -86,6 +86,12 @@
                                 <input type="text" name="instructions" class="form-control" value="{{ old('instructions') }}" placeholder="Send money then upload screenshot">
                             </div>
                             <div class="form-group">
+                                <label>Expense Charge (%)</label>
+                                <input type="number" name="charge_percent" class="form-control @error('charge_percent') is-invalid @enderror" value="{{ old('charge_percent', 0) }}" min="0" max="100" step="0.01">
+                                @error('charge_percent')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                                <small class="form-text text-muted">Automatically added when an expense is paid from this bank.</small>
+                            </div>
+                            <div class="form-group">
                                 <label>QR / Bank Image</label>
                                 <div class="payment-banks-file">
                                     <input type="file" name="image" id="add-bank-image" class="payment-banks-file-input" accept="image/*">
@@ -141,6 +147,11 @@
                                             No account number
                                         @endif
                                     </small>
+                                    <div class="small mt-1">
+                                        <strong>Balance:</strong> {{ money($bankBalances[$bank->id] ?? 0) }}
+                                        <span class="mx-1">•</span>
+                                        <strong>Charge:</strong> {{ number_format((float) $bank->charge_percent, 2) }}%
+                                    </div>
                                 </div>
                             </div>
                             <span class="payment-banks-status {{ $bank->is_active ? 'payment-banks-status--active' : 'payment-banks-status--inactive' }}">
@@ -183,7 +194,13 @@
                                             <input type="text" name="instructions" class="form-control" value="{{ old('instructions', $bank->instructions) }}">
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Charge (%)</label>
+                                            <input type="number" name="charge_percent" class="form-control" value="{{ old('charge_percent', $bank->charge_percent) }}" min="0" max="100" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
                                         <div class="form-group mb-md-0">
                                             <label>Sort Order</label>
                                             <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order', $bank->sort_order) }}" min="0">

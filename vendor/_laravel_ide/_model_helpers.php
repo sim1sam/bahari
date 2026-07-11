@@ -14,14 +14,16 @@ namespace App\Models {
 	 * @property float $amount
 	 * @property string|null $notes
 	 * @property string $title
-	 * @property string $category
+	 * @property int $account_head_id
 	 * @property \Illuminate\Support\Carbon $expense_date
 	 * @property int $id
+	 * @property-read \App\Models\AccountHead $accountHead
 	 * @property-read \App\Models\User $recorder
+	 * @property-read \App\Models\PaymentBank $paymentBank
 	 * @property-read \App\Models\Product $product
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereExpenseDate($value)
-	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereCategory($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereAccountHeadId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereTitle($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereNotes($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountExpense>|AccountExpense whereAmount($value)
@@ -358,11 +360,13 @@ namespace App\Models {
 	 * @property integer $sort_order
 	 * @property boolean $is_active
 	 * @property string|null $description
-	 * @property int|null $account_head_type_id
+	 * @property int $account_head_type_id
 	 * @property string|null $code
 	 * @property string $name
 	 * @property int $id
 	 * @property-read \App\Models\AccountHeadType $accountHeadType
+	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AccountExpense> $expenses
+	 * @property-read int|null $expenses_count
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountHead>|AccountHead whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountHead>|AccountHead whereName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<AccountHead>|AccountHead whereCode($value)
@@ -6639,6 +6643,8 @@ namespace App\Models {
 	 * @property string|null $account_name
 	 * @property string $name
 	 * @property int $id
+	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AccountExpense> $expenses
+	 * @property-read int|null $expenses_count
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<PaymentBank>|PaymentBank whereAccountName($value)

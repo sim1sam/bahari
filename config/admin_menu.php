@@ -20,6 +20,7 @@ return [
             'items' => [
                 'account_heads_list',
                 'account_types_list',
+                'account_expenses',
             ],
         ],
         'payment' => [

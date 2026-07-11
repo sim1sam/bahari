@@ -77,6 +77,13 @@ return [
         'active' => 'admin.account-types.*',
         'permission' => 'account_heads',
     ],
+    'account_expenses' => [
+        'label' => 'Expenses',
+        'icon' => 'fas fa-receipt',
+        'route' => 'admin.account-expenses.index',
+        'active' => 'admin.account-expenses.*',
+        'permission' => 'account_heads',
+    ],
     'coupons' => [
         'label' => 'Coupons',
         'icon' => 'fas fa-ticket-alt',

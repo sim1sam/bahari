@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentBank;
+use App\Services\BankBalanceService;
 use App\Services\MediaStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ use Illuminate\View\View;
 
 class PaymentBankController extends Controller
 {
-    public function index(): View
+    public function index(BankBalanceService $balances): View
     {
         $banks = PaymentBank::query()
             ->orderBy('sort_order', 'asc')
@@ -20,6 +21,7 @@ class PaymentBankController extends Controller
 
         return view('admin.payment-banks.index', [
             'banks' => $banks,
+            'bankBalances' => $balances->balances($banks),
             'stats' => [
                 'total' => $banks->count(),
                 'active' => $banks->where('is_active', true)->count(),
@@ -68,6 +70,10 @@ class PaymentBankController extends Controller
 
     public function destroy(PaymentBank $paymentBank, MediaStorageService $media): RedirectResponse
     {
+        if ($paymentBank->expenses()->exists()) {
+            return back()->with('error', 'This bank cannot be deleted because expenses are linked to it.');
+        }
+
         $media->delete($paymentBank->image);
         PaymentBank::destroy($paymentBank->getKey());
 
@@ -83,6 +89,7 @@ class PaymentBankController extends Controller
             'account_number' => 'nullable|string|max:100',
             'branch' => 'nullable|string|max:150',
             'instructions' => 'nullable|string|max:255',
+            'charge_percent' => 'nullable|numeric|min:0|max:100',
             'sort_order' => 'nullable|integer|min:0',
             'image' => 'nullable|image|max:5120',
         ]);

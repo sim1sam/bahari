@@ -259,8 +259,8 @@ class FinancialReportService
                         'datetime' => $expense->expense_date->startOfDay(),
                         'type' => 'expense',
                         'reference' => $expense->reference ?: 'EXP-'.$expense->id,
-                        'description' => $expense->title.' ('.$expense->categoryLabel().')',
-                        'debit' => (float) $expense->amount,
+                        'description' => $expense->title.' ('.$expense->accountHeadLabel().')',
+                        'debit' => (float) $expense->total_deduction,
                         'credit' => 0.0,
                         'order_id' => null,
                     ]);
@@ -469,7 +469,7 @@ class FinancialReportService
 
     private function expensesQuery(FinancialReportFilters $filters): Builder
     {
-        $query = AccountExpense::query();
+        $query = AccountExpense::query()->with('accountHead');
 
         if ($filters->dateFrom) {
             $query->whereDate('expense_date', '>=', $filters->dateFrom);
@@ -484,32 +484,47 @@ class FinancialReportService
 
     private function expensesSum(FinancialReportFilters $filters): float
     {
-        return (float) $this->expensesQuery($filters)->sum('amount');
+        return (float) $this->expensesQuery($filters)->sum('total_deduction');
     }
 
     private function inventoryPurchasesSum(FinancialReportFilters $filters): float
     {
-        return (float) $this->expensesQuery($filters)->where('category', 'inventory')->sum('amount');
+        return (float) $this->expensesQuery($filters)
+            ->where(function (Builder $query) {
+                $query->whereNotNull('product_id')
+                    ->orWhereHas('accountHead', fn (Builder $head) => $head->where('code', 'INVENTORY'));
+            })
+            ->sum('total_deduction');
     }
 
     private function operatingExpensesSum(FinancialReportFilters $filters): float
     {
-        return (float) $this->expensesQuery($filters)->where('category', '!=', 'inventory')->sum('amount');
+        return (float) $this->expensesQuery($filters)
+            ->where(function (Builder $query) {
+                $query->whereNull('product_id')
+                    ->whereDoesntHave('accountHead', fn (Builder $head) => $head->where('code', 'INVENTORY'));
+            })
+            ->sum('total_deduction');
     }
 
     /** @return array<int, array{category: string, label: string, total: float}> */
     private function expenseBreakdown(FinancialReportFilters $filters): array
     {
         return $this->expensesQuery($filters)
-            ->select('category', DB::raw('SUM(amount) as total'))
-            ->groupBy('category')
-            ->orderByDesc('total')
+            ->with('accountHead')
             ->get()
-            ->map(fn ($row) => [
-                'category' => $row->category,
-                'label' => AccountExpense::CATEGORIES[$row->category] ?? ucfirst($row->category),
-                'total' => (float) $row->total,
-            ])
+            ->groupBy('account_head_id')
+            ->map(function ($rows, $headId) {
+                $head = $rows->first()->accountHead;
+
+                return [
+                    'category' => (string) $headId,
+                    'label' => $head?->displayName() ?? 'Unknown',
+                    'total' => (float) $rows->sum('total_deduction'),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values()
             ->all();
     }
 

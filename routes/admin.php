@@ -152,6 +152,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:account_heads')->group(function () {
             Route::resource('account-heads', AccountHeadController::class)->except(['show'])->parameters(['account-heads' => 'accountHead']);
             Route::resource('account-types', AccountHeadTypeController::class)->except(['show'])->parameters(['account-types' => 'accountType']);
+            Route::resource('account-expenses', AccountExpenseController::class)->except(['show'])->parameters(['account-expenses' => 'expense']);
         });
 
         Route::middleware('admin.feature:orders')->group(function () {
@@ -181,7 +182,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('reports/profit-loss', [FinancialReportController::class, 'profitLoss'])->name('reports.profit-loss');
             Route::get('reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('reports/ledger', [FinancialReportController::class, 'ledger'])->name('reports.ledger');
-            Route::resource('reports/expenses', AccountExpenseController::class)->except(['show'])->names('reports.expenses')->parameters(['expenses' => 'expense']);
         });
 
         Route::middleware('admin.feature:shipping')->group(function () {

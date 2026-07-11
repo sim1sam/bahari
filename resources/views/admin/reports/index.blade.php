@@ -26,7 +26,7 @@
                 <a href="{{ route('admin.reports.profit-loss', $filters->toQueryArray()) }}" class="btn btn-primary">
                     <i class="fas fa-file-invoice-dollar mr-1"></i> Profit &amp; Loss
                 </a>
-                <a href="{{ route('admin.reports.expenses.create') }}" class="btn btn-warning">
+                <a href="{{ route('admin.account-expenses.create') }}" class="btn btn-warning">
                     <i class="fas fa-plus mr-1"></i> Add Expense
                 </a>
                 <a href="{{ route('admin.orders.index') }}" class="btn btn-info">
@@ -102,7 +102,7 @@
         <div class="reports-card">
             <div class="reports-card-head">
                 <h3>Report Sections</h3>
-                <p>Open detailed financial statements and manage operating expenses.</p>
+                <p>Open detailed financial statements and review operating performance.</p>
             </div>
             <div class="reports-quick-links">
                 <a href="{{ route('admin.reports.profit-loss', $filters->toQueryArray()) }}" class="reports-quick-link reports-quick-link--pl">
@@ -126,11 +126,11 @@
                         <span>Debit and credit entries by date</span>
                     </span>
                 </a>
-                <a href="{{ route('admin.reports.expenses.create') }}" class="reports-quick-link reports-quick-link--expense">
-                    <span class="reports-quick-link-icon"><i class="fas fa-plus"></i></span>
+                <a href="{{ route('admin.account-expenses.index') }}" class="reports-quick-link reports-quick-link--expense">
+                    <span class="reports-quick-link-icon"><i class="fas fa-receipt"></i></span>
                     <span>
-                        <strong>Add Expense</strong>
-                        <span>Record a new operating expense</span>
+                        <strong>Expenses</strong>
+                        <span>View and manage operating expenses</span>
                     </span>
                 </a>
             </div>

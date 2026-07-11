@@ -5,4 +5,7 @@
     <a href="{{ route('admin.account-types.index') }}" class="settings-nav-link @if (request()->routeIs('admin.account-types.*')) active @endif">
         <i class="fas fa-tags"></i> Account Types
     </a>
+    <a href="{{ route('admin.account-expenses.index') }}" class="settings-nav-link @if (request()->routeIs('admin.account-expenses.*')) active @endif">
+        <i class="fas fa-receipt"></i> Expenses
+    </a>
 </nav>

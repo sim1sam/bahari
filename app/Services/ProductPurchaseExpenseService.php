@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountExpense;
+use App\Models\AccountHead;
 use App\Models\Product;
 use App\Support\Money;
 
@@ -46,16 +47,35 @@ class ProductPurchaseExpenseService
             return null;
         }
 
+        $accountHeadId = $this->inventoryAccountHeadId();
+
+        if (! $accountHeadId) {
+            return null;
+        }
+
         return AccountExpense::create([
             'expense_date' => now()->toDateString(),
-            'category' => 'inventory',
+            'account_head_id' => $accountHeadId,
             'title' => 'Product purchase: '.$product->name,
             'notes' => $quantity.' unit(s) × '.Money::format($unitCost).' purchase price',
             'amount' => $amount,
+            'bank_charge_percent' => 0,
+            'bank_charge_amount' => 0,
+            'total_deduction' => $amount,
             'payment_method' => null,
             'reference' => 'STOCK-'.$product->id.'-'.now()->format('YmdHis'),
             'product_id' => $product->id,
             'recorded_by' => auth()->id(),
         ]);
+    }
+
+    private function inventoryAccountHeadId(): ?int
+    {
+        $head = AccountHead::query()
+            ->where('code', 'INVENTORY')
+            ->whereHas('accountHeadType', fn ($query) => $query->where('slug', 'expense'))
+            ->first();
+
+        return $head?->id;
     }
 }

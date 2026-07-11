@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\MediaStorageService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentBank extends Model
 {
@@ -13,6 +14,7 @@ class PaymentBank extends Model
         'account_number',
         'branch',
         'instructions',
+        'charge_percent',
         'image',
         'is_active',
         'sort_order',
@@ -23,7 +25,13 @@ class PaymentBank extends Model
         return [
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'charge_percent' => 'decimal:2',
         ];
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(AccountExpense::class);
     }
 
     public function imageUrl(): ?string
