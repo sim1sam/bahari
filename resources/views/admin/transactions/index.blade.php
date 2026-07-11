@@ -13,7 +13,7 @@
             </div>
             <div class="transactions-hero-actions">
                 <a href="{{ route('admin.bank-payments.create') }}" class="btn btn-info">
-                    <i class="fas fa-plus mr-1"></i> Record Payment
+                    <i class="fas fa-plus mr-1"></i> Make Payment
                 </a>
                 <a href="{{ route('admin.customer-ledgers.index') }}" class="btn btn-light">
                     <i class="fas fa-book mr-1"></i> Customer Ledgers

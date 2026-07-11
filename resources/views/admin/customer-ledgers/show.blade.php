@@ -7,7 +7,7 @@
     <div class="mb-3">
         <a href="{{ route('admin.customer-ledgers.index') }}" class="btn btn-default btn-sm">Back to Customer Ledgers</a>
         <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> Record Payment
+            <i class="fas fa-plus"></i> Make Payment
         </a>
     </div>
 

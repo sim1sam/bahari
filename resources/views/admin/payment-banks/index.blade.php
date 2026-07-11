@@ -13,7 +13,7 @@
             </div>
             <div class="payment-banks-hero-actions">
                 <a href="{{ route('admin.bank-payments.create') }}" class="btn btn-light">
-                    <i class="fas fa-money-check-alt mr-1"></i> Record Payment
+                    <i class="fas fa-money-check-alt mr-1"></i> Make Payment
                 </a>
             </div>
         </section>

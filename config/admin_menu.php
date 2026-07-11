@@ -18,6 +18,7 @@ return [
             'label' => 'Account',
             'icon' => 'fas fa-calculator',
             'items' => [
+                'bank_payments',
                 'account_heads_list',
                 'account_types_list',
                 'account_expenses',
@@ -28,7 +29,6 @@ return [
             'icon' => 'fas fa-credit-card',
             'items' => [
                 'payment_banks',
-                'bank_payments',
                 'customer_ledgers',
                 'transactions',
             ],

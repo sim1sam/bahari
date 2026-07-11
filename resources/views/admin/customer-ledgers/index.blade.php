@@ -13,7 +13,7 @@
             </div>
             <div class="customer-ledgers-hero-actions">
                 <a href="{{ route('admin.bank-payments.create') }}" class="btn btn-info">
-                    <i class="fas fa-plus mr-1"></i> Record Payment
+                    <i class="fas fa-plus mr-1"></i> Make Payment
                 </a>
                 <a href="{{ route('admin.payment-banks.index') }}" class="btn btn-light">
                     <i class="fas fa-university mr-1"></i> Payment Banks
@@ -133,7 +133,7 @@
                                         <a href="{{ route('admin.customer-ledgers.show', $customer) }}" class="btn btn-xs btn-outline-info" title="View Ledger">
                                             <i class="fas fa-book"></i>
                                         </a>
-                                        <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-xs btn-outline-primary" title="Record Payment">
+                                        <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-xs btn-outline-primary" title="Make Payment">
                                             <i class="fas fa-plus"></i>
                                         </a>
                                     </div>
@@ -155,7 +155,7 @@
                                         <a href="{{ route('admin.customer-ledgers.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Search</a>
                                     @else
                                         <a href="{{ route('admin.bank-payments.create') }}" class="btn btn-sm btn-info mt-2">
-                                            <i class="fas fa-plus mr-1"></i> Record Payment
+                                            <i class="fas fa-plus mr-1"></i> Make Payment
                                         </a>
                                     @endif
                                 </td>

@@ -115,11 +115,11 @@ return [
         'active' => 'admin.payment-banks.*',
     ],
     'bank_payments' => [
-        'label' => 'Record Bank Payment',
+        'label' => 'Make Payment',
         'icon' => 'fas fa-hand-holding-usd',
         'route' => 'admin.bank-payments.create',
         'active' => 'admin.bank-payments.*',
-        'permission' => 'transactions',
+        'permission' => 'account_heads',
     ],
     'customer_ledgers' => [
         'label' => 'Customer Ledger',

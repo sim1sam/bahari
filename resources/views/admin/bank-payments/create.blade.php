@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Record Bank Payment')
-@section('page_title', 'Record Bank Payment')
+@section('title', 'Make Payment')
+@section('page_title', 'Make Payment')
 
 @section('content')
     <form action="{{ route('admin.bank-payments.store') }}" method="POST" id="bank-payment-form" class="bank-payment-page">
@@ -9,8 +9,8 @@
 
         <section class="bank-payment-hero">
             <div>
-                <span class="bank-payment-eyebrow">Payment settings</span>
-                <h2>Record Bank Payment</h2>
+                <span class="bank-payment-eyebrow">Account</span>
+                <h2>Make Payment</h2>
                 <p>Log customer bank transfers, link them to orders, and update ledger balances.</p>
             </div>
             <div class="bank-payment-hero-actions">
@@ -22,6 +22,8 @@
                 </a>
             </div>
         </section>
+
+        @include('admin.account.partials.nav')
 
         <section class="row bank-payment-stats">
             <div class="col-xl-3 col-sm-6 mb-3">

@@ -136,7 +136,7 @@
                                         <a href="{{ route('admin.customer-ledgers.show', $customer) }}" class="btn btn-xs btn-outline-secondary" title="View Ledger">
                                             <i class="fas fa-book"></i>
                                         </a>
-                                        <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-xs btn-outline-success" title="Record Payment">
+                                        <a href="{{ route('admin.bank-payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-xs btn-outline-success" title="Make Payment">
                                             <i class="fas fa-money-bill-wave"></i>
                                         </a>
                                         <a href="{{ route('admin.customers.edit', $customer) }}" class="btn btn-xs btn-outline-info" title="Edit">

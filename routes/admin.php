@@ -95,6 +95,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
             Route::post('transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('transactions.approve');
             Route::post('transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('transactions.reject');
+        });
+
+        Route::middleware('admin.feature:account_heads')->group(function () {
             Route::get('bank-payments/create', [CustomerPaymentController::class, 'create'])->name('bank-payments.create');
             Route::post('bank-payments', [CustomerPaymentController::class, 'store'])->name('bank-payments.store');
         });
