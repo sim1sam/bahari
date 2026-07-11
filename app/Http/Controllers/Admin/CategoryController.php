@@ -25,9 +25,17 @@ class CategoryController extends Controller
             $query->withCount('products');
         }
 
+        $allCategories = (clone $query)->get();
+
         return view('admin.categories.index', [
             'categories' => $query->paginate(15),
             'canSyncReceived' => ApiReceivedItem::hasCategoryRelationColumn(),
+            'stats' => [
+                'total' => $allCategories->count(),
+                'active' => $allCategories->where('is_active', true)->count(),
+                'with_products' => $allCategories->where('products_count', '>', 0)->count(),
+                'products' => (int) $allCategories->sum('products_count'),
+            ],
         ]);
     }
 

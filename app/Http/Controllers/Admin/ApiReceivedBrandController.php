@@ -14,11 +14,22 @@ class ApiReceivedBrandController extends Controller
 {
     public function index(): View
     {
+        $allBrands = ApiReceivedBrand::query()
+            ->withCount('receivedItems')
+            ->orderBy('name')
+            ->get();
+
         return view('admin.api-brands.index', [
             'brands' => ApiReceivedBrand::query()
                 ->withCount('receivedItems')
                 ->orderBy('name')
                 ->paginate(20),
+            'stats' => [
+                'total' => $allBrands->count(),
+                'active' => $allBrands->where('is_active', true)->count(),
+                'with_items' => $allBrands->where('received_items_count', '>', 0)->count(),
+                'received_items' => (int) $allBrands->sum('received_items_count'),
+            ],
         ]);
     }
 

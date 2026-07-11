@@ -24,14 +24,22 @@ class ProductController extends Controller
 
     public function index(): View
     {
+        $baseQuery = Product::query()
+            ->where(function ($query) {
+                $query->liveFromApi()->orWhere('is_manual', true);
+            });
+
         return view('admin.products.index', [
-            'products' => Product::query()
+            'products' => (clone $baseQuery)
                 ->with(['category', 'apiReceivedItem'])
-                ->where(function ($query) {
-                    $query->liveFromApi()->orWhere('is_manual', true);
-                })
                 ->latest()
                 ->paginate(15),
+            'stats' => [
+                'total' => (clone $baseQuery)->count(),
+                'live' => (clone $baseQuery)->where('is_active', true)->count(),
+                'manual' => (clone $baseQuery)->where('is_manual', true)->count(),
+                'api' => (clone $baseQuery)->where('is_manual', false)->count(),
+            ],
         ]);
     }
 
