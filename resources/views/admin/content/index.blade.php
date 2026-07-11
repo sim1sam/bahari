@@ -181,11 +181,11 @@
                         </p>
                     </div>
                     <div class="content-select-toolbar">
-                        <label class="content-select-chip">
+                        <label class="content-select-chip content-select-chip--page">
                             <input type="checkbox" id="select-page">
                             <span><i class="fas fa-check"></i> This page</span>
                         </label>
-                        <label class="content-select-chip">
+                        <label class="content-select-chip content-select-chip--all">
                             <input type="checkbox" id="select-all-pages">
                             <span><i class="fas fa-layer-group"></i> All pages</span>
                         </label>
@@ -641,20 +641,53 @@
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.4rem 0.7rem;
-        border: 1px solid #dbe3ed;
+        padding: 0.45rem 0.85rem;
+        border: 2px solid transparent;
         border-radius: 999px;
-        background: #fff;
-        color: #475569;
         font-size: 0.76rem;
         font-weight: 700;
         transition: all 0.15s ease;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
     }
 
-    .content-select-chip input:checked + span {
-        border-color: #0891b2;
-        background: #ecfeff;
-        color: #0e7490;
+    .content-select-chip--page span {
+        background: #eff6ff;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+
+    .content-select-chip--page:hover span {
+        background: #dbeafe;
+        border-color: #60a5fa;
+    }
+
+    .content-select-chip--page input:checked + span {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border-color: #1d4ed8;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .content-select-chip--all span {
+        background: #f5f3ff;
+        border-color: #c4b5fd;
+        color: #6d28d9;
+    }
+
+    .content-select-chip--all:hover span {
+        background: #ede9fe;
+        border-color: #a78bfa;
+    }
+
+    .content-select-chip--all input:checked + span {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        border-color: #6d28d9;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+    }
+
+    .content-select-chip input:checked + span i {
+        color: inherit;
     }
 
     .content-select-status {
