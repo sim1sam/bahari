@@ -23,10 +23,32 @@ class TransactionController extends Controller
             $query->where('status', $status);
         }
 
+        $stats = DB::table('payment_transactions')
+            ->selectRaw(
+                'COUNT(*) as total,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as rejected,
+                SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as approved_amount',
+                [
+                    PaymentTransaction::STATUS_PENDING,
+                    PaymentTransaction::STATUS_APPROVED,
+                    PaymentTransaction::STATUS_REJECTED,
+                    PaymentTransaction::STATUS_APPROVED,
+                ]
+            )
+            ->first();
+
         return view('admin.transactions.index', [
             'transactions' => $query->paginate(20)->withQueryString(),
             'status' => $status,
-            'pendingCount' => PaymentTransaction::where('status', PaymentTransaction::STATUS_PENDING)->count(),
+            'stats' => [
+                'total' => (int) ($stats->total ?? 0),
+                'pending' => (int) ($stats->pending ?? 0),
+                'approved' => (int) ($stats->approved ?? 0),
+                'rejected' => (int) ($stats->rejected ?? 0),
+                'approved_amount' => (float) ($stats->approved_amount ?? 0),
+            ],
         ]);
     }
 

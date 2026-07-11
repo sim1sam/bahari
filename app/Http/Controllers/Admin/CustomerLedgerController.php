@@ -15,10 +15,12 @@ class CustomerLedgerController extends Controller
 
     public function index(Request $request): View
     {
-        $summaries = $this->ledger->summariesForCustomers();
+        $allSummaries = $this->ledger->summariesForCustomers();
+        $summaries = $allSummaries;
+        $search = trim((string) $request->input('search'));
 
-        if ($search = trim((string) $request->input('search'))) {
-            $summaries = $summaries->filter(function (array $summary) use ($search) {
+        if ($search !== '') {
+            $summaries = $allSummaries->filter(function (array $summary) use ($search) {
                 $customer = $summary['user'];
 
                 return str_contains(strtolower($customer->name), strtolower($search))
@@ -28,7 +30,14 @@ class CustomerLedgerController extends Controller
 
         return view('admin.customer-ledgers.index', [
             'summaries' => $summaries,
-            'search' => $search ?? '',
+            'search' => $search,
+            'stats' => [
+                'customers' => $allSummaries->count(),
+                'with_balance' => $allSummaries->where('balance', '>', 0)->count(),
+                'total_orders' => (float) $allSummaries->sum('total_orders'),
+                'total_paid' => (float) $allSummaries->sum('total_paid'),
+                'outstanding' => (float) $allSummaries->sum('balance'),
+            ],
         ]);
     }
 

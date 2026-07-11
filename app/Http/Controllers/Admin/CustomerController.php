@@ -15,17 +15,26 @@ class CustomerController extends Controller
     public function index(Request $request): View
     {
         $query = User::customers()->with('role')->withCount('orders')->latest();
+        $search = trim((string) $request->input('search'));
 
-        if ($search = $request->input('search')) {
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
+        $today = now()->startOfMonth();
+
         return view('admin.customers.index', [
             'customers' => $query->paginate(15)->withQueryString(),
-            'search' => $search ?? '',
+            'search' => $search,
+            'stats' => [
+                'total' => User::customers()->count(),
+                'active' => User::customers()->whereHas('role', fn ($q) => $q->where('is_active', true))->count(),
+                'with_orders' => User::customers()->has('orders')->count(),
+                'new_month' => User::customers()->where('created_at', '>=', $today)->count(),
+            ],
         ]);
     }
 
