@@ -3,6 +3,7 @@
     'title' => 'Featured Products',
     'subtitle' => 'Handpicked items just for you',
     'actionHref' => null,
+    'actionLabel' => 'See All Products',
 ])
 
 <section class="py-16 lg:py-20 bg-surface">
@@ -10,7 +11,7 @@
         <x-ui.section-heading
             :title="$title"
             :subtitle="$subtitle"
-            actionLabel="See All Products"
+            actionLabel="{{ $actionLabel }}"
             :actionHref="$actionHref ?? route('categories.index')"
         />
 

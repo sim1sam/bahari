@@ -61,6 +61,7 @@ Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('cat
 Route::get('/deals', fn () => redirect()->route('categories.show', 'sale'))->name('deals');
 
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/new-arrivals', [ProductController::class, 'newArrivals'])->name('new-arrivals');
 
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/search', [SearchController::class, 'index'])->name('search.index');

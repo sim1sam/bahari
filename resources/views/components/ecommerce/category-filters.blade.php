@@ -18,7 +18,7 @@
         <h3 class="text-xs font-bold uppercase tracking-wider text-brand-700 mb-3">Sort By</h3>
         <div class="space-y-2">
             @foreach ([
-                '' => 'Featured',
+                '' => 'Newest',
                 'price_asc' => 'Price: Low to High',
                 'price_desc' => 'Price: High to Low',
                 'name' => 'Name A–Z',

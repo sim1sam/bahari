@@ -8132,6 +8132,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Product>|Product query()
 	 * @method static \Illuminate\Database\Eloquent\Builder<Product>|Product liveFromApi() {@see App\Models\Product::scopeLiveFromApi()}
 	 * @method static \Illuminate\Database\Eloquent\Builder<Product>|Product onStorefront() {@see App\Models\Product::scopeOnStorefront()}
+	 * @method static \Illuminate\Database\Eloquent\Builder<Product>|Product orderByNewest() {@see App\Models\Product::scopeOrderByNewest()}
 	 * @method static mixed select($columns)
 	 * @method static mixed selectSub($query, $as)
 	 * @method static mixed selectExpression($expression, $as)

@@ -245,7 +245,7 @@ class CategoryCatalog
             'price_asc' => collect($items)->sortBy('price')->values()->all(),
             'price_desc' => collect($items)->sortByDesc('price')->values()->all(),
             'name' => collect($items)->sortBy('name')->values()->all(),
-            default => $items,
+            default => collect($items)->sortByDesc('published_at')->values()->all(),
         };
     }
 

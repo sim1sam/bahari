@@ -28,4 +28,13 @@ class ProductController extends Controller
                 ->all(),
         ]);
     }
+
+    public function newArrivals(): View
+    {
+        return view('pages.products.new-arrivals', [
+            'products' => collect($this->catalog->newArrivals())
+                ->map(fn ($p) => $this->catalog->toCard($p))
+                ->all(),
+        ]);
+    }
 }

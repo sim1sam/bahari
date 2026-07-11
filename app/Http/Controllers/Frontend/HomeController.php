@@ -26,7 +26,7 @@ class HomeController extends Controller
                 ->map(fn ($c) => $this->categories->toCard($c))
                 ->all(),
             'featuredProducts' => $this->productCards(fn () => $this->catalog->featured(), 8),
-            'newArrivals' => $this->productCards(fn () => $this->catalog->newArrivals(), 4),
+            'newArrivals' => $this->productCards(fn () => $this->catalog->newArrivals(), 20),
         ]);
     }
 

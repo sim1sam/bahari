@@ -27,7 +27,8 @@
             :products="$newArrivals"
             title="New Arrivals"
             subtitle="Latest girls fashion & dress styles"
-            :actionHref="route('categories.index')"
+            actionLabel="View More"
+            :actionHref="route('new-arrivals')"
         />
     @endif
 

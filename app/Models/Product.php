@@ -58,6 +58,26 @@ class Product extends Model
         });
     }
 
+    public function scopeOrderByNewest(Builder $query): Builder
+    {
+        return $query->orderByRaw(
+            'COALESCE(
+                (SELECT reviewed_at FROM api_received_items WHERE api_received_items.product_id = products.id AND api_received_items.status = ? LIMIT 1),
+                products.created_at
+            ) DESC',
+            [ApiReceivedItem::STATUS_IMPORTED]
+        );
+    }
+
+    public function publishedAt(): ?\Illuminate\Support\Carbon
+    {
+        $reviewedAt = $this->relationLoaded('apiReceivedItem')
+            ? $this->apiReceivedItem?->reviewed_at
+            : $this->apiReceivedItem()->value('reviewed_at');
+
+        return $reviewedAt ?? $this->created_at;
+    }
+
     public function isManualProduct(): bool
     {
         return (bool) $this->is_manual;
@@ -125,6 +145,7 @@ class Product extends Model
             'stock' => (int) $this->stock,
             'in_stock' => ! $this->is_manual || (int) $this->stock > 0,
             'is_manual' => (bool) $this->is_manual,
+            'published_at' => $this->publishedAt()?->getTimestamp() ?? 0,
         ];
     }
 

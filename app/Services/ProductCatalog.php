@@ -77,7 +77,7 @@ class ProductCatalog
                         $category->where('name', 'like', $term);
                     });
             })
-            ->orderBy('name');
+            ->orderByNewest();
 
         if ($limit !== null) {
             $builder->limit($limit);
@@ -120,7 +120,9 @@ class ProductCatalog
 
     private function storefrontQuery()
     {
-        return Product::with('category')->onStorefront();
+        return Product::with(['category', 'apiReceivedItem'])
+            ->onStorefront()
+            ->orderByNewest();
     }
 
     private function usesStorefrontProducts(): bool
