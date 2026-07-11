@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountExpenseController;
+use App\Http\Controllers\Admin\AccountHeadController;
+use App\Http\Controllers\Admin\AccountHeadTypeController;
 use App\Http\Controllers\Admin\ApiReceivedBrandController;
 use App\Http\Controllers\Admin\ApiContentController;
 use App\Http\Controllers\Admin\ApiProcessedController;
@@ -145,6 +147,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('processed/{item}', [ApiProcessedController::class, 'update'])->name('processed.update');
             Route::post('processed/{item}/live', [ApiProcessedController::class, 'live'])->name('processed.live-item');
             Route::delete('processed/{item}', [ApiProcessedController::class, 'destroy'])->name('processed.destroy');
+        });
+
+        Route::middleware('admin.feature:account_heads')->group(function () {
+            Route::resource('account-heads', AccountHeadController::class)->except(['show'])->parameters(['account-heads' => 'accountHead']);
+            Route::resource('account-types', AccountHeadTypeController::class)->except(['show'])->parameters(['account-types' => 'accountType']);
         });
 
         Route::middleware('admin.feature:orders')->group(function () {

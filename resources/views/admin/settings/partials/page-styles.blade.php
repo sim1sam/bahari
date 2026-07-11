@@ -185,6 +185,10 @@
         background: #f8fafc;
     }
 
+    .settings-card-footer.d-flex.gap-2 {
+        gap: 0.5rem;
+    }
+
     .settings-form-panel {
         margin-bottom: 1.25rem;
         padding: 1.1rem;

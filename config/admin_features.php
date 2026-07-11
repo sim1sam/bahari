@@ -63,6 +63,20 @@ return [
         'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit|admin.orders.invoice',
         'permission' => 'orders',
     ],
+    'account_heads_list' => [
+        'label' => 'Account Heads',
+        'icon' => 'fas fa-list',
+        'route' => 'admin.account-heads.index',
+        'active' => 'admin.account-heads.*',
+        'permission' => 'account_heads',
+    ],
+    'account_types_list' => [
+        'label' => 'Account Types',
+        'icon' => 'fas fa-tags',
+        'route' => 'admin.account-types.index',
+        'active' => 'admin.account-types.*',
+        'permission' => 'account_heads',
+    ],
     'coupons' => [
         'label' => 'Coupons',
         'icon' => 'fas fa-ticket-alt',

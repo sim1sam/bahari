@@ -14,6 +14,14 @@ return [
                 'orders_list',
             ],
         ],
+        'account' => [
+            'label' => 'Account',
+            'icon' => 'fas fa-calculator',
+            'items' => [
+                'account_heads_list',
+                'account_types_list',
+            ],
+        ],
         'payment' => [
             'label' => 'Payment Settings',
             'icon' => 'fas fa-credit-card',
