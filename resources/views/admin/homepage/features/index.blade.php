@@ -4,34 +4,54 @@
 @section('page_title', 'Trust Features')
 
 @section('content')
-    <div class="mb-3"><a href="{{ route('admin.homepage.index') }}" class="btn btn-default btn-sm"><i class="fas fa-arrow-left"></i> Homepage</a></div>
-    <div class="card">
-        <div class="card-header">
-            <a href="{{ route('admin.homepage.features.create') }}" class="btn btn-primary btn-sm float-right"><i class="fas fa-plus"></i> Add Feature</a>
-            <h3 class="card-title">Trust Features Strip</h3>
-        </div>
-        <div class="card-body table-responsive p-0">
-            <table class="table table-hover">
-                <thead><tr><th>Title</th><th>Description</th><th>Icon</th><th>Order</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                    @forelse ($features as $feature)
-                        <tr>
-                            <td>{{ $feature->title }}</td>
-                            <td>{{ Str::limit($feature->description, 50) }}</td>
-                            <td>{{ $feature->icon }}</td>
-                            <td>{{ $feature->sort_order }}</td>
-                            <td><span class="badge badge-{{ $feature->is_active ? 'success' : 'secondary' }}">{{ $feature->is_active ? 'Active' : 'Inactive' }}</span></td>
-                            <td>
-                                <a href="{{ route('admin.homepage.features.edit', $feature) }}" class="btn btn-xs btn-info"><i class="fas fa-edit"></i></a>
-                                <form action="{{ route('admin.homepage.features.destroy', $feature) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button></form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="6" class="text-center text-muted">No features yet</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if ($features->hasPages())<div class="card-footer">{{ $features->links() }}</div>@endif
-    </div>
+    @component('admin.homepage.partials.list-layout', [
+        'title' => 'Trust Features',
+        'description' => 'Icon strip below the hero slider highlighting shipping, returns, and support.',
+        'createRoute' => route('admin.homepage.features.create'),
+        'createLabel' => 'Add Feature',
+        'items' => $features,
+        'emptyIcon' => 'fas fa-star',
+        'emptyTitle' => 'No features yet',
+        'emptyText' => 'Add trust features to build customer confidence on the homepage.',
+    ])
+        @slot('tableHead')
+            <th>Title</th>
+            <th>Description</th>
+            <th>Icon</th>
+            <th>Order</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+        @endslot
+
+        @forelse ($features as $feature)
+            <tr>
+                <td><strong>{{ $feature->title }}</strong></td>
+                <td>{{ Str::limit($feature->description, 50) }}</td>
+                <td><code>{{ $feature->icon }}</code></td>
+                <td>{{ $feature->sort_order }}</td>
+                <td>
+                    <span class="settings-status {{ $feature->is_active ? 'settings-status--live' : 'settings-status--hidden' }}">
+                        {{ $feature->is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </td>
+                <td class="text-right">
+                    <div class="settings-actions">
+                        <a href="{{ route('admin.homepage.features.edit', $feature) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
+                        <form action="{{ route('admin.homepage.features.destroy', $feature) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete?')">
+                            @csrf @method('DELETE')
+                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="6" class="settings-empty">
+                    <i class="fas fa-star"></i>
+                    <strong>No features yet</strong>
+                    <p>Add trust features to build customer confidence on the homepage.</p>
+                </td>
+            </tr>
+        @endforelse
+    @endcomponent
 @endsection
