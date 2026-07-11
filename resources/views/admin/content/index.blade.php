@@ -5,6 +5,11 @@
 
 @section('content')
     <div class="ecom-page content-page">
+        <form id="delete-batch-form" action="{{ route('admin.content.destroy-batch') }}" method="POST" class="d-none">
+            @csrf
+            @method('DELETE')
+        </form>
+
         @if (session('generated_credentials'))
             <div class="content-alert content-alert--success">
                 <i class="fas fa-key"></i>
@@ -165,6 +170,9 @@
                         <button type="button" class="btn btn-info btn-lg btn-block content-process-btn" id="btn-process-selected" disabled>
                             <i class="fas fa-magic mr-1"></i> Process Selected
                         </button>
+                        <button type="button" class="btn btn-outline-danger btn-block content-delete-btn" id="btn-delete-selected" disabled>
+                            <i class="fas fa-trash mr-1"></i> Delete Selected
+                        </button>
                         <p class="content-process-note">Select images below, then apply your logo in one batch.</p>
                     </div>
                 </div>
@@ -257,6 +265,13 @@
                                         <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
                                         <span class="content-gallery-select-mark"><i class="fas fa-check"></i></span>
                                     </label>
+                                    <form action="{{ route('admin.content.destroy', $item) }}" method="POST" class="content-gallery-delete" onsubmit="return confirm('Delete this received item permanently?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="content-gallery-delete-btn" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                     <a href="{{ route('admin.content.show', $item) }}" class="content-gallery-media">
                                         @if ($item->imageUrl())
                                             <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}">
@@ -586,6 +601,11 @@
         box-shadow: 0 8px 20px rgba(8, 145, 178, 0.2);
     }
 
+    .content-delete-btn {
+        margin-top: 0.55rem;
+        font-weight: 700;
+    }
+
     .content-process-note {
         margin: 0.75rem 0 0;
         text-align: center;
@@ -845,6 +865,35 @@
         color: #fff;
     }
 
+    .content-gallery-delete {
+        position: absolute;
+        top: 0.55rem;
+        right: 0.55rem;
+        z-index: 3;
+        margin: 0;
+    }
+
+    .content-gallery-delete-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.65rem;
+        height: 1.65rem;
+        border: 2px solid rgba(255, 255, 255, 0.95);
+        border-radius: 0.45rem;
+        background: rgba(220, 38, 38, 0.88);
+        color: #fff;
+        font-size: 0.68rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .content-gallery-delete-btn:hover {
+        background: #b91c1c;
+        transform: scale(1.05);
+    }
+
     .content-gallery-media {
         position: relative;
         display: block;
@@ -1050,7 +1099,9 @@
     var selectAllPagesCheckbox = document.getElementById('select-all-pages');
     var selectAllStatus = document.getElementById('select-all-status');
     var btn = document.getElementById('btn-process-selected');
+    var deleteBtn = document.getElementById('btn-delete-selected');
     var form = document.getElementById('batch-form');
+    var deleteForm = document.getElementById('delete-batch-form');
     var filteredTotal = {{ (int) $items->total() }};
     var pageTotal = checks.length;
     var filterBrand = @json($brand);
@@ -1111,8 +1162,57 @@
 
     function updateBtn() {
         if (btn) btn.disabled = !hasSelection();
+        if (deleteBtn) deleteBtn.disabled = !hasSelection();
         updateSelectAllStatus();
         updateCardStates();
+    }
+
+    function prepareDeleteBatchSubmit() {
+        if (!deleteForm) return;
+
+        deleteForm.querySelectorAll('input[name="select_all"]').forEach(function (el) { el.remove(); });
+        deleteForm.querySelectorAll('input[name="filter_brand"]').forEach(function (el) { el.remove(); });
+        deleteForm.querySelectorAll('input[name="filter_date_from"]').forEach(function (el) { el.remove(); });
+        deleteForm.querySelectorAll('input[name="filter_date_to"]').forEach(function (el) { el.remove(); });
+        deleteForm.querySelectorAll('input[name="items[]"]').forEach(function (el) { el.remove(); });
+
+        if (selectAllPages) {
+            var selectInput = document.createElement('input');
+            selectInput.type = 'hidden';
+            selectInput.name = 'select_all';
+            selectInput.value = '1';
+            deleteForm.appendChild(selectInput);
+
+            if (filterBrand) {
+                var brandInput = document.createElement('input');
+                brandInput.type = 'hidden';
+                brandInput.name = 'filter_brand';
+                brandInput.value = filterBrand;
+                deleteForm.appendChild(brandInput);
+            }
+            if (filterDateFrom) {
+                var fromInput = document.createElement('input');
+                fromInput.type = 'hidden';
+                fromInput.name = 'filter_date_from';
+                fromInput.value = filterDateFrom;
+                deleteForm.appendChild(fromInput);
+            }
+            if (filterDateTo) {
+                var toInput = document.createElement('input');
+                toInput.type = 'hidden';
+                toInput.name = 'filter_date_to';
+                toInput.value = filterDateTo;
+                deleteForm.appendChild(toInput);
+            }
+        } else {
+            selectedChecks().forEach(function (check) {
+                var itemInput = document.createElement('input');
+                itemInput.type = 'hidden';
+                itemInput.name = 'items[]';
+                itemInput.value = check.value;
+                deleteForm.appendChild(itemInput);
+            });
+        }
     }
 
     function prepareBatchSubmit() {
@@ -1193,6 +1293,20 @@
             }
             prepareBatchSubmit();
             form.submit();
+        });
+    }
+
+    if (deleteBtn && deleteForm) {
+        deleteBtn.addEventListener('click', function () {
+            if (!hasSelection()) {
+                alert('Please select at least one received item.');
+                return;
+            }
+            if (!confirm('Delete ' + selectionCountLabel() + ' received item(s) permanently?')) {
+                return;
+            }
+            prepareDeleteBatchSubmit();
+            deleteForm.submit();
         });
     }
 

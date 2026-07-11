@@ -12,6 +12,7 @@ use App\Services\ProductLogoService;
 use App\Services\ApiReceivedImageService;
 use App\Services\ApiReceivedMetadataService;
 use App\Services\ApiReceivedPriceService;
+use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -385,6 +386,52 @@ class ApiContentController extends Controller
         return redirect()->route('admin.content.index')->with('success', 'Item rejected.');
     }
 
+    public function destroy(ApiReceivedItem $item, MediaStorageService $media): RedirectResponse
+    {
+        if (! $item->isPending()) {
+            return back()->with('error', 'Only pending received content can be deleted.');
+        }
+
+        $this->deletePendingItem($item, $media);
+
+        return redirect()
+            ->route('admin.content.index')
+            ->with('success', 'Received item deleted.');
+    }
+
+    public function destroyBatch(Request $request, MediaStorageService $media): RedirectResponse
+    {
+        $validated = $request->validate([
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:100',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
+            'items' => 'required_without:select_all|array|min:1',
+            'items.*' => 'integer|exists:api_received_items,id',
+        ]);
+
+        $itemIds = $request->boolean('select_all')
+            ? $this->pendingBatchQuery($request)->pluck('id')
+            : collect($validated['items'] ?? []);
+
+        $deleted = 0;
+
+        foreach ($itemIds as $id) {
+            $item = ApiReceivedItem::query()->find($id);
+
+            if (! $item || ! $item->isPending()) {
+                continue;
+            }
+
+            $this->deletePendingItem($item, $media);
+            $deleted++;
+        }
+
+        return redirect()
+            ->route('admin.content.index')
+            ->with('success', "{$deleted} received item(s) deleted.");
+    }
+
     private function pendingBatchQuery(Request $request)
     {
         $query = ApiReceivedItem::query()
@@ -421,5 +468,20 @@ class ApiContentController extends Controller
     private function listFromString(string $value): array
     {
         return array_values(array_filter(array_map('trim', explode(',', $value))));
+    }
+
+    private function deletePendingItem(ApiReceivedItem $item, MediaStorageService $media): void
+    {
+        $paths = array_values(array_unique(array_filter([
+            $item->image,
+            $item->processed_image,
+            ...($item->images ?? []),
+        ])));
+
+        foreach ($paths as $path) {
+            $media->delete($path);
+        }
+
+        $item->delete();
     }
 }
