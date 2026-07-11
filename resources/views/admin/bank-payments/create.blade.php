@@ -78,6 +78,133 @@
             <div class="col-xl-8">
                 <div class="card bank-payment-card">
                     <div class="bank-payment-card-head">
+                        <span class="bank-payment-section-icon bank-payment-section-icon--amber">
+                            <i class="fas fa-university"></i>
+                        </span>
+                        <div>
+                            <h3 class="mb-0">Select Payment Bank</h3>
+                            <p class="mb-0 text-muted">Choose the bank account where the customer paid.</p>
+                        </div>
+                        <span class="bank-payment-section-number">01</span>
+                    </div>
+                    <div class="card-body bank-payment-form-body">
+                        <input type="hidden" name="payment_bank_id" id="payment_bank_id" value="{{ old('payment_bank_id', $selectedBankId) }}">
+                        @error('payment_bank_id')<div class="text-danger small mb-3">{{ $message }}</div>@enderror
+
+                        @if ($banks->isEmpty())
+                            <div class="bank-payment-empty">
+                                <i class="fas fa-university"></i>
+                                <strong>No payment banks yet</strong>
+                                <p class="mb-0">Create a bank account before recording payments.</p>
+                                <a href="{{ route('admin.payment-banks.index') }}" class="btn btn-info btn-sm mt-2">Add Payment Bank</a>
+                            </div>
+                        @else
+                            <div class="bank-payment-bank-grid">
+                                @foreach ($banks as $bank)
+                                    <button
+                                        type="button"
+                                        class="bank-payment-bank-btn {{ (int) old('payment_bank_id', $selectedBankId) === $bank->id ? 'is-selected' : '' }}"
+                                        data-bank-id="{{ $bank->id }}"
+                                        data-name="{{ $bank->name }}"
+                                        data-account-name="{{ $bank->account_name }}"
+                                        data-account-number="{{ $bank->account_number }}"
+                                        data-branch="{{ $bank->branch }}"
+                                        data-instructions="{{ $bank->instructions }}"
+                                        data-charge="{{ (float) $bank->charge_percent }}"
+                                        data-balance="{{ $bankBalances[$bank->id] ?? 0 }}"
+                                        data-active="{{ $bank->is_active ? '1' : '0' }}"
+                                        data-image="{{ $bank->imageUrl() }}"
+                                        data-display="{{ $bank->displayName() }}"
+                                    >
+                                        <span class="bank-payment-bank-btn-thumb">
+                                            @if ($bank->imageUrl())
+                                                <img src="{{ $bank->imageUrl() }}" alt="{{ $bank->name }}">
+                                            @else
+                                                <i class="fas fa-university"></i>
+                                            @endif
+                                        </span>
+                                        <span class="bank-payment-bank-btn-body">
+                                            <span class="bank-payment-bank-btn-title">{{ $bank->name }}</span>
+                                            @if ($bank->account_number)
+                                                <span class="bank-payment-bank-btn-meta">{{ $bank->account_number }}</span>
+                                            @endif
+                                            <span class="bank-payment-bank-btn-balance">Bal {{ money($bankBalances[$bank->id] ?? 0) }}</span>
+                                        </span>
+                                        <span class="bank-payment-bank-btn-select">Select</span>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <div id="bank-details-panel" class="bank-payment-bank-details d-none">
+                                <div class="bank-payment-bank-details-head">
+                                    <div class="bank-payment-bank-details-title">
+                                        <span id="bank-details-thumb" class="bank-payment-bank-details-thumb"></span>
+                                        <div>
+                                            <strong id="bank-details-name">—</strong>
+                                            <span id="bank-details-status" class="bank-payment-bank-status"></span>
+                                        </div>
+                                    </div>
+                                    <div class="bank-payment-bank-details-balance">
+                                        <small>Current Balance</small>
+                                        <strong id="bank-details-balance">—</strong>
+                                    </div>
+                                </div>
+                                <div class="bank-payment-bank-details-grid">
+                                    <div>
+                                        <small>Account Name</small>
+                                        <strong id="bank-details-account-name">—</strong>
+                                    </div>
+                                    <div>
+                                        <small>Account Number</small>
+                                        <strong id="bank-details-account-number">—</strong>
+                                    </div>
+                                    <div>
+                                        <small>Branch / Type</small>
+                                        <strong id="bank-details-branch">—</strong>
+                                    </div>
+                                    <div>
+                                        <small>Charge</small>
+                                        <strong id="bank-details-charge">—</strong>
+                                    </div>
+                                </div>
+                                <div id="bank-details-instructions-wrap" class="bank-payment-bank-instructions d-none">
+                                    <small>Instructions</small>
+                                    <p id="bank-details-instructions" class="mb-0"></p>
+                                </div>
+                            </div>
+
+                            <div id="bank-payments-panel" class="bank-payment-bank-payments d-none">
+                                <div class="bank-payment-bank-payments-head">
+                                    <h4 class="mb-0">Recent Customer Payments</h4>
+                                    <span id="bank-payments-count" class="bank-payment-bank-payments-count"></span>
+                                </div>
+                                <div id="bank-payments-loading" class="bank-payment-bank-payments-loading d-none">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading payments...
+                                </div>
+                                <div id="bank-payments-empty" class="bank-payment-bank-payments-empty d-none">
+                                    No customer payments recorded for this bank yet.
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table bank-payment-bank-table mb-0 d-none" id="bank-payments-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Customer</th>
+                                                <th>Type</th>
+                                                <th>Order</th>
+                                                <th class="text-right">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="bank-payments-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card bank-payment-card">
+                    <div class="bank-payment-card-head">
                         <span class="bank-payment-section-icon bank-payment-section-icon--cyan">
                             <i class="fas fa-user"></i>
                         </span>
@@ -85,7 +212,7 @@
                             <h3 class="mb-0">Customer & Order</h3>
                             <p class="mb-0 text-muted">Choose who paid and optionally link an unpaid order.</p>
                         </div>
-                        <span class="bank-payment-section-number">01</span>
+                        <span class="bank-payment-section-number">02</span>
                     </div>
                     <div class="card-body bank-payment-form-body">
                         <div class="form-group">
@@ -135,33 +262,15 @@
                         </span>
                         <div>
                             <h3 class="mb-0">Payment Details</h3>
-                            <p class="mb-0 text-muted">Enter bank, amount, date, and any reference notes.</p>
+                            <p class="mb-0 text-muted">Enter amount, date, and any reference notes.</p>
                         </div>
-                        <span class="bank-payment-section-number">02</span>
+                        <span class="bank-payment-section-number">03</span>
                     </div>
                     <div class="card-body bank-payment-form-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Payment Bank *</label>
-                                    <select name="payment_bank_id" id="payment_bank_id" class="form-control @error('payment_bank_id') is-invalid @enderror" required>
-                                        <option value="">Select bank account</option>
-                                        @foreach ($banks as $bank)
-                                            <option value="{{ $bank->id }}" @selected((int) old('payment_bank_id') === $bank->id)>
-                                                {{ $bank->displayName() }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('payment_bank_id')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Payment Date *</label>
-                                    <input type="date" name="payment_date" id="payment_date" class="form-control @error('payment_date') is-invalid @enderror" value="{{ old('payment_date', now()->toDateString()) }}" required>
-                                    @error('payment_date')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label>Payment Date *</label>
+                            <input type="date" name="payment_date" id="payment_date" class="form-control @error('payment_date') is-invalid @enderror" value="{{ old('payment_date', now()->toDateString()) }}" required>
+                            @error('payment_date')<span class="invalid-feedback">{{ $message }}</span>@enderror
                         </div>
 
                         <div class="form-group">
@@ -221,6 +330,7 @@
                             <div class="bank-payment-preview-item">
                                 <small>Payment Bank</small>
                                 <strong id="preview-bank">—</strong>
+                                <span id="preview-bank-balance" class="text-muted"></span>
                             </div>
                             <div class="bank-payment-preview-item">
                                 <small>Payment Date</small>
@@ -407,6 +517,329 @@
     .bank-payment-section-icon--cyan { background: #ecfeff; color: #0891b2; }
     .bank-payment-section-icon--emerald { background: #ecfdf5; color: #059669; }
     .bank-payment-section-icon--violet { background: #f5f3ff; color: #7c3aed; }
+    .bank-payment-section-icon--amber { background: #fff7ed; color: #d97706; }
+
+    .bank-payment-bank-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .bank-payment-bank-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.85rem;
+        border: 1px solid #dbe3ed;
+        border-radius: 0.85rem;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .bank-payment-bank-btn:hover {
+        border-color: #67e8f9;
+        background: #f8feff;
+    }
+
+    .bank-payment-bank-btn.is-selected {
+        border-color: #0891b2;
+        background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 100%);
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+    }
+
+    .bank-payment-bank-btn-thumb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 0.7rem;
+        background: #ecfeff;
+        color: #0891b2;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .bank-payment-bank-btn-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .bank-payment-bank-btn-body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .bank-payment-bank-btn-title {
+        color: var(--bp-ink);
+        font-size: 0.88rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .bank-payment-bank-btn-meta,
+    .bank-payment-bank-btn-balance {
+        color: var(--bp-muted);
+        font-size: 0.74rem;
+        line-height: 1.3;
+    }
+
+    .bank-payment-bank-btn-balance {
+        margin-top: 0.1rem;
+        color: #0f766e;
+        font-weight: 600;
+    }
+
+    .bank-payment-bank-btn-select {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .bank-payment-bank-btn.is-selected .bank-payment-bank-btn-select {
+        background: #0891b2;
+        color: #fff;
+    }
+
+    .bank-payment-bank-details {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #a5f3fc;
+        border-radius: 0.9rem;
+        background: linear-gradient(135deg, #ecfeff 0%, #f8fafc 100%);
+    }
+
+    .bank-payment-bank-details-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .bank-payment-bank-details-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .bank-payment-bank-details-title strong {
+        display: block;
+        color: var(--bp-ink);
+        font-size: 1rem;
+    }
+
+    .bank-payment-bank-details-thumb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 0.7rem;
+        background: #fff;
+        border: 1px solid #cffafe;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .bank-payment-bank-details-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .bank-payment-bank-status {
+        display: inline-block;
+        margin-top: 0.15rem;
+        padding: 0.12rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .bank-payment-bank-status--active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .bank-payment-bank-status--inactive {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .bank-payment-bank-details-balance {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .bank-payment-bank-details-balance small {
+        display: block;
+        color: var(--bp-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .bank-payment-bank-details-balance strong {
+        display: block;
+        margin-top: 0.1rem;
+        color: #0f766e;
+        font-size: 1.1rem;
+    }
+
+    .bank-payment-bank-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .bank-payment-bank-details-grid small {
+        display: block;
+        color: var(--bp-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .bank-payment-bank-details-grid strong {
+        display: block;
+        margin-top: 0.15rem;
+        color: var(--bp-ink);
+        font-size: 0.86rem;
+        word-break: break-word;
+    }
+
+    .bank-payment-bank-instructions {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #cffafe;
+    }
+
+    .bank-payment-bank-instructions small {
+        display: block;
+        color: var(--bp-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .bank-payment-bank-instructions p {
+        margin-top: 0.35rem;
+        color: #0e7490;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .bank-payment-bank-payments {
+        border: 1px solid var(--bp-border);
+        border-radius: 0.85rem;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .bank-payment-bank-payments-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid #eef2f7;
+        background: #f8fafc;
+    }
+
+    .bank-payment-bank-payments-head h4 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--bp-ink);
+    }
+
+    .bank-payment-bank-payments-count {
+        color: var(--bp-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .bank-payment-bank-payments-loading,
+    .bank-payment-bank-payments-empty {
+        padding: 1rem;
+        color: var(--bp-muted);
+        font-size: 0.84rem;
+        text-align: center;
+    }
+
+    .bank-payment-bank-table {
+        font-size: 0.82rem;
+    }
+
+    .bank-payment-bank-table thead th {
+        border-top: 0;
+        border-bottom: 1px solid #eef2f7;
+        background: #fff;
+        color: var(--bp-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+    }
+
+    .bank-payment-bank-table tbody td {
+        vertical-align: middle;
+        border-color: #eef2f7;
+        color: #334155;
+    }
+
+    .bank-payment-bank-table .bank-payment-customer-email {
+        display: block;
+        color: var(--bp-muted);
+        font-size: 0.72rem;
+    }
+
+    .bank-payment-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--bp-muted);
+    }
+
+    .bank-payment-empty i {
+        display: block;
+        margin-bottom: 0.65rem;
+        font-size: 1.6rem;
+        color: #cbd5e1;
+    }
+
+    .bank-payment-empty strong {
+        display: block;
+        color: var(--bp-ink);
+        font-size: 0.95rem;
+    }
+
+    .bank-payment-empty p {
+        margin-top: 0.35rem;
+        font-size: 0.84rem;
+    }
 
     .bank-payment-section-number {
         position: absolute;
@@ -593,6 +1026,20 @@
         .bank-payment-hero-actions .btn {
             flex: 1;
         }
+
+        .bank-payment-bank-grid,
+        .bank-payment-bank-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .bank-payment-bank-details-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .bank-payment-bank-details-balance {
+            text-align: left;
+        }
     }
 </style>
 @endpush
@@ -602,12 +1049,22 @@
 (function () {
     const customerSelect = document.getElementById('customer_id');
     const orderSelect = document.getElementById('order_id');
-    const bankSelect = document.getElementById('payment_bank_id');
+    const bankInput = document.getElementById('payment_bank_id');
     const amountInput = document.getElementById('amount');
     const dateInput = document.getElementById('payment_date');
     const notesInput = document.getElementById('notes');
     const dueHint = document.getElementById('order-due-hint');
     const ordersUrlTemplate = @json(url('/admin/customers')) + '/';
+    const bankPaymentsUrlTemplate = @json(url('/admin/payment-banks')) + '/';
+    const bankButtons = Array.from(document.querySelectorAll('.bank-payment-bank-btn'));
+
+    const bankDetailsPanel = document.getElementById('bank-details-panel');
+    const bankPaymentsPanel = document.getElementById('bank-payments-panel');
+    const bankPaymentsLoading = document.getElementById('bank-payments-loading');
+    const bankPaymentsEmpty = document.getElementById('bank-payments-empty');
+    const bankPaymentsTable = document.getElementById('bank-payments-table');
+    const bankPaymentsBody = document.getElementById('bank-payments-body');
+    const bankPaymentsCount = document.getElementById('bank-payments-count');
 
     const previewCustomer = document.getElementById('preview-customer');
     const previewCustomerEmail = document.getElementById('preview-customer-email');
@@ -616,10 +1073,13 @@
     const previewOrderStatus = document.getElementById('preview-order-status');
     const previewDue = document.getElementById('preview-due');
     const previewBank = document.getElementById('preview-bank');
+    const previewBankBalance = document.getElementById('preview-bank-balance');
     const previewDate = document.getElementById('preview-date');
     const previewAmount = document.getElementById('preview-amount');
     const previewNotesWrap = document.getElementById('preview-notes-wrap');
     const previewNotes = document.getElementById('preview-notes');
+
+    let selectedBankButton = null;
 
     function formatMoney(value) {
         const amount = parseFloat(value);
@@ -647,6 +1107,26 @@
         return select.options[select.selectedIndex] || null;
     }
 
+    function textOrDash(value) {
+        return value && String(value).trim() !== '' ? String(value).trim() : '—';
+    }
+
+    function setThumb(element, imageUrl, fallbackIcon) {
+        element.innerHTML = '';
+
+        if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = '';
+            element.appendChild(img);
+            return;
+        }
+
+        const icon = document.createElement('i');
+        icon.className = fallbackIcon;
+        element.appendChild(icon);
+    }
+
     function updateDueHint() {
         const selected = selectedOption(orderSelect);
         const due = selected ? selected.getAttribute('data-due') : null;
@@ -662,10 +1142,111 @@
         }
     }
 
+    function renderBankPayments(payments) {
+        bankPaymentsBody.innerHTML = '';
+
+        if (!payments.length) {
+            bankPaymentsTable.classList.add('d-none');
+            bankPaymentsEmpty.classList.remove('d-none');
+            bankPaymentsCount.textContent = '0 payments';
+            return;
+        }
+
+        bankPaymentsEmpty.classList.add('d-none');
+        bankPaymentsTable.classList.remove('d-none');
+        bankPaymentsCount.textContent = payments.length + ' payment' + (payments.length === 1 ? '' : 's');
+
+        payments.forEach(function (payment) {
+            const row = document.createElement('tr');
+            row.innerHTML =
+                '<td>' + payment.payment_date + '</td>' +
+                '<td><strong>' + payment.customer_name + '</strong><span class="bank-payment-customer-email">' + payment.customer_email + '</span></td>' +
+                '<td>' + payment.type + '</td>' +
+                '<td>' + (payment.order_number || '—') + '</td>' +
+                '<td class="text-right"><strong>' + formatMoney(payment.amount) + '</strong></td>';
+            bankPaymentsBody.appendChild(row);
+        });
+    }
+
+    function loadBankPayments(bankId) {
+        if (!bankPaymentsPanel) {
+            return;
+        }
+
+        bankPaymentsPanel.classList.remove('d-none');
+        bankPaymentsLoading.classList.remove('d-none');
+        bankPaymentsEmpty.classList.add('d-none');
+        bankPaymentsTable.classList.add('d-none');
+        bankPaymentsBody.innerHTML = '';
+        bankPaymentsCount.textContent = '';
+
+        fetch(bankPaymentsUrlTemplate + bankId + '/customer-payments', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) { renderBankPayments(data.payments || []); })
+            .catch(function () {
+                bankPaymentsTable.classList.add('d-none');
+                bankPaymentsEmpty.classList.remove('d-none');
+                bankPaymentsEmpty.textContent = 'Could not load payments for this bank.';
+                bankPaymentsCount.textContent = '';
+            })
+            .finally(function () {
+                bankPaymentsLoading.classList.add('d-none');
+            });
+    }
+
+    function showBankDetails(button) {
+        if (!bankDetailsPanel) {
+            return;
+        }
+
+        const imageUrl = button.getAttribute('data-image') || '';
+        const isActive = button.getAttribute('data-active') === '1';
+
+        setThumb(document.getElementById('bank-details-thumb'), imageUrl, 'fas fa-university');
+        document.getElementById('bank-details-name').textContent = button.getAttribute('data-name') || '—';
+        document.getElementById('bank-details-balance').textContent = formatMoney(button.getAttribute('data-balance'));
+        document.getElementById('bank-details-account-name').textContent = textOrDash(button.getAttribute('data-account-name'));
+        document.getElementById('bank-details-account-number').textContent = textOrDash(button.getAttribute('data-account-number'));
+        document.getElementById('bank-details-branch').textContent = textOrDash(button.getAttribute('data-branch'));
+        document.getElementById('bank-details-charge').textContent = parseFloat(button.getAttribute('data-charge') || 0).toFixed(2) + '%';
+
+        const status = document.getElementById('bank-details-status');
+        status.textContent = isActive ? 'Active' : 'Inactive';
+        status.className = 'bank-payment-bank-status ' + (isActive ? 'bank-payment-bank-status--active' : 'bank-payment-bank-status--inactive');
+
+        const instructions = button.getAttribute('data-instructions') || '';
+        const instructionsWrap = document.getElementById('bank-details-instructions-wrap');
+        const instructionsEl = document.getElementById('bank-details-instructions');
+
+        if (instructions.trim()) {
+            instructionsEl.textContent = instructions.trim();
+            instructionsWrap.classList.remove('d-none');
+        } else {
+            instructionsEl.textContent = '';
+            instructionsWrap.classList.add('d-none');
+        }
+
+        bankDetailsPanel.classList.remove('d-none');
+        loadBankPayments(button.getAttribute('data-bank-id'));
+    }
+
+    function selectBank(button) {
+        bankButtons.forEach(function (item) {
+            item.classList.remove('is-selected');
+        });
+
+        button.classList.add('is-selected');
+        selectedBankButton = button;
+        bankInput.value = button.getAttribute('data-bank-id');
+        showBankDetails(button);
+        updatePreview();
+    }
+
     function updatePreview() {
         const customer = selectedOption(customerSelect);
         const order = selectedOption(orderSelect);
-        const bank = selectedOption(bankSelect);
 
         if (customer && customer.value) {
             previewCustomer.textContent = customer.getAttribute('data-name') || customer.textContent;
@@ -685,7 +1266,14 @@
             previewOrderStatus.textContent = '';
         }
 
-        previewBank.textContent = bank && bank.value ? bank.textContent.trim() : '—';
+        if (selectedBankButton) {
+            previewBank.textContent = selectedBankButton.getAttribute('data-display') || selectedBankButton.getAttribute('data-name') || '—';
+            previewBankBalance.textContent = 'Balance: ' + formatMoney(selectedBankButton.getAttribute('data-balance'));
+        } else {
+            previewBank.textContent = '—';
+            previewBankBalance.textContent = '';
+        }
+
         previewDate.textContent = formatDate(dateInput.value);
         previewAmount.textContent = formatMoney(amountInput.value);
 
@@ -721,6 +1309,12 @@
         updatePreview();
     }
 
+    bankButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            selectBank(button);
+        });
+    });
+
     customerSelect.addEventListener('change', function () {
         const customerId = this.value;
 
@@ -751,10 +1345,27 @@
         updatePreview();
     });
 
-    [bankSelect, amountInput, dateInput, notesInput].forEach(function (element) {
+    [amountInput, dateInput, notesInput].forEach(function (element) {
         element.addEventListener('input', updatePreview);
         element.addEventListener('change', updatePreview);
     });
+
+    document.getElementById('bank-payment-form').addEventListener('submit', function (event) {
+        if (!bankInput.value) {
+            event.preventDefault();
+            alert('Please select a payment bank first.');
+        }
+    });
+
+    if (bankInput.value) {
+        const initialButton = bankButtons.find(function (button) {
+            return String(button.getAttribute('data-bank-id')) === String(bankInput.value);
+        });
+
+        if (initialButton) {
+            selectBank(initialButton);
+        }
+    }
 
     updatePreview();
 })();

@@ -28,6 +28,7 @@
                     'account_number' => $bank->account_number,
                     'branch' => $bank->branch,
                     'instructions' => $bank->instructions,
+                    'charge_percent' => (float) $bank->charge_percent,
                     'image_url' => $bank->imageUrl(),
                 ])->values();
             @endphp
@@ -78,6 +79,9 @@
                         this.payment = method;
                         if (method === 'bank_transfer') {
                             this.ensureBankSelected();
+                            this.updateBankPaymentAmount();
+                        } else {
+                            this.paymentAmount = this.cartAmount;
                         }
                     },
                     ensureBankSelected() {
@@ -87,6 +91,42 @@
                     },
                     get selectedBank() {
                         return this.banks.find((bank) => String(bank.id) === String(this.selectedBankId)) || null;
+                    },
+                    get bankChargePercent() {
+                        return Number(this.selectedBank?.charge_percent || 0);
+                    },
+                    get cartAmount() {
+                        return Math.max(0, Number(this.orderTotal || 0));
+                    },
+                    get bankChargeAmount() {
+                        if (this.payment !== 'bank_transfer' || this.bankChargePercent <= 0) {
+                            return 0;
+                        }
+
+                        const amount = this.cartAmount;
+                        if (amount <= 0) {
+                            return 0;
+                        }
+
+                        return Math.round((amount * this.bankChargePercent / 100) * 100) / 100;
+                    },
+                    get totalPayable() {
+                        if (this.payment !== 'bank_transfer') {
+                            return this.cartAmount;
+                        }
+
+                        return Math.round((this.cartAmount + this.bankChargeAmount) * 100) / 100;
+                    },
+                    updateBankPaymentAmount() {
+                        if (this.payment === 'bank_transfer') {
+                            this.paymentAmount = this.totalPayable;
+                        }
+                    },
+                    formatMoney(value) {
+                        return '৳' + Number(value || 0).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        });
                     },
                     useSavedAddress(id) {
                         this.mode = 'existing';
@@ -109,9 +149,11 @@
                         this.details.zip = '';
                     },
                     openPaymentModal() {
-                        this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.orderTotal;
                         if (this.payment === 'bank_transfer') {
                             this.ensureBankSelected();
+                            this.updateBankPaymentAmount();
+                        } else {
+                            this.paymentAmount = this.paymentAmount > 0 ? this.paymentAmount : this.cartAmount;
                         }
                         this.showPaymentModal = true;
                     },
@@ -123,6 +165,10 @@
                         this.screenshotPreview = file ? URL.createObjectURL(file) : null;
                     },
                     confirmPayment() {
+                        if (this.payment === 'bank_transfer') {
+                            this.updateBankPaymentAmount();
+                        }
+
                         if (Number(this.paymentAmount) <= 0) {
                             alert('Please enter payment amount.');
                             return;
@@ -155,7 +201,11 @@
                     },
                     async syncShippingZone() {
                         this.total = this.orderTotal;
-                        this.paymentAmount = this.orderTotal;
+                        if (this.payment === 'bank_transfer') {
+                            this.updateBankPaymentAmount();
+                        } else {
+                            this.paymentAmount = this.orderTotal;
+                        }
                         try {
                             await fetch(@js(route('cart.shipping-zone')), {
                                 method: 'POST',
@@ -169,6 +219,7 @@
                         } catch (e) {}
                     },
                 }"
+                x-init="if (payment === 'bank_transfer') { ensureBankSelected(); updateBankPaymentAmount(); }"
             >
                 @csrf
                 <input type="hidden" name="address_mode" :value="mode">
@@ -458,7 +509,7 @@
                                 </label>
                             </div>
 
-                            <div>
+                            <div x-show="payment === 'cod'">
                                 <label for="payment_amount_visible" class="block text-sm font-medium text-ink mb-1.5">Amount</label>
                                 <input
                                     type="number"
@@ -468,7 +519,6 @@
                                     step="0.01"
                                     class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                                 >
-                                <p class="mt-1 text-xs text-ink-muted" x-show="payment === 'bank_transfer'">Enter the amount customer paid.</p>
                             </div>
 
                             <div x-show="payment === 'bank_transfer'" x-cloak class="space-y-4">
@@ -481,7 +531,7 @@
                                                 type="button"
                                                 class="w-full rounded-xl border p-4 text-left transition-colors"
                                                 :class="String(selectedBankId) === '{{ $bank->id }}' ? 'border-brand-600 bg-brand-50' : 'border-border bg-surface hover:border-brand-300'"
-                                                @click="selectedBankId = '{{ $bank->id }}'"
+                                                @click="selectedBankId = '{{ $bank->id }}'; updateBankPaymentAmount()"
                                             >
                                                 <div class="flex gap-4">
                                                     @if ($bank->imageUrl())
@@ -505,6 +555,9 @@
                                                         @if ($bank->branch)
                                                             <p class="mt-1 text-ink-muted">Branch/Type: <span class="text-ink">{{ $bank->branch }}</span></p>
                                                         @endif
+                                                        @if ((float) $bank->charge_percent > 0)
+                                                            <p class="mt-1 text-ink-muted">Charge: <span class="font-semibold text-amber-700">{{ number_format((float) $bank->charge_percent, 2) }}%</span></p>
+                                                        @endif
                                                         @if ($bank->instructions)
                                                             <p class="mt-2 text-brand-700">{{ $bank->instructions }}</p>
                                                         @endif
@@ -514,6 +567,34 @@
                                         @endforeach
                                     </div>
                                     @error('bank_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div
+                                    x-show="selectedBank"
+                                    x-cloak
+                                    class="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm"
+                                >
+                                    <p class="font-semibold text-ink">Payment Breakdown</p>
+                                    <dl class="mt-3 space-y-2">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <dt class="text-ink-muted">Order Amount</dt>
+                                            <dd class="font-semibold text-ink" x-text="formatMoney(cartAmount)"></dd>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3">
+                                            <dt class="text-ink-muted">
+                                                Bank Charge
+                                                <span x-text="'(' + bankChargePercent.toFixed(2) + '%)'"></span>
+                                            </dt>
+                                            <dd class="font-semibold text-amber-700" x-text="'+' + formatMoney(bankChargeAmount)"></dd>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3 border-t border-brand-200 pt-2">
+                                            <dt class="font-semibold text-ink">Total to Pay</dt>
+                                            <dd class="font-bold text-brand-700" x-text="formatMoney(totalPayable)"></dd>
+                                        </div>
+                                    </dl>
+                                    <p class="mt-3 text-xs text-ink-muted">
+                                        Pay the total amount including bank charge to the selected account.
+                                    </p>
                                 </div>
 
                                 <div>

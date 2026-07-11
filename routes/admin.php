@@ -100,6 +100,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:account_heads')->group(function () {
             Route::get('bank-payments/create', [CustomerPaymentController::class, 'create'])->name('bank-payments.create');
             Route::post('bank-payments', [CustomerPaymentController::class, 'store'])->name('bank-payments.store');
+            Route::get('payment-banks/{paymentBank}/customer-payments', [CustomerPaymentController::class, 'bankPayments'])->name('payment-banks.customer-payments');
         });
 
         Route::middleware('admin.feature:payment_banks')->group(function () {

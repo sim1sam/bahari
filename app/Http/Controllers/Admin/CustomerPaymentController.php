@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\PaymentBank;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\BankBalanceService;
 use App\Services\CustomerLedgerService;
 use App\Services\OrderTransferService;
 use Illuminate\Http\JsonResponse;
@@ -22,14 +23,17 @@ class CustomerPaymentController extends Controller
     public function __construct(
         private CustomerLedgerService $ledger,
         private OrderTransferService $transfer,
+        private BankBalanceService $bankBalances,
     ) {}
 
     public function create(Request $request): View
     {
         $customers = User::customers()->orderBy('name')->get(['id', 'name', 'email']);
         $banks = PaymentBank::query()->orderBy('sort_order')->orderBy('name')->get();
+        $balances = $this->bankBalances->balances($banks);
         $selectedCustomerId = $request->integer('customer_id') ?: null;
         $selectedOrderId = $request->integer('order_id') ?: null;
+        $selectedBankId = $request->integer('payment_bank_id') ?: (int) old('payment_bank_id') ?: null;
         $orders = $selectedCustomerId
             ? $this->ordersForCustomerId($selectedCustomerId)
             : collect();
@@ -38,9 +42,11 @@ class CustomerPaymentController extends Controller
         return view('admin.bank-payments.create', [
             'customers' => $customers,
             'banks' => $banks,
+            'bankBalances' => $balances,
             'orders' => $orders,
             'selectedCustomerId' => $selectedCustomerId,
             'selectedOrderId' => $selectedOrderId,
+            'selectedBankId' => $selectedBankId,
             'stats' => [
                 'total' => CustomerPayment::count(),
                 'today' => CustomerPayment::whereDate('payment_date', $today)->count(),
@@ -129,6 +135,29 @@ class CustomerPaymentController extends Controller
         return redirect()
             ->route('admin.bank-payments.create', ['customer_id' => $customer->id])
             ->with('success', $message);
+    }
+
+    public function bankPayments(PaymentBank $paymentBank): JsonResponse
+    {
+        $payments = CustomerPayment::query()
+            ->with(['user:id,name,email', 'order:id,number'])
+            ->where('payment_bank_id', $paymentBank->id)
+            ->latest('payment_date')
+            ->latest('id')
+            ->limit(25)
+            ->get()
+            ->map(fn (CustomerPayment $payment) => [
+                'id' => $payment->id,
+                'customer_name' => $payment->user->name,
+                'customer_email' => $payment->user->email,
+                'order_number' => $payment->order?->number,
+                'amount' => (float) $payment->amount,
+                'payment_date' => $payment->payment_date->format('M d, Y'),
+                'notes' => $payment->notes,
+                'type' => $payment->order_id ? 'Order payment' : 'Advance',
+            ]);
+
+        return response()->json(['payments' => $payments]);
     }
 
     public function customerOrders(User $customer): JsonResponse
