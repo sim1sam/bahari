@@ -21,6 +21,7 @@
     $siteSettings = app(\App\Services\SiteSettingsService::class);
     $freeShippingAt = $siteSettings->freeShippingThreshold();
     $freeShippingRemaining = max(0, $freeShippingAt - $cartSubtotal);
+    $hideFloatingCart = request()->routeIs('checkout.*');
 @endphp
 
 <header
@@ -29,7 +30,7 @@
     x-data="{
         mobileOpen: false,
         searchOpen: false,
-        cartOpen: {{ session('cart_drawer_open') ? 'true' : 'false' }},
+        cartOpen: {{ session('cart_drawer_open') && ! $hideFloatingCart ? 'true' : 'false' }},
         cartItems: @js($cartItems),
         cartCount: {{ $cartCount ?? 0 }},
         cartSubtotal: @js(money($cartSubtotal)),
@@ -264,6 +265,7 @@
         </nav>
     </div>
 
+    @unless ($hideFloatingCart)
     {{-- Cart drawer --}}
     <template x-teleport="body">
     <div>
@@ -418,4 +420,5 @@
     </div>
     </div>
     </template>
+    @endunless
 </header>

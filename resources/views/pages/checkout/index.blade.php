@@ -513,7 +513,7 @@
 
                 <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-10000 flex items-center justify-center p-3 sm:p-4">
                     <div class="absolute inset-0 bg-black/50" @click="closePaymentModal()"></div>
-                    <div class="relative flex max-h-[92dvh] sm:max-h-[min(640px,calc(100dvh-2rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden" @click.stop>
+                    <div class="relative flex h-auto max-h-[90dvh] sm:max-h-[min(640px,calc(100dvh-2rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden my-auto" @click.stop>
                         <div class="px-4 sm:px-5 py-2.5 sm:py-3.5 border-b border-border flex items-center justify-between shrink-0">
                             <div>
                                 <h3 class="text-sm sm:text-base font-semibold text-ink" x-show="payment === 'bank_transfer'">Bank Payment Details</h3>
@@ -524,7 +524,7 @@
                             </button>
                         </div>
 
-                        <div class="flex flex-1 min-h-0 flex-col overflow-hidden">
+                        <div class="checkout-payment-body flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-contain checkout-bank-scroll">
                             <div class="shrink-0 px-4 sm:px-5 pt-3 sm:pt-4">
                                 <div class="grid grid-cols-2 gap-2 sm:gap-3">
                                     <label class="flex items-center justify-center gap-2 rounded-xl border border-border px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold cursor-pointer has-checked:border-brand-600 has-checked:bg-brand-50">
@@ -538,7 +538,7 @@
                                 </div>
                             </div>
 
-                            <div x-show="payment === 'cod'" class="flex-1 overflow-y-auto px-4 sm:px-5 py-3 sm:py-4">
+                            <div x-show="payment === 'cod'" class="px-4 sm:px-5 py-3 sm:py-4">
                                 <label for="payment_amount_visible" class="block text-sm font-medium text-ink mb-1.5">Amount</label>
                                 <input
                                     type="number"
@@ -550,8 +550,8 @@
                                 >
                             </div>
 
-                            <div x-show="payment === 'bank_transfer'" x-cloak class="flex flex-1 min-h-0 flex-col overflow-hidden px-4 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 gap-2 sm:gap-3">
-                                <div class="shrink-0">
+                            <div x-show="payment === 'bank_transfer'" x-cloak class="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 gap-2 sm:gap-3 space-y-2 sm:space-y-3">
+                                <div>
                                     <label class="block text-xs sm:text-sm font-medium text-ink mb-1.5 sm:mb-2">Select Bank / Wallet</label>
                                     <input type="hidden" name="bank_id" :value="selectedBankId">
                                     <div class="checkout-bank-list checkout-bank-scroll space-y-2.5 sm:space-y-3 overflow-y-auto overscroll-contain pr-1 -mr-1">
@@ -581,15 +581,11 @@
                                             </button>
                                         @endforeach
                                     </div>
-                                    @error('bank_id')<p class="mt-1 shrink-0 text-xs text-red-600">{{ $message }}</p>@enderror
+                                    @error('bank_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
 
-                                <div
-                                    x-show="selectedBank"
-                                    x-cloak
-                                    class="checkout-bank-scroll flex min-h-0 flex-1 flex-col gap-1.5 sm:gap-2 overflow-y-auto overscroll-contain"
-                                >
-                                    <div class="shrink-0 rounded-lg border border-border bg-surface p-2 sm:p-2.5 text-xs">
+                                <div x-show="selectedBank" x-cloak class="space-y-1.5 sm:space-y-2">
+                                    <div class="rounded-lg border border-border bg-surface p-2 sm:p-2.5 text-xs">
                                         <p class="text-[11px] sm:text-xs font-semibold text-ink truncate" x-text="selectedBank?.name"></p>
 
                                         <template x-if="selectedBankHasDetails">
@@ -637,7 +633,7 @@
                                         </template>
                                     </div>
 
-                                    <div class="shrink-0 rounded-lg sm:rounded-xl border border-brand-200 bg-brand-50 p-2 sm:p-3 text-sm">
+                                    <div class="rounded-lg sm:rounded-xl border border-brand-200 bg-brand-50 p-2 sm:p-3 text-sm">
                                         <div class="flex items-center justify-between gap-2">
                                             <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-brand-700">Payment Breakdown</p>
                                             <p class="text-[10px] sm:text-[11px] text-ink-muted" x-show="bankChargePercent > 0" x-text="bankChargePercent.toFixed(2) + '% charge'"></p>
@@ -659,20 +655,22 @@
                                     </div>
                                 </div>
 
-                                <div class="shrink-0">
+                                <div>
                                     <label for="payment_screenshot" class="block text-xs sm:text-sm font-medium text-ink mb-1">Payment Screenshot</label>
-                                    <input
-                                        type="file"
-                                        name="payment_screenshot"
-                                        id="payment_screenshot"
-                                        accept="image/*"
-                                        @change="onScreenshot($event)"
-                                        class="w-full rounded-lg border border-border bg-surface px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 sm:file:px-2.5 file:py-0.5 sm:file:py-1 file:text-[10px] sm:file:text-xs file:font-medium file:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                                    >
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="file"
+                                            name="payment_screenshot"
+                                            id="payment_screenshot"
+                                            accept="image/*"
+                                            @change="onScreenshot($event)"
+                                            class="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 sm:file:px-2.5 file:py-0.5 sm:file:py-1 file:text-[10px] sm:file:text-xs file:font-medium file:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                        >
+                                        <template x-if="screenshotPreview">
+                                            <img :src="screenshotPreview" alt="Payment screenshot preview" class="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-md object-cover border border-border bg-surface">
+                                        </template>
+                                    </div>
                                     @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                                    <template x-if="screenshotPreview">
-                                        <img :src="screenshotPreview" alt="Payment screenshot preview" class="mt-1.5 h-12 sm:h-16 w-20 sm:w-24 rounded-lg object-contain border border-border bg-surface">
-                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -691,11 +689,10 @@
                                     class="checkout-modal-confirm flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
                                     @click="confirmPayment()"
                                 >
-                                    <svg class="h-4 w-4 shrink-0 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                     </svg>
-                                    <span class="sm:hidden">Confirm Order</span>
-                                    <span class="hidden sm:inline">Confirm & Place Order</span>
+                                    <span class="whitespace-nowrap">Confirm &amp; Place Order</span>
                                 </button>
                             </div>
                         </div>
@@ -716,6 +713,10 @@
 
 @push('styles')
 <style>
+    .checkout-payment-body {
+        -webkit-overflow-scrolling: touch;
+    }
+
     .checkout-bank-list {
         max-height: calc(50px * 3 + 0.625rem * 2);
     }
