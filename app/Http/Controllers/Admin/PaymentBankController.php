@@ -13,11 +13,18 @@ class PaymentBankController extends Controller
 {
     public function index(): View
     {
+        $banks = PaymentBank::query()
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
+
         return view('admin.payment-banks.index', [
-            'banks' => PaymentBank::query()
-                ->orderBy('sort_order', 'asc')
-                ->orderBy('name', 'asc')
-                ->get(),
+            'banks' => $banks,
+            'stats' => [
+                'total' => $banks->count(),
+                'active' => $banks->where('is_active', true)->count(),
+                'inactive' => $banks->where('is_active', false)->count(),
+            ],
         ]);
     }
 

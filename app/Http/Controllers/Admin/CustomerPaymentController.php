@@ -33,6 +33,7 @@ class CustomerPaymentController extends Controller
         $orders = $selectedCustomerId
             ? $this->ordersForCustomerId($selectedCustomerId)
             : collect();
+        $today = now()->toDateString();
 
         return view('admin.bank-payments.create', [
             'customers' => $customers,
@@ -40,6 +41,12 @@ class CustomerPaymentController extends Controller
             'orders' => $orders,
             'selectedCustomerId' => $selectedCustomerId,
             'selectedOrderId' => $selectedOrderId,
+            'stats' => [
+                'total' => CustomerPayment::count(),
+                'today' => CustomerPayment::whereDate('payment_date', $today)->count(),
+                'today_amount' => (float) CustomerPayment::whereDate('payment_date', $today)->sum('amount'),
+                'banks' => $banks->where('is_active', true)->count(),
+            ],
         ]);
     }
 
