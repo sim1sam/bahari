@@ -64,9 +64,15 @@
             <div class="transactions-card-head">
                 <div>
                     <h3 class="mb-0">Payment Submissions</h3>
-                    <p class="mb-0 text-muted">Showing {{ $transactions->count() }} of {{ $transactions->total() }} transactions</p>
+                    <p class="mb-0 text-muted">
+                        Page {{ $transactions->currentPage() }} of {{ $transactions->lastPage() }}
+                        — showing {{ $transactions->firstItem() ?? 0 }}–{{ $transactions->lastItem() ?? 0 }} of {{ $transactions->total() }}
+                    </p>
                 </div>
                 <nav class="transactions-filters" aria-label="Transaction status filters">
+                    <a href="{{ route('admin.transactions.index', ['status' => 'all']) }}" class="{{ $status === 'all' ? 'active transactions-filter--all' : '' }}">
+                        All <span>{{ $stats['total'] }}</span>
+                    </a>
                     <a href="{{ route('admin.transactions.index', ['status' => 'pending']) }}" class="{{ $status === 'pending' ? 'active transactions-filter--pending' : '' }}">
                         Pending <span>{{ $stats['pending'] }}</span>
                     </a>
@@ -75,9 +81,6 @@
                     </a>
                     <a href="{{ route('admin.transactions.index', ['status' => 'rejected']) }}" class="{{ $status === 'rejected' ? 'active transactions-filter--rejected' : '' }}">
                         Rejected <span>{{ $stats['rejected'] }}</span>
-                    </a>
-                    <a href="{{ route('admin.transactions.index', ['status' => 'all']) }}" class="{{ $status === 'all' ? 'active transactions-filter--all' : '' }}">
-                        All <span>{{ $stats['total'] }}</span>
                     </a>
                 </nav>
             </div>
@@ -167,8 +170,11 @@
             </table>
             </div>
 
-            @if ($transactions->hasPages())
-                <div class="transactions-card-footer">{{ $transactions->links() }}</div>
+            @if ($transactions->total() > 0)
+                <div class="transactions-card-footer d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="text-muted small">20 per page</span>
+                    {{ $transactions->links() }}
+                </div>
             @endif
         </div>
     </div>

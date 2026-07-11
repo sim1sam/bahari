@@ -14,7 +14,8 @@ class PaymentTransaction extends Model
     public const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
-        'order_id', 'user_id', 'amount', 'bank_name', 'screenshot',
+        'order_id', 'user_id', 'payment_bank_id', 'amount', 'sale_amount',
+        'bank_charge_percent', 'bank_charge_amount', 'bank_name', 'screenshot',
         'status', 'reviewed_by', 'reviewed_at', 'admin_notes',
     ];
 
@@ -22,8 +23,16 @@ class PaymentTransaction extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'sale_amount' => 'decimal:2',
+            'bank_charge_percent' => 'decimal:2',
+            'bank_charge_amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
         ];
+    }
+
+    public function paymentBank(): BelongsTo
+    {
+        return $this->belongsTo(PaymentBank::class);
     }
 
     public function order(): BelongsTo

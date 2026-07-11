@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\BankBalanceService;
 use App\Services\CustomerLedgerService;
+use App\Services\FinancialTransactionService;
 use App\Services\OrderTransferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class CustomerPaymentController extends Controller
         private CustomerLedgerService $ledger,
         private OrderTransferService $transfer,
         private BankBalanceService $bankBalances,
+        private FinancialTransactionService $financialTransactions,
     ) {}
 
     public function create(Request $request): View
@@ -91,26 +93,35 @@ class CustomerPaymentController extends Controller
         $movedToProcessing = false;
 
         DB::transaction(function () use ($validated, $customer, $bank, $amount, $order, &$movedToProcessing) {
-            CustomerPayment::create([
+            $customerPayment = CustomerPayment::create([
                 'user_id' => $customer->id,
                 'order_id' => $order?->id,
                 'payment_bank_id' => $bank->id,
                 'recorded_by' => Auth::id(),
                 'amount' => $amount,
+                'sale_amount' => $amount,
+                'bank_charge_percent' => 0,
+                'bank_charge_amount' => 0,
                 'bank_name' => $bank->displayName(),
                 'notes' => $validated['notes'] ?? null,
                 'payment_date' => $validated['payment_date'],
             ]);
 
             if ($order) {
-                \App\Models\OrderPayment::create([
+                $orderPayment = \App\Models\OrderPayment::create([
                     'order_id' => $order->id,
                     'recorded_by' => Auth::id(),
+                    'payment_bank_id' => $bank->id,
                     'amount' => $amount,
+                    'sale_amount' => $amount,
+                    'bank_charge_percent' => 0,
+                    'bank_charge_amount' => 0,
                     'payment_method' => 'bank_transfer',
                     'bank_name' => $bank->displayName(),
                     'notes' => $validated['notes'] ?? null,
                 ]);
+
+                $this->financialTransactions->recordFromOrderPayment($orderPayment);
 
                 $movedToProcessing = $order->status === 'pending';
                 $order->amount_paid = round((float) $order->amount_paid + $amount, 2);
@@ -121,6 +132,8 @@ class CustomerPaymentController extends Controller
                 }
 
                 $order->save();
+            } else {
+                $this->financialTransactions->recordFromCustomerPayment($customerPayment);
             }
         });
 
@@ -152,6 +165,8 @@ class CustomerPaymentController extends Controller
                 'customer_email' => $payment->user->email,
                 'order_number' => $payment->order?->number,
                 'amount' => (float) $payment->amount,
+                'sale_amount' => (float) ($payment->sale_amount ?? $payment->amount),
+                'bank_charge_amount' => (float) ($payment->bank_charge_amount ?? 0),
                 'payment_date' => $payment->payment_date->format('M d, Y'),
                 'notes' => $payment->notes,
                 'type' => $payment->order_id ? 'Order payment' : 'Advance',

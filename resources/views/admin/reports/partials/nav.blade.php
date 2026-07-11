@@ -30,4 +30,7 @@
     <a href="{{ route('admin.reports.ledger', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.ledger')) active @endif">
         <i class="fas fa-book"></i> Ledger
     </a>
+    <a href="{{ route('admin.reports.bank-balances', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.bank-balances')) active @endif">
+        <i class="fas fa-university"></i> Bank Balances
+    </a>
 </nav>

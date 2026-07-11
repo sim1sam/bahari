@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountExpense;
+use App\Models\FinancialTransaction;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class FinancialReportService
 {
+    public function __construct(private BankBalanceService $bankBalances) {}
+
     /** @return array<string, mixed> */
     public function overview(FinancialReportFilters $filters): array
     {
@@ -25,6 +28,7 @@ class FinancialReportService
             'gross_profit' => $profitLoss['gross_profit'],
             'net_profit' => $profitLoss['net_profit'],
             'cash_collected' => $this->cashCollected($filters),
+            'bank_charges_collected' => $this->bankChargesCollected($filters),
             'accounts_receivable' => $this->accountsReceivable($filters),
             'inventory_value' => $this->inventoryValue(),
             'total_expenses' => $profitLoss['operating_expenses'],
@@ -51,7 +55,7 @@ class FinancialReportService
         $productPurchases = $this->inventoryPurchasesSum($filters);
         $grossProfit = $netSales - $cogs;
         $operatingExpenses = $this->operatingExpensesSum($filters);
-        $netProfit = $grossProfit + $shipping - $productPurchases - $operatingExpenses;
+        $netProfit = $grossProfit + $shipping - $operatingExpenses;
 
         $itemsWithoutCost = $this->itemsMissingCostCount($orderIds);
 
@@ -118,7 +122,7 @@ class FinancialReportService
             excludeCancelled: true,
         );
 
-        $cash = $this->cashCollectedUpTo($asOf);
+        $cash = $this->bankBalancesReport($asOf)['total_balance'];
         $accountsReceivable = $this->accountsReceivableUpTo($asOf);
         $inventory = $this->inventoryValue();
         $totalAssets = $cash + $accountsReceivable + $inventory;
@@ -148,6 +152,62 @@ class FinancialReportService
 
     /** @return Collection<int, array<string, mixed>> */
     public function ledger(FinancialReportFilters $filters): Collection
+    {
+        if ($this->usesFinancialTransactions()) {
+            return $this->ledgerFromFinancialTransactions($filters);
+        }
+
+        return $this->legacyLedger($filters);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function ledgerFromFinancialTransactions(FinancialReportFilters $filters): Collection
+    {
+        $query = $this->financialTransactionsQuery($filters, includeInterTransfers: true)
+            ->with(['paymentBank', 'accountHead', 'order'])
+            ->orderBy('transaction_date')
+            ->orderBy('id');
+
+        if ($filters->basis === 'accrual') {
+            $query->whereNotIn('type', [
+                FinancialTransaction::TYPE_PAYMENT_IN,
+                FinancialTransaction::TYPE_ADVANCE_IN,
+                FinancialTransaction::TYPE_GATEWAY_IN,
+                FinancialTransaction::TYPE_CHECKOUT_PENDING,
+            ]);
+        }
+
+        $balance = 0.0;
+
+        return $query->get()->map(function (FinancialTransaction $transaction) use (&$balance) {
+            $debit = $transaction->direction === FinancialTransaction::DIRECTION_DEBIT
+                ? (float) $transaction->total_amount
+                : 0.0;
+            $credit = $transaction->direction === FinancialTransaction::DIRECTION_CREDIT
+                ? (float) $transaction->total_amount
+                : 0.0;
+
+            $balance += $credit - $debit;
+
+            return [
+                'date' => $transaction->transaction_date->toDateString(),
+                'datetime' => $transaction->transaction_date,
+                'type' => $transaction->type,
+                'type_label' => $transaction->typeLabel(),
+                'reference' => $transaction->reference ?: 'TXN-'.$transaction->id,
+                'description' => $transaction->description,
+                'base_amount' => (float) $transaction->base_amount,
+                'bank_charge_amount' => (float) $transaction->bank_charge_amount,
+                'debit' => $debit,
+                'credit' => $credit,
+                'balance' => $balance,
+                'order_id' => $transaction->order_id,
+            ];
+        });
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function legacyLedger(FinancialReportFilters $filters): Collection
     {
         $entries = collect();
 
@@ -384,10 +444,51 @@ class FinancialReportService
 
     public function cashCollected(FinancialReportFilters $filters): float
     {
+        if ($this->usesFinancialTransactions()) {
+            return (float) $this->financialTransactionsQuery($filters)
+                ->where('direction', FinancialTransaction::DIRECTION_CREDIT)
+                ->whereIn('type', [
+                    FinancialTransaction::TYPE_PAYMENT_IN,
+                    FinancialTransaction::TYPE_ADVANCE_IN,
+                    FinancialTransaction::TYPE_GATEWAY_IN,
+                ])
+                ->sum('total_amount');
+        }
+
         $fromPayments = (float) $this->cashCollectionQuery($filters)->sum('amount');
         $fromGateway = (float) $this->gatewayPaymentsQuery($filters)->sum('amount_paid');
 
         return $fromPayments + $fromGateway;
+    }
+
+    public function bankChargesCollected(FinancialReportFilters $filters): float
+    {
+        if (! $this->usesFinancialTransactions()) {
+            return 0.0;
+        }
+
+        return (float) $this->financialTransactionsQuery($filters)
+            ->where('direction', FinancialTransaction::DIRECTION_CREDIT)
+            ->whereIn('type', [
+                FinancialTransaction::TYPE_PAYMENT_IN,
+                FinancialTransaction::TYPE_ADVANCE_IN,
+            ])
+            ->sum('bank_charge_amount');
+    }
+
+    /** @return array<string, mixed> */
+    public function bankBalancesReport(?string $asOf = null): array
+    {
+        $banks = \App\Models\PaymentBank::query()->orderBy('sort_order')->orderBy('name')->get();
+
+        return [
+            'as_of' => $asOf ?: now()->toDateString(),
+            'banks' => $banks->map(fn ($bank) => array_merge(
+                ['id' => $bank->id, 'name' => $bank->displayName()],
+                $this->bankBalances->breakdown($bank, $asOf),
+            ))->all(),
+            'total_balance' => array_sum($this->bankBalances->balances($banks, $asOf)),
+        ];
     }
 
     private function cashCollectedUpTo(string $asOf): float
@@ -479,7 +580,50 @@ class FinancialReportService
             $query->whereDate('expense_date', '<=', $filters->dateTo);
         }
 
+        if ($filters->paymentBankId) {
+            $query->where('payment_bank_id', $filters->paymentBankId);
+        }
+
+        if ($filters->accountHeadId) {
+            $query->where('account_head_id', $filters->accountHeadId);
+        }
+
         return $query;
+    }
+
+    private function financialTransactionsQuery(FinancialReportFilters $filters, bool $includeInterTransfers = false): Builder
+    {
+        $excluded = [FinancialTransaction::TYPE_CHECKOUT_PENDING];
+
+        if (! $includeInterTransfers) {
+            $excluded = array_merge($excluded, FinancialTransaction::PNL_EXCLUDED_TYPES);
+            $excluded = array_values(array_unique(array_filter($excluded, fn ($type) => $type !== FinancialTransaction::TYPE_CHECKOUT_PENDING)));
+        }
+
+        $query = FinancialTransaction::query()->whereNotIn('type', $excluded);
+
+        if ($filters->dateFrom) {
+            $query->whereDate('transaction_date', '>=', $filters->dateFrom);
+        }
+
+        if ($filters->dateTo) {
+            $query->whereDate('transaction_date', '<=', $filters->dateTo);
+        }
+
+        if ($filters->paymentBankId) {
+            $query->where('payment_bank_id', $filters->paymentBankId);
+        }
+
+        if ($filters->accountHeadId) {
+            $query->where('account_head_id', $filters->accountHeadId);
+        }
+
+        return $query;
+    }
+
+    private function usesFinancialTransactions(): bool
+    {
+        return FinancialTransaction::query()->exists();
     }
 
     private function expensesSum(FinancialReportFilters $filters): float

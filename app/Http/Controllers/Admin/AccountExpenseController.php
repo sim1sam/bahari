@@ -7,6 +7,7 @@ use App\Models\AccountExpense;
 use App\Models\AccountHead;
 use App\Models\PaymentBank;
 use App\Services\BankBalanceService;
+use App\Services\FinancialTransactionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,8 @@ use Illuminate\View\View;
 
 class AccountExpenseController extends Controller
 {
+    public function __construct(private FinancialTransactionService $financialTransactions) {}
+
     public function index(Request $request, BankBalanceService $balances): View
     {
         $query = $this->filteredQuery($request);
@@ -60,7 +63,8 @@ class AccountExpenseController extends Controller
     {
         $validated = $this->validated($request);
         $validated['recorded_by'] = Auth::id();
-        AccountExpense::create($validated);
+        $expense = AccountExpense::create($validated);
+        $this->financialTransactions->recordFromExpense($expense);
 
         return redirect()
             ->route('admin.account-expenses.index')
@@ -90,6 +94,7 @@ class AccountExpenseController extends Controller
     public function update(Request $request, AccountExpense $expense): RedirectResponse
     {
         $expense->update($this->validated($request, $expense));
+        $this->financialTransactions->recordFromExpense($expense->fresh());
 
         return redirect()
             ->route('admin.account-expenses.index')
@@ -98,6 +103,7 @@ class AccountExpenseController extends Controller
 
     public function destroy(AccountExpense $expense): RedirectResponse
     {
+        $this->financialTransactions->deleteForSource($expense);
         AccountExpense::query()->whereKey($expense->getKey())->delete();
 
         return redirect()

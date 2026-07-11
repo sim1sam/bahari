@@ -9,6 +9,8 @@
     @include('admin.reports.partials.filters', [
         'action' => route('admin.reports.ledger'),
         'exportRoute' => route('admin.reports.ledger', array_merge($filters->toQueryArray(), ['export' => 'csv'])),
+        'paymentBanks' => $paymentBanks ?? collect(),
+        'accountHeads' => $accountHeads ?? collect(),
     ])
 
     <div class="card">
@@ -26,6 +28,8 @@
                         <th>Type</th>
                         <th>Reference</th>
                         <th>Description</th>
+                        <th class="text-right">Base/Sale</th>
+                        <th class="text-right">Charge</th>
                         <th class="text-right">Debit</th>
                         <th class="text-right">Credit</th>
                         <th class="text-right">Balance</th>
@@ -35,7 +39,7 @@
                     @forelse ($entries as $entry)
                         <tr>
                             <td>{{ $entry['date'] }}</td>
-                            <td><span class="badge badge-secondary">{{ $entry['type'] }}</span></td>
+                            <td><span class="badge badge-secondary">{{ $entry['type_label'] ?? $entry['type'] }}</span></td>
                             <td>
                                 @if ($entry['order_id'])
                                     <a href="{{ route('admin.orders.show', $entry['order_id']) }}">{{ $entry['reference'] }}</a>
@@ -44,12 +48,14 @@
                                 @endif
                             </td>
                             <td>{{ $entry['description'] }}</td>
+                            <td class="text-right">{{ ($entry['base_amount'] ?? 0) > 0 ? money($entry['base_amount']) : '—' }}</td>
+                            <td class="text-right">{{ ($entry['bank_charge_amount'] ?? 0) > 0 ? money($entry['bank_charge_amount']) : '—' }}</td>
                             <td class="text-right">{{ $entry['debit'] > 0 ? money($entry['debit']) : '—' }}</td>
                             <td class="text-right">{{ $entry['credit'] > 0 ? money($entry['credit']) : '—' }}</td>
                             <td class="text-right font-weight-bold">{{ money($entry['balance']) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted py-4">No ledger entries for this period.</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted py-4">No ledger entries for this period.</td></tr>
                     @endforelse
                 </tbody>
             </table>

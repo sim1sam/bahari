@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
 use App\Models\User;
+use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
 use App\Services\OrderTransferService;
 use App\Services\SiteSettingsService;
@@ -552,15 +553,18 @@ class OrderController extends Controller
             ? (config('payment.banks')[$validated['bank_name']] ?? $validated['bank_name'])
             : null;
 
-        OrderPayment::create([
+        $orderPayment = OrderPayment::create([
             'order_id' => $order->id,
             'recorded_by' => Auth::id(),
             'amount' => $amount,
+            'sale_amount' => $amount,
             'payment_method' => $validated['payment_method'],
             'bank_name' => $bankLabel,
             'screenshot' => $screenshotPath,
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        app(FinancialTransactionService::class)->recordFromOrderPayment($orderPayment);
 
         $order->amount_paid = round((float) $order->amount_paid + $amount, 2);
         $order->recalculatePaymentStatus();

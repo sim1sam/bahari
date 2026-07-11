@@ -121,6 +121,13 @@ return [
         'active' => 'admin.bank-payments.*',
         'permission' => 'account_heads',
     ],
+    'bank_inter_transfers' => [
+        'label' => 'Inter Transfer',
+        'icon' => 'fas fa-exchange-alt',
+        'route' => 'admin.bank-inter-transfers.create',
+        'active' => 'admin.bank-inter-transfers.*',
+        'permission' => 'account_heads',
+    ],
     'customer_ledgers' => [
         'label' => 'Customer Ledger',
         'icon' => 'fas fa-book',

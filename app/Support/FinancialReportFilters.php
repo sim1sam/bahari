@@ -14,6 +14,8 @@ class FinancialReportFilters
         public ?string $paymentStatus = null,
         public ?string $paymentMethod = null,
         public ?string $orderType = null,
+        public ?int $paymentBankId = null,
+        public ?int $accountHeadId = null,
         public bool $excludeCancelled = true,
     ) {}
 
@@ -29,6 +31,8 @@ class FinancialReportFilters
             paymentStatus: $request->query('payment_status') ?: null,
             paymentMethod: $request->query('payment_method') ?: null,
             orderType: $request->query('order_type') ?: null,
+            paymentBankId: $request->integer('payment_bank_id') ?: null,
+            accountHeadId: $request->integer('account_head_id') ?: null,
             excludeCancelled: ! $request->boolean('include_cancelled'),
         );
     }
@@ -44,6 +48,8 @@ class FinancialReportFilters
             'payment_status' => $this->paymentStatus,
             'payment_method' => $this->paymentMethod,
             'order_type' => $this->orderType,
+            'payment_bank_id' => $this->paymentBankId,
+            'account_head_id' => $this->accountHeadId,
             'include_cancelled' => $this->excludeCancelled ? null : '1',
         ], fn ($value) => $value !== null && $value !== '');
     }

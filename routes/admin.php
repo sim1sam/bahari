@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BankInterTransferController;
 use App\Http\Controllers\Admin\AccountExpenseController;
 use App\Http\Controllers\Admin\AccountHeadController;
 use App\Http\Controllers\Admin\AccountHeadTypeController;
@@ -101,6 +102,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('bank-payments/create', [CustomerPaymentController::class, 'create'])->name('bank-payments.create');
             Route::post('bank-payments', [CustomerPaymentController::class, 'store'])->name('bank-payments.store');
             Route::get('payment-banks/{paymentBank}/customer-payments', [CustomerPaymentController::class, 'bankPayments'])->name('payment-banks.customer-payments');
+            Route::get('bank-inter-transfers', [BankInterTransferController::class, 'index'])->name('bank-inter-transfers.index');
+            Route::get('bank-inter-transfers/create', [BankInterTransferController::class, 'create'])->name('bank-inter-transfers.create');
+            Route::post('bank-inter-transfers', [BankInterTransferController::class, 'store'])->name('bank-inter-transfers.store');
         });
 
         Route::middleware('admin.feature:payment_banks')->group(function () {
@@ -186,6 +190,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('reports/profit-loss', [FinancialReportController::class, 'profitLoss'])->name('reports.profit-loss');
             Route::get('reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('reports/ledger', [FinancialReportController::class, 'ledger'])->name('reports.ledger');
+            Route::get('reports/bank-balances', [FinancialReportController::class, 'bankBalances'])->name('reports.bank-balances');
         });
 
         Route::middleware('admin.feature:shipping')->group(function () {

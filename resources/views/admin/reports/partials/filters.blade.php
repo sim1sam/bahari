@@ -55,6 +55,28 @@
                         <option value="custom" @selected($filters->orderType === 'custom')>Custom</option>
                     </select>
                 </div>
+                @if (! empty($paymentBanks))
+                    <div class="reports-filter-field">
+                        <label>Payment Bank</label>
+                        <select name="payment_bank_id" class="form-control">
+                            <option value="">All banks</option>
+                            @foreach ($paymentBanks as $bank)
+                                <option value="{{ $bank->id }}" @selected((int) $filters->paymentBankId === $bank->id)>{{ $bank->displayName() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                @if (! empty($accountHeads))
+                    <div class="reports-filter-field">
+                        <label>Account Head</label>
+                        <select name="account_head_id" class="form-control">
+                            <option value="">All heads</option>
+                            @foreach ($accountHeads as $head)
+                                <option value="{{ $head->id }}" @selected((int) $filters->accountHeadId === $head->id)>{{ $head->displayName() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="reports-filter-check">
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="include_cancelled" name="include_cancelled" value="1" @checked(! $filters->excludeCancelled)>

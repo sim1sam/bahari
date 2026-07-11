@@ -15,6 +15,7 @@ class PaymentBank extends Model
         'branch',
         'instructions',
         'charge_percent',
+        'opening_balance',
         'image',
         'is_active',
         'sort_order',
@@ -26,6 +27,7 @@ class PaymentBank extends Model
             'is_active' => 'boolean',
             'sort_order' => 'integer',
             'charge_percent' => 'decimal:2',
+            'opening_balance' => 'decimal:2',
         ];
     }
 

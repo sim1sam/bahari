@@ -13,6 +13,9 @@ class CustomerPayment extends Model
         'payment_bank_id',
         'recorded_by',
         'amount',
+        'sale_amount',
+        'bank_charge_percent',
+        'bank_charge_amount',
         'bank_name',
         'notes',
         'payment_date',
@@ -22,6 +25,9 @@ class CustomerPayment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'sale_amount' => 'decimal:2',
+            'bank_charge_percent' => 'decimal:2',
+            'bank_charge_amount' => 'decimal:2',
             'payment_date' => 'date',
         ];
     }

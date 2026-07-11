@@ -19,6 +19,7 @@ return [
             'icon' => 'fas fa-calculator',
             'items' => [
                 'bank_payments',
+                'bank_inter_transfers',
                 'account_heads_list',
                 'account_types_list',
                 'account_expenses',

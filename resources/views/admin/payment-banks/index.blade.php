@@ -92,6 +92,11 @@
                                 <small class="form-text text-muted">Automatically added when an expense is paid from this bank.</small>
                             </div>
                             <div class="form-group">
+                                <label>Opening Balance (BDT)</label>
+                                <input type="number" name="opening_balance" class="form-control @error('opening_balance') is-invalid @enderror" value="{{ old('opening_balance', 0) }}" min="0" step="0.01">
+                                @error('opening_balance')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="form-group">
                                 <label>QR / Bank Image</label>
                                 <div class="payment-banks-file">
                                     <input type="file" name="image" id="add-bank-image" class="payment-banks-file-input" accept="image/*">
@@ -148,6 +153,8 @@
                                         @endif
                                     </small>
                                     <div class="small mt-1">
+                                        <strong>Opening:</strong> {{ money($bank->opening_balance ?? 0) }}
+                                        <span class="mx-1">•</span>
                                         <strong>Balance:</strong> {{ money($bankBalances[$bank->id] ?? 0) }}
                                         <span class="mx-1">•</span>
                                         <strong>Charge:</strong> {{ number_format((float) $bank->charge_percent, 2) }}%
@@ -198,6 +205,12 @@
                                         <div class="form-group mb-md-0">
                                             <label>Charge (%)</label>
                                             <input type="number" name="charge_percent" class="form-control" value="{{ old('charge_percent', $bank->charge_percent) }}" min="0" max="100" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Opening Bal.</label>
+                                            <input type="number" name="opening_balance" class="form-control" value="{{ old('opening_balance', $bank->opening_balance ?? 0) }}" min="0" step="0.01">
                                         </div>
                                     </div>
                                     <div class="col-md-2">

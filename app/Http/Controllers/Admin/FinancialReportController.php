@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AccountExpense;
+use App\Models\AccountHead;
+use App\Models\PaymentBank;
 use App\Services\FinancialReportService;
 use App\Support\FinancialReportFilters;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,8 @@ class FinancialReportController extends Controller
         return view('admin.reports.index', [
             'filters' => $filters,
             'overview' => $this->reports->overview($filters),
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -37,6 +40,8 @@ class FinancialReportController extends Controller
         return view('admin.reports.profit-loss', [
             'filters' => $filters,
             'report' => $report,
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -47,6 +52,8 @@ class FinancialReportController extends Controller
         return view('admin.reports.balance-sheet', [
             'filters' => $filters,
             'report' => $this->reports->balanceSheet($filters),
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -62,10 +69,24 @@ class FinancialReportController extends Controller
         return view('admin.reports.ledger', [
             'filters' => $filters,
             'entries' => $entries,
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
             'totals' => [
                 'debit' => $entries->sum('debit'),
                 'credit' => $entries->sum('credit'),
             ],
+        ]);
+    }
+
+    public function bankBalances(Request $request): View
+    {
+        $filters = $this->resolveFilters($request);
+
+        return view('admin.reports.bank-balances', [
+            'filters' => $filters,
+            'report' => $this->reports->bankBalancesReport($filters->dateTo),
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
         ]);
     }
 

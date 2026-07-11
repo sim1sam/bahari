@@ -37,7 +37,11 @@
 
         @include('admin.reports.partials.nav')
 
-        @include('admin.reports.partials.filters', ['action' => route('admin.reports.index')])
+        @include('admin.reports.partials.filters', [
+            'action' => route('admin.reports.index'),
+            'paymentBanks' => $paymentBanks ?? collect(),
+            'accountHeads' => $accountHeads ?? collect(),
+        ])
 
         <section class="row">
             <div class="col-xl-3 col-sm-6 mb-3">

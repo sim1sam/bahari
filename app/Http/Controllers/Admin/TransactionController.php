@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\OrderPayment;
 use App\Models\PaymentTransaction;
+use App\Services\FinancialTransactionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,9 +13,11 @@ use Illuminate\View\View;
 
 class TransactionController extends Controller
 {
+    public function __construct(private FinancialTransactionService $financialTransactions) {}
+
     public function index(Request $request): View
     {
-        $status = $request->query('status', 'pending');
+        $status = $request->query('status', 'all');
 
         $query = PaymentTransaction::with(['order', 'user'])
             ->latest();
@@ -71,7 +74,9 @@ class TransactionController extends Controller
 
         DB::transaction(function () use ($transaction, $validated) {
             $order = $transaction->order;
-            $amount = min((float) $transaction->amount, (float) $order->total);
+            $saleAmount = (float) ($transaction->sale_amount ?? $order->total);
+            $totalPaid = (float) $transaction->amount;
+            $settlementAmount = min($saleAmount, (float) $order->amountDue());
 
             $transaction->update([
                 'status' => PaymentTransaction::STATUS_APPROVED,
@@ -80,17 +85,22 @@ class TransactionController extends Controller
                 'admin_notes' => $validated['admin_notes'] ?? null,
             ]);
 
-            OrderPayment::create([
+            $orderPayment = OrderPayment::create([
                 'order_id' => $order->id,
                 'recorded_by' => auth()->id(),
-                'amount' => $amount,
+                'payment_bank_id' => $transaction->payment_bank_id,
+                'payment_transaction_id' => $transaction->id,
+                'amount' => $totalPaid,
+                'sale_amount' => $saleAmount,
+                'bank_charge_percent' => (float) ($transaction->bank_charge_percent ?? 0),
+                'bank_charge_amount' => (float) ($transaction->bank_charge_amount ?? 0),
                 'payment_method' => 'bank_transfer',
                 'bank_name' => $transaction->bank_name,
                 'screenshot' => $transaction->screenshot,
                 'notes' => 'Approved from payment transaction #'.$transaction->id,
             ]);
 
-            $order->amount_paid = round((float) $order->amount_paid + $amount, 2);
+            $order->amount_paid = round((float) $order->amount_paid + $settlementAmount, 2);
             $order->recalculatePaymentStatus();
 
             if ($order->status === 'pending') {
@@ -98,6 +108,8 @@ class TransactionController extends Controller
             }
 
             $order->save();
+
+            $this->financialTransactions->confirmPaymentTransaction($transaction->fresh());
         });
 
         return redirect()

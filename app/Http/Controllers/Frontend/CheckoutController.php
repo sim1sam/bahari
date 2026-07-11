@@ -10,6 +10,7 @@ use App\Models\PaymentBank;
 use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
 use App\Services\SslCommerzService;
@@ -27,6 +28,7 @@ class CheckoutController extends Controller
         private MediaStorageService $media,
         private SiteSettingsService $siteSettings,
         private SslCommerzService $sslCommerz,
+        private FinancialTransactionService $financialTransactions,
     ) {}
 
     public function index(): View|RedirectResponse
@@ -181,6 +183,14 @@ class CheckoutController extends Controller
         $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $shippingZone, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz) {
             $isBankTransfer = $validated['payment'] === 'bank_transfer';
             $paymentAmount = $isSslCommerz ? $total : round((float) $validated['payment_amount'], 2);
+            $chargeSplit = $isBankTransfer && $bank
+                ? $this->financialTransactions->splitFromTotal($total, $paymentAmount, $bank)
+                : [
+                    'base_amount' => $paymentAmount,
+                    'bank_charge_percent' => 0,
+                    'bank_charge_amount' => 0,
+                    'total_amount' => $paymentAmount,
+                ];
 
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -224,14 +234,20 @@ class CheckoutController extends Controller
             }
 
             if ($isBankTransfer && $screenshotPath) {
-                PaymentTransaction::create([
+                $paymentTransaction = PaymentTransaction::create([
                     'order_id' => $order->id,
                     'user_id' => Auth::id(),
-                    'amount' => $paymentAmount,
+                    'payment_bank_id' => $bank?->id,
+                    'amount' => $chargeSplit['total_amount'],
+                    'sale_amount' => $chargeSplit['base_amount'],
+                    'bank_charge_percent' => $chargeSplit['bank_charge_percent'],
+                    'bank_charge_amount' => $chargeSplit['bank_charge_amount'],
                     'bank_name' => $bank?->displayName(),
                     'screenshot' => $screenshotPath,
                     'status' => PaymentTransaction::STATUS_PENDING,
                 ]);
+
+                $this->financialTransactions->recordFromPaymentTransaction($paymentTransaction, pending: true);
             }
 
             return $order;

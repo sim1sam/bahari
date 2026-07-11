@@ -90,6 +90,7 @@ class PaymentBankController extends Controller
             'branch' => 'nullable|string|max:150',
             'instructions' => 'nullable|string|max:255',
             'charge_percent' => 'nullable|numeric|min:0|max:100',
+            'opening_balance' => 'nullable|numeric|min:0',
             'sort_order' => 'nullable|integer|min:0',
             'image' => 'nullable|image|max:5120',
         ]);

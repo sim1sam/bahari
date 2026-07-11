@@ -8,15 +8,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderPayment extends Model
 {
     protected $fillable = [
-        'order_id', 'recorded_by', 'amount', 'payment_method',
-        'bank_name', 'screenshot', 'notes',
+        'order_id', 'recorded_by', 'payment_bank_id', 'payment_transaction_id',
+        'amount', 'sale_amount', 'bank_charge_percent', 'bank_charge_amount',
+        'payment_method', 'bank_name', 'screenshot', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
+            'sale_amount' => 'decimal:2',
+            'bank_charge_percent' => 'decimal:2',
+            'bank_charge_amount' => 'decimal:2',
         ];
+    }
+
+    public function paymentBank(): BelongsTo
+    {
+        return $this->belongsTo(PaymentBank::class);
+    }
+
+    public function paymentTransaction(): BelongsTo
+    {
+        return $this->belongsTo(PaymentTransaction::class);
     }
 
     public function order(): BelongsTo

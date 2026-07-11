@@ -6,7 +6,11 @@
 @section('content')
     @include('admin.reports.partials.nav')
 
-    @include('admin.reports.partials.filters', ['action' => route('admin.reports.balance-sheet')])
+    @include('admin.reports.partials.filters', [
+        'action' => route('admin.reports.balance-sheet'),
+        'paymentBanks' => $paymentBanks ?? collect(),
+        'accountHeads' => $accountHeads ?? collect(),
+    ])
 
     <div class="alert alert-light border">
         Snapshot as of <strong>{{ $report['as_of'] }}</strong>. Inventory uses current stock × purchase price. Retained earnings = cumulative net profit to date.
