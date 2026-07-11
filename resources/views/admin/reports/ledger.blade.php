@@ -56,3 +56,7 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+@include('admin.reports.partials.page-styles')
+@endpush

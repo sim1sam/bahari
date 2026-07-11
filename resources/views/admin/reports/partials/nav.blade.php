@@ -17,20 +17,20 @@
     $query = $navFilters->toQueryArray();
 @endphp
 
-<ul class="nav nav-pills mb-3 flex-wrap">
-    <li class="nav-item">
-        <a href="{{ route('admin.reports.index', $query) }}" class="nav-link @if (request()->routeIs('admin.reports.index')) active @endif">Overview</a>
-    </li>
-    <li class="nav-item">
-        <a href="{{ route('admin.reports.profit-loss', $query) }}" class="nav-link @if (request()->routeIs('admin.reports.profit-loss')) active @endif">Profit &amp; Loss</a>
-    </li>
-    <li class="nav-item">
-        <a href="{{ route('admin.reports.balance-sheet', $query) }}" class="nav-link @if (request()->routeIs('admin.reports.balance-sheet')) active @endif">Balance Sheet</a>
-    </li>
-    <li class="nav-item">
-        <a href="{{ route('admin.reports.ledger', $query) }}" class="nav-link @if (request()->routeIs('admin.reports.ledger')) active @endif">Ledger</a>
-    </li>
-    <li class="nav-item">
-        <a href="{{ route('admin.reports.expenses.index') }}" class="nav-link @if (request()->routeIs('admin.reports.expenses.*')) active @endif">Expenses</a>
-    </li>
-</ul>
+<nav class="reports-nav" aria-label="Report sections">
+    <a href="{{ route('admin.reports.index', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.index')) active @endif">
+        <i class="fas fa-chart-pie"></i> Overview
+    </a>
+    <a href="{{ route('admin.reports.profit-loss', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.profit-loss')) active @endif">
+        <i class="fas fa-file-invoice-dollar"></i> Profit &amp; Loss
+    </a>
+    <a href="{{ route('admin.reports.balance-sheet', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.balance-sheet')) active @endif">
+        <i class="fas fa-balance-scale"></i> Balance Sheet
+    </a>
+    <a href="{{ route('admin.reports.ledger', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.ledger')) active @endif">
+        <i class="fas fa-book"></i> Ledger
+    </a>
+    <a href="{{ route('admin.reports.expenses.index') }}" class="reports-nav-link @if (request()->routeIs('admin.reports.expenses.*')) active @endif">
+        <i class="fas fa-receipt"></i> Expenses
+    </a>
+</nav>
