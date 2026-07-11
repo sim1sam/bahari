@@ -1,163 +1,1013 @@
 @extends('layouts.admin')
 
-@section('title', 'Content')
+@section('title', 'Import Product')
 @section('page_title', 'Content — Received Images')
 
 @section('content')
-    @if (session('generated_credentials'))
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            <strong>API credentials:</strong>
-            <code>{{ session('generated_credentials')['api_key'] }}</code> /
-            <code>{{ session('generated_credentials')['api_token'] }}</code>
-        </div>
-    @endif
-
-    @unless ($logoUrl)
-        <div class="alert alert-warning">
-            <strong>Logo required.</strong> Upload a logo below before clicking Process Selected.
-        </div>
-    @endunless
-
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <a href="{{ route('admin.processed.index') }}" class="btn btn-info btn-sm">Processed</a>
-            <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">Content API Settings</a>
-            <form action="{{ route('admin.content.repair-images') }}" method="POST" class="d-inline" onsubmit="return confirm('Re-download images and sync prices from API payload for pending items?')">
-                @csrf
-                <button type="submit" class="btn btn-outline-warning btn-sm">
-                    <i class="fas fa-sync"></i> Re-download Images & Sync Prices
-                </button>
-            </form>
-        </div>
-        <div class="col-md-4 text-md-right">
-            <span class="badge badge-warning badge-lg">{{ $pendingCount }} received</span>
-        </div>
-    </div>
-
-    {{-- Logo + batch process --}}
-    <div class="card card-outline card-primary">
-        <div class="card-header"><h3 class="card-title">1. Upload Logo → 2. Select Images → 3. Process</h3></div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-3 text-center mb-3 mb-md-0">
-                    @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo" class="img-thumbnail" style="max-height:72px">
-                    @else
-                        <span class="text-muted d-block">No logo yet</span>
-                    @endif
+    <div class="ecom-page content-page">
+        @if (session('generated_credentials'))
+            <div class="content-alert content-alert--success">
+                <i class="fas fa-key"></i>
+                <div>
+                    <strong>API credentials generated</strong>
+                    <span>
+                        Key: <code>{{ session('generated_credentials')['api_key'] }}</code> ·
+                        Token: <code>{{ session('generated_credentials')['api_token'] }}</code>
+                    </span>
                 </div>
-                <div class="col-md-5 mb-3 mb-md-0">
-                    <form action="{{ route('admin.content.logo') }}" method="POST" enctype="multipart/form-data" class="form-inline mb-2">
+            </div>
+        @endif
+
+        <section class="ecom-hero">
+            <div>
+                <span class="ecom-eyebrow">Ecommerce</span>
+                <h2>Import Product</h2>
+                <p>Review API-received images, apply your logo, and process them into your catalog pipeline.</p>
+            </div>
+            <div class="ecom-hero-actions">
+                <a href="{{ route('admin.processed.index') }}" class="btn btn-info">
+                    <i class="fas fa-check-circle mr-1"></i> Processed Product
+                </a>
+                <a href="{{ route('admin.api-settings.index') }}" class="btn btn-light">
+                    <i class="fas fa-cog mr-1"></i> Content API Settings
+                </a>
+                <form action="{{ route('admin.content.repair-images') }}" method="POST" class="d-inline" onsubmit="return confirm('Re-download images and sync prices from API payload for pending items?')">
+                    @csrf
+                    <button type="submit" class="btn btn-light">
+                        <i class="fas fa-sync mr-1"></i> Repair Images
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        @unless ($logoUrl)
+            <div class="content-alert content-alert--warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Logo required</strong>
+                    <span>Upload a logo below before clicking Process Selected.</span>
+                </div>
+            </div>
+        @endunless
+
+        <section class="row ecom-stats">
+            <div class="col-xl-3 col-sm-6 mb-3">
+                <article class="ecom-stat ecom-stat--total">
+                    <span class="ecom-stat-icon"><i class="fas fa-inbox"></i></span>
+                    <div>
+                        <div class="ecom-stat-value">{{ number_format($stats['pending']) }}</div>
+                        <div class="ecom-stat-label">Pending Received</div>
+                    </div>
+                </article>
+            </div>
+            <div class="col-xl-3 col-sm-6 mb-3">
+                <article class="ecom-stat ecom-stat--manual">
+                    <span class="ecom-stat-icon"><i class="fas fa-magic"></i></span>
+                    <div>
+                        <div class="ecom-stat-value">{{ number_format($stats['processed']) }}</div>
+                        <div class="ecom-stat-label">Processed</div>
+                    </div>
+                </article>
+            </div>
+            <div class="col-xl-3 col-sm-6 mb-3">
+                <article class="ecom-stat ecom-stat--live">
+                    <span class="ecom-stat-icon"><i class="fas fa-store"></i></span>
+                    <div>
+                        <div class="ecom-stat-value">{{ number_format($stats['imported']) }}</div>
+                        <div class="ecom-stat-label">Published</div>
+                    </div>
+                </article>
+            </div>
+            <div class="col-xl-3 col-sm-6 mb-3">
+                <article class="ecom-stat ecom-stat--api">
+                    <span class="ecom-stat-icon"><i class="fas fa-tags"></i></span>
+                    <div>
+                        <div class="ecom-stat-value">{{ number_format($stats['brands']) }}</div>
+                        <div class="ecom-stat-label">Active Brands</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <div class="card ecom-card content-workflow-card">
+            <div class="content-workflow-head">
+                <span class="content-step content-step--1"><i class="fas fa-image"></i> Upload Logo</span>
+                <span class="content-step-arrow"><i class="fas fa-chevron-right"></i></span>
+                <span class="content-step content-step--2"><i class="fas fa-check-square"></i> Select Images</span>
+                <span class="content-step-arrow"><i class="fas fa-chevron-right"></i></span>
+                <span class="content-step content-step--3"><i class="fas fa-magic"></i> Process</span>
+            </div>
+            <div class="content-workflow-body">
+                <div class="content-upload-panel">
+                    <div class="content-panel-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Brand Logo</span>
+                    </div>
+                    <div class="content-logo-frame {{ $logoUrl ? 'content-logo-frame--has-logo' : '' }}">
+                        @if ($logoUrl)
+                            <img src="{{ $logoUrl }}" alt="Logo" id="content-logo-preview-img">
+                        @else
+                            <div class="content-logo-placeholder" id="content-logo-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>No logo uploaded</span>
+                            </div>
+                        @endif
+                    </div>
+                    <form action="{{ route('admin.content.logo') }}" method="POST" enctype="multipart/form-data" class="content-logo-upload">
                         @csrf
-                        <input type="file" name="logo" class="form-control-file mr-2" accept="image/*" required>
-                        <button type="submit" class="btn btn-secondary btn-sm">Upload Logo</button>
+                        <label class="content-dropzone" for="content-logo-file">
+                            <input type="file" name="logo" id="content-logo-file" class="content-dropzone-input" accept="image/*" required>
+                            <span class="content-dropzone-icon"><i class="fas fa-file-image"></i></span>
+                            <span class="content-dropzone-title">Drop logo here or browse</span>
+                            <span class="content-dropzone-hint" id="content-logo-filename">PNG, JPG, WEBP up to 2MB</span>
+                        </label>
+                        <button type="submit" class="btn btn-info btn-block content-upload-btn">
+                            <i class="fas fa-upload mr-1"></i> Upload Logo
+                        </button>
                     </form>
-                    <form action="{{ route('admin.content.logo-scale') }}" method="POST" class="form-inline align-items-center">
+                </div>
+
+                <div class="content-scale-panel">
+                    <div class="content-panel-label">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                        <span>Logo Size</span>
+                    </div>
+                    <p class="content-scale-desc">How large the logo appears on each processed image.</p>
+                    <form action="{{ route('admin.content.logo-scale') }}" method="POST" class="content-scale-form">
                         @csrf
                         @method('PUT')
-                        <label class="small text-muted mr-2 mb-0">Logo size on image</label>
-                        <input type="number" name="api_logo_scale" class="form-control form-control-sm mr-1" style="width:72px"
-                            min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" required>
-                        <span class="small text-muted mr-2">%</span>
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">Save Size</button>
-                    </form>
-                    <small class="text-muted d-block mt-1">Default is 28% of image width (was 18%). Increase before processing.</small>
-                </div>
-                <div class="col-md-4 text-md-right">
-                    <button type="button" class="btn btn-primary" id="btn-process-selected" disabled>
-                        <i class="fas fa-magic"></i> Process Selected
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-            <h3 class="card-title mb-0">Received Images</h3>
-            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0">
-                <form action="{{ route('admin.content.index') }}" method="GET" class="form-inline mr-3 mb-2 mb-md-0">
-                    <select name="brand" class="form-control form-control-sm mr-1" style="min-width:160px" aria-label="Brand">
-                        <option value="">All brands</option>
-                        @foreach ($brands as $brandOption)
-                            <option value="{{ $brandOption }}" @selected($brand === $brandOption)>{{ $brandOption }}</option>
-                        @endforeach
-                    </select>
-                    <input type="date" name="date_from" class="form-control form-control-sm mr-1" value="{{ $dateFrom }}" aria-label="From date">
-                    <span class="text-muted mx-1">to</span>
-                    <input type="date" name="date_to" class="form-control form-control-sm mr-1" value="{{ $dateTo }}" aria-label="To date">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary mr-1">Filter</button>
-                    @if ($brand || $dateFrom || $dateTo)
-                        <a href="{{ route('admin.content.index') }}" class="btn btn-sm btn-link">Clear</a>
-                    @endif
-                </form>
-                <label class="mb-0 mr-2">
-                    <input type="checkbox" id="select-page"> This page
-                </label>
-                <label class="mb-0 mr-3">
-                    <input type="checkbox" id="select-all-pages"> All pages
-                </label>
-                <span id="select-all-status" class="small text-info mr-3 d-none"></span>
-            </div>
-        </div>
-        <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
-            @csrf
-            <div class="card-body">
-                @if ($items->isEmpty())
-                    <p class="text-center text-muted py-5 mb-0">No received images. Items from API will appear here.</p>
-                @else
-                    <div class="row">
-                        @foreach ($items as $item)
-                            <div class="col-6 col-md-3 col-lg-2 mb-4">
-                                <div class="card h-100 border {{ $item->imageUrl() ? '' : 'border-danger' }}">
-                                    <div class="card-header p-2 text-center">
-                                        <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
-                                    </div>
-                                    <a href="{{ route('admin.content.show', $item) }}">
-                                        @if ($item->imageUrl())
-                                            <img src="{{ $item->imageUrl() }}" alt="" class="card-img-top" style="height:140px;object-fit:cover">
-                                        @else
-                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height:140px">
-                                                <span class="text-muted small">No image</span>
-                                            </div>
-                                        @endif
-                                    </a>
-                                    <div class="card-body p-2">
-                                        <p class="small font-weight-bold mb-0 text-truncate" title="{{ $item->title }}">{{ $item->title }}</p>
-                                        @if ($item->sku)
-                                            <code class="small">{{ $item->sku }}</code>
-                                        @endif
-                                        @if ($item->brand || $item->vendor)
-                                            <p class="small text-muted mb-1">
-                                                @if ($item->brand)<span>{{ $item->brand }}</span>@endif
-                                                @if ($item->brand && $item->vendor)<span> · </span>@endif
-                                                @if ($item->vendor)<span>{{ $item->vendor }}</span>@endif
-                                            </p>
-                                        @endif
-                                        <p class="small text-muted mb-1">{{ money($item->price) }}</p>
-                                        <a href="{{ route('admin.content.show', $item) }}" class="btn btn-xs btn-outline-primary btn-block">Open</a>
-                                    </div>
-                                </div>
+                        <div class="content-scale-control">
+                            <input type="range" name="api_logo_scale" class="content-scale-range" min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" id="content-logo-scale-range">
+                            <div class="content-scale-value">
+                                <input type="number" class="form-control form-control-sm content-scale-number" min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" id="content-logo-scale-number" aria-label="Logo scale percent">
+                                <span>%</span>
                             </div>
-                        @endforeach
+                        </div>
+                        <div class="content-scale-track">
+                            <span style="width: {{ $logoScale }}%" id="content-scale-fill"></span>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-save mr-1"></i> Save Size
+                        </button>
+                    </form>
+                </div>
+
+                <div class="content-process-panel">
+                    <div class="content-panel-label">
+                        <i class="fas fa-magic"></i>
+                        <span>Batch Process</span>
+                    </div>
+                    <div class="content-process-box">
+                        <div class="content-process-count">
+                            <strong>{{ number_format($pendingCount) }}</strong>
+                            <span>images waiting</span>
+                        </div>
+                        <button type="button" class="btn btn-info btn-lg btn-block content-process-btn" id="btn-process-selected" disabled>
+                            <i class="fas fa-magic mr-1"></i> Process Selected
+                        </button>
+                        <p class="content-process-note">Select images below, then apply your logo in one batch.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card ecom-card content-gallery-wrap">
+            <div class="content-toolbar">
+                <div class="content-toolbar-top">
+                    <div>
+                        <h3 class="mb-0">Received Images</h3>
+                        <p class="mb-0 text-muted">
+                            Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
+                        </p>
+                    </div>
+                    <div class="content-select-toolbar">
+                        <label class="content-select-chip">
+                            <input type="checkbox" id="select-page">
+                            <span><i class="fas fa-check"></i> This page</span>
+                        </label>
+                        <label class="content-select-chip">
+                            <input type="checkbox" id="select-all-pages">
+                            <span><i class="fas fa-layer-group"></i> All pages</span>
+                        </label>
+                        <span id="select-all-status" class="content-select-status d-none"></span>
+                    </div>
+                </div>
+
+                <form action="{{ route('admin.content.index') }}" method="GET" class="content-filter-bar">
+                    <div class="content-filter-field">
+                        <label>Brand</label>
+                        <select name="brand" class="form-control" aria-label="Brand">
+                            <option value="">All brands</option>
+                            @foreach ($brands as $brandOption)
+                                <option value="{{ $brandOption }}" @selected($brand === $brandOption)>{{ $brandOption }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="content-filter-field">
+                        <label>From</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}" aria-label="From date">
+                    </div>
+                    <div class="content-filter-field">
+                        <label>To</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}" aria-label="To date">
+                    </div>
+                    <div class="content-filter-actions">
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-filter mr-1"></i> Apply
+                        </button>
+                        @if ($brand || $dateFrom || $dateTo)
+                            <a href="{{ route('admin.content.index') }}" class="btn btn-outline-secondary">Clear</a>
+                        @endif
+                    </div>
+                </form>
+
+                @if ($brand || $dateFrom || $dateTo)
+                    <div class="content-active-filters">
+                        <span class="content-active-filters-label">Active filters:</span>
+                        @if ($brand)
+                            <span class="content-filter-chip"><i class="fas fa-tag"></i> {{ $brand }}</span>
+                        @endif
+                        @if ($dateFrom)
+                            <span class="content-filter-chip"><i class="fas fa-calendar"></i> From {{ $dateFrom }}</span>
+                        @endif
+                        @if ($dateTo)
+                            <span class="content-filter-chip"><i class="fas fa-calendar"></i> To {{ $dateTo }}</span>
+                        @endif
                     </div>
                 @endif
             </div>
-            @if ($items->hasPages() || $items->total() > 0)
-                <div class="card-footer d-flex flex-wrap justify-content-between align-items-center">
-                    <span class="text-muted small mb-2 mb-md-0">
-                        Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
-                    </span>
-                    @if ($items->hasPages())
-                        <div>{{ $items->links() }}</div>
+
+            <form id="batch-form" action="{{ route('admin.content.process-batch') }}" method="POST">
+                @csrf
+                <div class="content-grid-body">
+                    @if ($items->isEmpty())
+                        <div class="content-empty">
+                            <i class="fas fa-cloud-download-alt"></i>
+                            <strong>No received images</strong>
+                            <p>Items sent from the Content API will appear here for review and processing.</p>
+                            <a href="{{ route('admin.api-settings.index') }}" class="btn btn-sm btn-outline-secondary mt-2">
+                                <i class="fas fa-cog mr-1"></i> Content API Settings
+                            </a>
+                        </div>
+                    @else
+                        <div class="content-gallery-grid">
+                            @foreach ($items as $item)
+                                <article class="content-gallery-card {{ $item->imageUrl() ? '' : 'content-gallery-card--missing' }}" data-item-id="{{ $item->id }}">
+                                    <label class="content-gallery-select">
+                                        <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
+                                        <span class="content-gallery-select-mark"><i class="fas fa-check"></i></span>
+                                    </label>
+                                    <a href="{{ route('admin.content.show', $item) }}" class="content-gallery-media">
+                                        @if ($item->imageUrl())
+                                            <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}">
+                                            <span class="content-gallery-overlay">
+                                                <i class="fas fa-search-plus"></i> Preview
+                                            </span>
+                                        @else
+                                            <span class="content-gallery-no-image">
+                                                <i class="fas fa-image"></i>
+                                                <span>Missing image</span>
+                                            </span>
+                                        @endif
+                                    </a>
+                                    <div class="content-gallery-body">
+                                        <h4 class="content-gallery-title" title="{{ $item->title }}">{{ $item->title }}</h4>
+                                        <div class="content-gallery-tags">
+                                            @if ($item->brand)
+                                                <span class="content-gallery-tag content-gallery-tag--brand">{{ $item->brand }}</span>
+                                            @endif
+                                            @if ($item->sku)
+                                                <span class="content-gallery-tag">{{ $item->sku }}</span>
+                                            @endif
+                                        </div>
+                                        @if ($item->vendor)
+                                            <p class="content-gallery-vendor">{{ $item->vendor }}</p>
+                                        @endif
+                                        <div class="content-gallery-footer">
+                                            <span class="content-gallery-price">{{ money($item->price) }}</span>
+                                            <a href="{{ route('admin.content.show', $item) }}" class="content-gallery-open">
+                                                Open <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
                     @endif
                 </div>
-            @endif
-        </form>
-    </div>
 
+                @if ($items->hasPages())
+                    <div class="ecom-card-footer">{{ $items->links() }}</div>
+                @endif
+            </form>
+        </div>
+    </div>
 @endsection
+
+@push('styles')
+@include('admin.partials.ecom-page-styles')
+<style>
+    .content-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        margin-bottom: 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 0.85rem;
+    }
+
+    .content-alert > i { font-size: 1.1rem; margin-top: 0.1rem; }
+    .content-alert strong { display: block; font-size: 0.9rem; }
+    .content-alert span { display: block; margin-top: 0.15rem; font-size: 0.82rem; }
+    .content-alert code { font-size: 0.78rem; }
+
+    .content-alert--success {
+        border: 1px solid #a7f3d0;
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .content-alert--warning {
+        border: 1px solid #fde68a;
+        background: #fffbeb;
+        color: #b45309;
+    }
+
+    .content-workflow-card { margin-bottom: 1.25rem; }
+
+    .content-workflow-head {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.15rem;
+        border-bottom: 1px solid #eef2f7;
+        background: #f8fafc;
+        flex-wrap: wrap;
+    }
+
+    .content-step {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #475569;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+    }
+
+    .content-step--1 { color: #0891b2; border-color: #a5f3fc; background: #ecfeff; }
+    .content-step--2 { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
+    .content-step--3 { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
+
+    .content-step-arrow {
+        color: #cbd5e1;
+        font-size: 0.7rem;
+    }
+
+    .content-workflow-body {
+        display: grid;
+        grid-template-columns: minmax(220px, 1.1fr) minmax(240px, 1.2fr) minmax(220px, 0.9fr);
+        gap: 1rem;
+        padding: 1.15rem;
+        align-items: stretch;
+    }
+
+    .content-panel-label {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.75rem;
+        color: #0891b2;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .content-upload-panel,
+    .content-scale-panel,
+    .content-process-panel {
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.9rem;
+        background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+    }
+
+    .content-logo-frame {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 6.5rem;
+        margin-bottom: 0.85rem;
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.85rem;
+        background:
+            linear-gradient(135deg, rgba(236, 254, 255, 0.65) 0%, rgba(248, 250, 252, 1) 100%);
+        padding: 0.75rem;
+        transition: border-color 0.15s ease;
+    }
+
+    .content-logo-frame--has-logo {
+        border-style: solid;
+        border-color: #a5f3fc;
+        background: #fff;
+    }
+
+    .content-logo-frame img {
+        max-height: 5rem;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .content-logo-placeholder {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.78rem;
+    }
+
+    .content-logo-placeholder i {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 1.35rem;
+        opacity: 0.55;
+    }
+
+    .content-dropzone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem;
+        padding: 1rem 0.75rem;
+        border: 1.5px dashed #94a3b8;
+        border-radius: 0.85rem;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+
+    .content-dropzone:hover,
+    .content-dropzone.content-dropzone--active {
+        border-color: #22d3ee;
+        background: #ecfeff;
+    }
+
+    .content-dropzone-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .content-dropzone-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 999px;
+        background: #ecfeff;
+        color: #0891b2;
+        font-size: 1rem;
+    }
+
+    .content-dropzone-title {
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .content-dropzone-hint {
+        color: #94a3b8;
+        font-size: 0.72rem;
+    }
+
+    .content-upload-btn {
+        font-weight: 700;
+    }
+
+    .content-scale-desc {
+        margin: 0 0 0.85rem;
+        color: #64748b;
+        font-size: 0.8rem;
+        line-height: 1.45;
+    }
+
+    .content-scale-control {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .content-scale-range {
+        flex: 1;
+        accent-color: #0891b2;
+        cursor: pointer;
+    }
+
+    .content-scale-value {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .content-scale-number {
+        width: 3.5rem;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 0.5rem;
+    }
+
+    .content-scale-value > span {
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .content-scale-track {
+        height: 0.35rem;
+        margin-bottom: 0.85rem;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .content-scale-track > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #0891b2, #22d3ee);
+        transition: width 0.15s ease;
+    }
+
+    .content-process-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: calc(100% - 1.8rem);
+        padding: 0.5rem 0;
+    }
+
+    .content-process-count {
+        text-align: center;
+        margin-bottom: 1rem;
+        padding: 0.85rem;
+        border-radius: 0.85rem;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+        border: 1px solid #fed7aa;
+    }
+
+    .content-process-count strong {
+        display: block;
+        color: #c2410c;
+        font-size: 1.75rem;
+        line-height: 1;
+    }
+
+    .content-process-count span {
+        display: block;
+        margin-top: 0.25rem;
+        color: #9a3412;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .content-process-btn {
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(8, 145, 178, 0.2);
+    }
+
+    .content-process-note {
+        margin: 0.75rem 0 0;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.78rem;
+        line-height: 1.4;
+    }
+
+    .content-toolbar {
+        padding: 1rem 1.15rem 0.85rem;
+        border-bottom: 1px solid #eef2f7;
+        background: #fff;
+    }
+
+    .content-toolbar-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
+        flex-wrap: wrap;
+    }
+
+    .content-toolbar-top h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .content-toolbar-top p {
+        font-size: 0.8rem;
+    }
+
+    .content-select-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .content-select-chip {
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .content-select-chip input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .content-select-chip span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.7rem;
+        border: 1px solid #dbe3ed;
+        border-radius: 999px;
+        background: #fff;
+        color: #475569;
+        font-size: 0.76rem;
+        font-weight: 700;
+        transition: all 0.15s ease;
+    }
+
+    .content-select-chip input:checked + span {
+        border-color: #0891b2;
+        background: #ecfeff;
+        color: #0e7490;
+    }
+
+    .content-select-status {
+        color: #0891b2;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .content-filter-bar {
+        display: grid;
+        grid-template-columns: minmax(160px, 1.4fr) repeat(2, minmax(130px, 1fr)) auto;
+        gap: 0.65rem;
+        align-items: end;
+        padding: 0.85rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.85rem;
+        background: #f8fafc;
+    }
+
+    .content-filter-field label {
+        display: block;
+        margin-bottom: 0.3rem;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .content-filter-field .form-control {
+        min-height: 2.45rem;
+        border-color: #dbe3ed;
+        border-radius: 0.6rem;
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .content-filter-field .form-control:focus {
+        border-color: #22d3ee;
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+    }
+
+    .content-filter-actions {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        padding-bottom: 0.05rem;
+    }
+
+    .content-active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+    }
+
+    .content-active-filters-label {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .content-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        background: #ecfeff;
+        color: #0e7490;
+        font-size: 0.74rem;
+        font-weight: 600;
+    }
+
+    .content-grid-body {
+        padding: 1rem 1.15rem 0.75rem;
+        background: #f8fafc;
+    }
+
+    .content-gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+        gap: 1rem;
+    }
+
+    .content-gallery-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        border: 2px solid transparent;
+        border-radius: 1rem;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .content-gallery-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(8, 145, 178, 0.12);
+    }
+
+    .content-gallery-card--selected {
+        border-color: #0891b2;
+        box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15), 0 12px 28px rgba(8, 145, 178, 0.12);
+    }
+
+    .content-gallery-card--missing .content-gallery-media {
+        background: #fef2f2;
+    }
+
+    .content-gallery-select {
+        position: absolute;
+        top: 0.55rem;
+        left: 0.55rem;
+        z-index: 3;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .content-gallery-select input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .content-gallery-select-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.65rem;
+        height: 1.65rem;
+        border: 2px solid rgba(255, 255, 255, 0.95);
+        border-radius: 0.45rem;
+        background: rgba(15, 23, 42, 0.45);
+        color: transparent;
+        font-size: 0.7rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+        transition: all 0.15s ease;
+    }
+
+    .content-gallery-card:hover .content-gallery-select-mark,
+    .content-gallery-card--selected .content-gallery-select-mark {
+        background: #fff;
+        border-color: #0891b2;
+        color: transparent;
+    }
+
+    .content-gallery-select input:checked + .content-gallery-select-mark {
+        background: #0891b2;
+        border-color: #0891b2;
+        color: #fff;
+    }
+
+    .content-gallery-media {
+        position: relative;
+        display: block;
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+        background: #e2e8f0;
+    }
+
+    .content-gallery-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.2s ease;
+    }
+
+    .content-gallery-card:hover .content-gallery-media img {
+        transform: scale(1.04);
+    }
+
+    .content-gallery-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background: rgba(15, 23, 42, 0.45);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 700;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .content-gallery-card:hover .content-gallery-overlay {
+        opacity: 1;
+    }
+
+    .content-gallery-no-image {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        height: 100%;
+        color: #b91c1c;
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
+    .content-gallery-no-image i {
+        font-size: 1.4rem;
+        opacity: 0.55;
+    }
+
+    .content-gallery-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0.75rem 0.8rem 0.8rem;
+    }
+
+    .content-gallery-title {
+        margin: 0 0 0.45rem;
+        color: #1e293b;
+        font-size: 0.8rem;
+        font-weight: 700;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .content-gallery-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .content-gallery-tag {
+        display: inline-block;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.65rem;
+        font-weight: 700;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-gallery-tag--brand {
+        background: #f5f3ff;
+        color: #6d28d9;
+    }
+
+    .content-gallery-vendor {
+        margin: 0 0 0.5rem;
+        color: #94a3b8;
+        font-size: 0.68rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-gallery-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: auto;
+        padding-top: 0.55rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .content-gallery-price {
+        color: #0891b2;
+        font-size: 0.88rem;
+        font-weight: 800;
+    }
+
+    .content-gallery-open {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .content-gallery-open:hover {
+        color: #0891b2;
+        text-decoration: none;
+    }
+
+    .content-empty {
+        padding: 3rem 1rem;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .content-empty i {
+        display: block;
+        margin-bottom: 0.75rem;
+        font-size: 2rem;
+        opacity: 0.45;
+    }
+
+    .content-empty strong {
+        display: block;
+        color: #334155;
+        font-size: 1rem;
+    }
+
+    .content-empty p {
+        margin: 0.35rem 0 0;
+        font-size: 0.86rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .content-workflow-body {
+            grid-template-columns: 1fr;
+        }
+
+        .content-filter-bar {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .content-filter-actions {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .content-toolbar-top {
+            flex-direction: column;
+        }
+
+        .content-select-toolbar {
+            width: 100%;
+        }
+
+        .content-filter-bar {
+            grid-template-columns: 1fr;
+        }
+
+        .content-gallery-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -218,9 +1068,18 @@
         return selectedChecks().length + ' selected';
     }
 
+    function updateCardStates() {
+        document.querySelectorAll('.content-gallery-card').forEach(function (card) {
+            var check = card.querySelector('.item-check');
+            if (!check) return;
+            card.classList.toggle('content-gallery-card--selected', check.checked);
+        });
+    }
+
     function updateBtn() {
         if (btn) btn.disabled = !hasSelection();
         updateSelectAllStatus();
+        updateCardStates();
     }
 
     function prepareBatchSubmit() {
@@ -303,6 +1162,72 @@
             form.submit();
         });
     }
+
+    document.querySelectorAll('.content-dropzone-input').forEach(function (input) {
+        var dropzone = input.closest('.content-dropzone');
+        var filenameEl = document.getElementById('content-logo-filename');
+        var previewImg = document.getElementById('content-logo-preview-img');
+        var placeholder = document.getElementById('content-logo-placeholder');
+        var logoFrame = document.querySelector('.content-logo-frame');
+
+        input.addEventListener('change', function () {
+            var file = this.files && this.files[0];
+            if (filenameEl) {
+                filenameEl.textContent = file ? file.name : 'PNG, JPG, WEBP up to 2MB';
+            }
+            if (!file || !file.type.startsWith('image/')) return;
+
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                if (previewImg) {
+                    previewImg.src = event.target.result;
+                } else if (logoFrame) {
+                    if (placeholder) placeholder.remove();
+                    var img = document.createElement('img');
+                    img.id = 'content-logo-preview-img';
+                    img.alt = 'Logo preview';
+                    img.src = event.target.result;
+                    logoFrame.appendChild(img);
+                    logoFrame.classList.add('content-logo-frame--has-logo');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        if (dropzone) {
+            dropzone.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                dropzone.classList.add('content-dropzone--active');
+            });
+            dropzone.addEventListener('dragleave', function () {
+                dropzone.classList.remove('content-dropzone--active');
+            });
+            dropzone.addEventListener('drop', function (e) {
+                e.preventDefault();
+                dropzone.classList.remove('content-dropzone--active');
+            });
+        }
+    });
+
+    var scaleRange = document.getElementById('content-logo-scale-range');
+    var scaleNumber = document.getElementById('content-logo-scale-number');
+    var scaleFill = document.getElementById('content-scale-fill');
+
+    function syncScale(value) {
+        var num = Math.min(50, Math.max(10, parseInt(value, 10) || 28));
+        if (scaleRange) scaleRange.value = num;
+        if (scaleNumber) scaleNumber.value = num;
+        if (scaleFill) scaleFill.style.width = num + '%';
+    }
+
+    if (scaleRange) {
+        scaleRange.addEventListener('input', function () { syncScale(this.value); });
+    }
+    if (scaleNumber) {
+        scaleNumber.addEventListener('input', function () { syncScale(this.value); });
+    }
+
+    updateCardStates();
 })();
 </script>
 @endpush

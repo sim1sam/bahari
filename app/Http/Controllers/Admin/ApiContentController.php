@@ -41,8 +41,10 @@ class ApiContentController extends Controller
             $this->applyBrandFilter($query, $request->string('brand')->toString());
         }
 
+        $items = $query->paginate(24)->withQueryString();
+
         return view('admin.content.index', [
-            'items' => $query->paginate(24)->withQueryString(),
+            'items' => $items,
             'dateFrom' => $request->query('date_from'),
             'dateTo' => $request->query('date_to'),
             'brand' => $request->query('brand'),
@@ -52,6 +54,12 @@ class ApiContentController extends Controller
             'logoScale' => Schema::hasColumn((new SiteSetting)->getTable(), 'api_logo_scale')
                 ? (SiteSetting::current()->api_logo_scale ?: 28)
                 : 28,
+            'stats' => [
+                'pending' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PENDING)->count(),
+                'processed' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)->count(),
+                'imported' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_IMPORTED)->count(),
+                'brands' => count(app(ApiReceivedBrandService::class)->activeBrandNames()),
+            ],
         ]);
     }
 
