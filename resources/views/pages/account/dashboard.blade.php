@@ -63,7 +63,7 @@
 
     {{-- ========== DESKTOP DASHBOARD LAYOUT ========== --}}
     <div class="hidden lg:block px-8 pt-8 space-y-8">
-        <div class="grid grid-cols-4 gap-5">
+        <div class="grid grid-cols-3 gap-5">
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Total Orders</p>
                 <p class="text-3xl font-bold text-ink mt-1">{{ $ordersCount }}</p>
@@ -71,10 +71,6 @@
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Total Spent</p>
                 <p class="text-3xl font-bold text-brand-700 mt-1">{{ money($totalSpent) }}</p>
-            </div>
-            <div class="account-stat-card">
-                <p class="text-sm text-ink-muted">Cart Items</p>
-                <p class="text-3xl font-bold text-ink mt-1">{{ $cartCount ?? 0 }}</p>
             </div>
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Member Since</p>
@@ -92,7 +88,7 @@
                     @if ($orders->isEmpty())
                         <div class="account-panel-body text-center py-12">
                             <p class="text-ink-muted">No orders yet.</p>
-                            <a href="{{ route('home') }}" class="inline-block mt-4 px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium">Browse Products</a>
+                            <a href="{{ route('account.custom-order') }}" class="inline-block mt-4 px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium">Place Custom Order</a>
                         </div>
                     @else
                         <div class="overflow-x-auto">
@@ -130,10 +126,10 @@
                     <div class="account-panel-header"><h2 class="font-semibold text-ink">Quick Actions</h2></div>
                     <div class="account-panel-body space-y-2">
                         <a href="{{ route('account.orders') }}" class="account-quick-link">View all orders</a>
+                        <a href="{{ route('account.transactions') }}" class="account-quick-link">Transactions</a>
+                        <a href="{{ route('account.ledger') }}" class="account-quick-link">Ledger</a>
                         <a href="{{ route('account.addresses.index') }}" class="account-quick-link">Shipping addresses</a>
                         <a href="{{ route('account.profile') }}" class="account-quick-link">Edit profile</a>
-                        <a href="{{ route('categories.index') }}" class="account-quick-link">Browse categories</a>
-                        <a href="{{ route('cart.index') }}" class="account-quick-link">Go to cart</a>
                     </div>
                 </div>
                 <div class="account-panel">
