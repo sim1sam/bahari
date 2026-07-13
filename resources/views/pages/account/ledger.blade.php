@@ -12,7 +12,21 @@
 @endsection
 
 @section('content')
-    <div class="px-4 lg:px-8 pt-4 lg:pt-8 space-y-6">
+    {{-- Mobile --}}
+    <div class="lg:hidden px-4 pt-4 space-y-4 pb-4">
+        <div class="grid grid-cols-1 gap-3">
+            <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20">
+                <p class="text-brand-100 text-sm">Balance Due</p>
+                <p class="text-3xl font-bold mt-1">{{ money($totals['balance']) }}</p>
+                <p class="text-xs text-brand-100 mt-2">Orders {{ money($totals['total_orders']) }} · Paid {{ money($totals['total_paid']) }}</p>
+            </div>
+        </div>
+
+        @include('pages.account.partials.ledger-list-mobile', ['entries' => $entries])
+    </div>
+
+    {{-- Desktop --}}
+    <div class="hidden lg:block px-8 pt-8 space-y-6">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="account-stat-card">
                 <p class="text-sm text-ink-muted">Total Orders</p>
