@@ -109,6 +109,7 @@
         </div>
     </section>
 
+    <div class="items-table-wrap">
     <table class="items-table">
         <thead>
             <tr>
@@ -123,21 +124,22 @@
         <tbody>
             @foreach ($order->items as $index => $item)
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>
+                    <td data-label="#">{{ $index + 1 }}</td>
+                    <td class="item-cell-lead" data-label="">
                         <div class="item-style">{{ $item->product_name }}</div>
                         @if ($item->color)
                             <div class="item-meta">Color: {{ $item->color }}</div>
                         @endif
                     </td>
-                    <td>{{ $item->size ?: '—' }}</td>
-                    <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-right">{{ money($item->price) }}</td>
-                    <td class="text-right">{{ money($item->price * $item->quantity) }}</td>
+                    <td data-label="Size">{{ $item->size ?: '—' }}</td>
+                    <td class="text-center" data-label="Qty">{{ $item->quantity }}</td>
+                    <td class="text-right" data-label="Unit Price">{{ money($item->price) }}</td>
+                    <td class="text-right" data-label="Total">{{ money($item->price * $item->quantity) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+    </div>
 
     <div class="totals-wrap">
         <table class="totals-table">

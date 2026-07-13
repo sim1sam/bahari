@@ -331,6 +331,171 @@
         background: #f8fafc;
     }
 
+    .ecom-app-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.85rem;
+        background: #f8fafc;
+    }
+
+    .ecom-app-card {
+        padding: 0.9rem;
+        border: 1px solid var(--ecom-border);
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+    }
+
+    .ecom-app-card-top {
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        gap: 0.65rem;
+        align-items: start;
+    }
+
+    .ecom-app-select {
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .ecom-app-select input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .ecom-app-select-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.65rem;
+        height: 1.65rem;
+        border: 2px solid #cbd5e1;
+        border-radius: 0.45rem;
+        background: #fff;
+        color: transparent;
+        font-size: 0.68rem;
+        transition: all 0.15s ease;
+    }
+
+    .ecom-app-select input:checked + .ecom-app-select-mark {
+        background: #0891b2;
+        border-color: #0891b2;
+        color: #fff;
+    }
+
+    .ecom-app-card-thumb {
+        width: 3.5rem;
+        height: 4rem;
+        border-radius: 0.6rem;
+        object-fit: cover;
+        border: 1px solid var(--ecom-border);
+        flex-shrink: 0;
+    }
+
+    .ecom-app-card-thumb--empty {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    .ecom-app-card-info {
+        min-width: 0;
+    }
+
+    .ecom-app-card-name {
+        font-weight: 800;
+        color: #1e293b;
+        font-size: 0.92rem;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ecom-app-card-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+    }
+
+    .ecom-app-card-price {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .ecom-app-card-price strong {
+        display: block;
+        color: #0891b2;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .ecom-app-card-price small {
+        color: #94a3b8;
+        font-size: 0.72rem;
+    }
+
+    .ecom-app-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem 0.75rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #eef2f7;
+        color: #64748b;
+        font-size: 0.74rem;
+        font-weight: 600;
+    }
+
+    .ecom-app-card-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .ecom-app-card-meta i {
+        color: #94a3b8;
+        font-size: 0.68rem;
+    }
+
+    .ecom-app-card-foot {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed #e2e8f0;
+    }
+
+    .ecom-app-card-foot .btn {
+        flex: 1;
+        font-weight: 700;
+    }
+
+    .ecom-app-card-delete {
+        margin: 0;
+        flex: 0 0 auto;
+    }
+
+    .ecom-app-card-delete .btn {
+        width: 2.15rem;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .ecom-app-empty {
+        border: 1px dashed var(--ecom-border);
+        border-radius: 1rem;
+        background: #fff;
+    }
+
     @media (max-width: 767.98px) {
         .ecom-hero {
             align-items: flex-start;
@@ -353,6 +518,16 @@
 
         .ecom-hero-actions form .btn {
             width: 100%;
+        }
+
+        .ecom-card-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .ecom-bulk-actions {
+            width: 100%;
+            justify-content: space-between;
         }
     }
 </style>

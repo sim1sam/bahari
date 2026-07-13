@@ -86,7 +86,80 @@
                 @endif
             </div>
 
-            <div class="table-responsive">
+            <div class="ecom-app-list d-md-none">
+                @forelse ($products as $product)
+                    <article class="ecom-app-card">
+                        <div class="ecom-app-card-top">
+                            <label class="ecom-app-select">
+                                <input type="checkbox" class="product-check" name="products[]" value="{{ $product->id }}">
+                                <span class="ecom-app-select-mark"><i class="fas fa-check"></i></span>
+                            </label>
+                            @if ($url = $product->imageUrl())
+                                <img src="{{ $url }}" alt="" class="ecom-app-card-thumb">
+                            @else
+                                <span class="ecom-app-card-thumb ecom-app-card-thumb--empty"><i class="fas fa-image"></i></span>
+                            @endif
+                            <div class="ecom-app-card-info">
+                                <div class="ecom-app-card-name">{{ $product->name }}</div>
+                                <code class="ecom-product-slug">{{ $product->slug }}</code>
+                                <div class="ecom-app-card-chips">
+                                    <span class="ecom-pill {{ $product->isManualProduct() ? 'ecom-pill--manual' : 'ecom-pill--api' }}">
+                                        {{ $product->isManualProduct() ? 'Manual' : 'API' }}
+                                    </span>
+                                    <span class="ecom-status {{ $product->is_active ? 'ecom-status--live' : 'ecom-status--hidden' }}">
+                                        {{ $product->is_active ? 'Live' : 'Hidden' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ecom-app-card-price">
+                                <strong>{{ money($product->price) }}</strong>
+                                @if ($product->original_price)
+                                    <small><s>{{ money($product->original_price) }}</s></small>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="ecom-app-card-meta">
+                            <span><i class="fas fa-tag"></i> {{ $product->brand ?: 'No brand' }}</span>
+                            <span><i class="fas fa-folder"></i> {{ $product->category?->name ?? 'No category' }}</span>
+                            <span class="{{ $product->stock > 0 ? '' : 'text-danger' }}">
+                                <i class="fas fa-boxes"></i> Stock {{ $product->stock }}
+                            </span>
+                        </div>
+
+                        <div class="ecom-app-card-foot">
+                            @if ($product->is_active)
+                                <a href="{{ route('products.show', $product->slug) }}" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                            @endif
+                            <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="ecom-app-card-delete" onsubmit="return confirm('Remove this product from the storefront?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                @empty
+                    <div class="ecom-empty ecom-app-empty">
+                        <i class="fas fa-box-open"></i>
+                        <strong>No products yet</strong>
+                        <p>Create a product manually or publish from API processed items.</p>
+                        <a href="{{ route('admin.products.create') }}" class="btn btn-sm btn-info mt-2 mr-1">
+                            <i class="fas fa-plus mr-1"></i> Create Product
+                        </a>
+                        <a href="{{ route('admin.processed.index') }}" class="btn btn-sm btn-outline-secondary mt-2">
+                            API Processed
+                        </a>
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
                 <table class="table ecom-table mb-0">
                     <thead>
                         <tr>
@@ -204,23 +277,41 @@
         return;
     }
 
-    function selectedChecks() {
+    function visibleChecks() {
         return Array.from(checks).filter(function (check) {
+            return check.offsetParent !== null;
+        });
+    }
+
+    function selectedChecks() {
+        return visibleChecks().filter(function (check) {
             return check.checked;
         });
     }
 
     function updateDeleteBtn() {
         deleteBtn.disabled = selectedChecks().length === 0;
+
+        if (selectAll) {
+            var visible = visibleChecks();
+            selectAll.checked = visible.length > 0 && visible.every(function (check) {
+                return check.checked;
+            });
+        }
     }
 
     checks.forEach(function (check) {
-        check.addEventListener('change', updateDeleteBtn);
+        check.addEventListener('change', function () {
+            if (selectAll && !check.checked) {
+                selectAll.checked = false;
+            }
+            updateDeleteBtn();
+        });
     });
 
     if (selectAll) {
         selectAll.addEventListener('change', function () {
-            checks.forEach(function (check) {
+            visibleChecks().forEach(function (check) {
                 check.checked = selectAll.checked;
             });
             updateDeleteBtn();
@@ -243,7 +334,12 @@
             input.remove();
         });
 
+        var seen = {};
         selected.forEach(function (check) {
+            if (seen[check.value]) {
+                return;
+            }
+            seen[check.value] = true;
             var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'products[]';
