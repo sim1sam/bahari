@@ -100,7 +100,84 @@
                 </div>
             </div>
 
-            <div class="table-responsive">
+            <div class="orders-app-list d-md-none">
+                @forelse ($orders as $order)
+                    @php
+                        $statusStyle = $statusStyles[$order->status] ?? $statusStyles['pending'];
+                        $transferKey = $order->external_transfer_status ?? 'pending';
+                    @endphp
+                    <article class="orders-app-card">
+                        <div class="orders-app-card-head">
+                            <div>
+                                <a href="{{ route('admin.orders.show', $order) }}" class="orders-app-card-number">{{ $order->number }}</a>
+                                @if ($order->isCustom())
+                                    <span class="orders-tag orders-tag--custom">Custom</span>
+                                @endif
+                                <div class="orders-app-card-customer">{{ $order->customer_name }}</div>
+                                <small class="text-muted">{{ $order->customer_email }}</small>
+                            </div>
+                            <div class="orders-app-card-total-wrap">
+                                <strong class="orders-app-card-total">{{ money($order->total) }}</strong>
+                                @if ($order->amountDue() > 0)
+                                    <small class="text-danger">Due {{ money($order->amountDue()) }}</small>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="orders-app-card-chips">
+                            <span class="orders-pill {{ $order->paymentStatusBadgeClass() }}">{{ $order->paymentStatusLabel() }}</span>
+                            <span class="orders-pill badge-{{ $transferStyles[$transferKey] ?? 'light' }}">API {{ ucfirst($transferKey) }}</span>
+                            <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ ucfirst($order->status) }}</span>
+                        </div>
+
+                        <div class="orders-app-card-field">
+                            <label>Update status</label>
+                            <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="orders-status-form">
+                                @csrf
+                                @method('PATCH')
+                                <select name="status" class="form-control orders-status-select orders-status-select--app" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};">
+                                    @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
+                                        <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+                        </div>
+
+                        @if ($order->external_transfer_message)
+                            <p class="orders-app-card-note" title="{{ $order->external_transfer_message }}">{{ Str::limit($order->external_transfer_message, 60) }}</p>
+                        @endif
+
+                        <div class="orders-app-card-foot">
+                            <span class="orders-app-card-date">
+                                <i class="far fa-clock"></i>
+                                {{ $order->created_at->format('M d, Y · h:i A') }}
+                            </span>
+                            <div class="orders-app-card-actions">
+                                <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"><i class="fas fa-file-invoice"></i></a>
+                                <a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-sm btn-outline-info"><i class="fas fa-edit"></i></a>
+                                @if ($order->canBeDeleted())
+                                    <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" onsubmit="return confirm('Delete this order?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="orders-empty orders-app-empty">
+                        <i class="fas fa-inbox"></i>
+                        <strong>No orders yet</strong>
+                        <p>Create your first order to start tracking sales here.</p>
+                        <a href="{{ route('admin.orders.create') }}" class="btn btn-sm btn-info mt-2">
+                            <i class="fas fa-plus mr-1"></i> Create Order
+                        </a>
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
                 <table class="table orders-index-table mb-0">
                     <thead>
                         <tr>
@@ -503,6 +580,140 @@
         padding: 0.85rem 1rem;
         border-top: 1px solid #eef2f7;
         background: #f8fafc;
+    }
+
+    .orders-app-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.85rem;
+        background: #f8fafc;
+    }
+
+    .orders-app-card {
+        padding: 1rem;
+        border: 1px solid var(--orders-border);
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+    }
+
+    .orders-app-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .orders-app-card-number {
+        display: inline-block;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0891b2;
+    }
+
+    .orders-app-card-number:hover {
+        color: #0e7490;
+        text-decoration: none;
+    }
+
+    .orders-app-card-customer {
+        margin-top: 0.35rem;
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.9rem;
+    }
+
+    .orders-app-card-total-wrap {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .orders-app-card-total {
+        display: block;
+        font-size: 1.05rem;
+        color: var(--orders-ink);
+    }
+
+    .orders-app-card-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .orders-app-status-pill {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .orders-app-card-field label {
+        display: block;
+        margin-bottom: 0.35rem;
+        color: var(--orders-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .orders-status-select--app {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .orders-app-card-note {
+        margin: 0 0 0.75rem;
+        padding: 0.55rem 0.65rem;
+        border-radius: 0.6rem;
+        background: #f8fafc;
+        color: var(--orders-muted);
+        font-size: 0.76rem;
+        line-height: 1.35;
+    }
+
+    .orders-app-card-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #eef2f7;
+        flex-wrap: wrap;
+    }
+
+    .orders-app-card-date {
+        color: var(--orders-muted);
+        font-size: 0.74rem;
+        font-weight: 600;
+    }
+
+    .orders-app-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: auto;
+    }
+
+    .orders-app-card-actions .btn {
+        width: 2.15rem;
+        height: 2.15rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orders-app-empty {
+        border: 1px dashed var(--orders-border);
+        border-radius: 1rem;
+        background: #fff;
     }
 
     @media (max-width: 767.98px) {

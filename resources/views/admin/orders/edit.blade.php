@@ -131,7 +131,7 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive order-items-scroll">
-                            <table class="table mb-0 order-form-table" id="items-table">
+                            <table class="table mb-0 order-form-table order-mobile-stack-table" id="items-table">
                                 <thead>
                                     <tr>
                                         <th style="width:18%">Product *</th>
@@ -148,16 +148,16 @@
                                 <tbody id="items-body">
                                     @foreach ($order->items as $item)
                                         <tr data-existing="1">
-                                            <td>
+                                            <td class="order-mobile-lead" data-label="Product">
                                                 <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control form-control-sm item-name" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
                                             </td>
-                                            <td>
+                                            <td data-label="Slug">
                                                 <input type="text" name="items[{{ $item->id }}][product_slug]" class="form-control form-control-sm item-slug" value="{{ old('items.'.$item->id.'.product_slug', $item->product_slug) }}" data-manual="1">
                                             </td>
-                                            <td>
+                                            <td data-label="Link">
                                                 <input type="text" name="items[{{ $item->id }}][product_link]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.product_link', $item->product_link) }}" placeholder="https://...">
                                             </td>
-                                            <td>
+                                            <td data-label="Image">
                                                 <div class="order-item-image-cell">
                                                     @if ($item->imageUrl())
                                                         <a href="{{ $item->imageUrl() }}" target="_blank" rel="noopener" class="order-item-image-preview">
@@ -175,19 +175,19 @@
                                                     </label>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="Size">
                                                 <input type="text" name="items[{{ $item->id }}][size]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.size', $item->size) }}">
                                             </td>
-                                            <td>
+                                            <td data-label="Color">
                                                 <input type="text" name="items[{{ $item->id }}][color]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.color', $item->color) }}">
                                             </td>
-                                            <td>
+                                            <td data-label="Qty">
                                                 <input type="number" name="items[{{ $item->id }}][quantity]" class="form-control form-control-sm item-qty" min="1" value="{{ old('items.'.$item->id.'.quantity', $item->quantity) }}" required>
                                             </td>
-                                            <td>
+                                            <td data-label="Price">
                                                 <input type="number" name="items[{{ $item->id }}][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="{{ old('items.'.$item->id.'.price', $item->price) }}" required>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-center order-mobile-actions" data-label="">
                                                 <label class="order-row-remove" title="Remove item">
                                                     <input type="checkbox" name="delete_items[]" value="{{ $item->id }}">
                                                     <span><i class="fas fa-trash"></i></span>
@@ -223,8 +223,8 @@
                                 </div>
                             </div>
                         @endif
-                        <div class="table-responsive">
-                            <table class="table mb-0 order-form-table {{ $order->payments->isEmpty() ? 'd-none' : '' }}" id="payments-table">
+                        <div class="table-responsive order-payments-scroll">
+                            <table class="table mb-0 order-form-table order-mobile-stack-table {{ $order->payments->isEmpty() ? 'd-none' : '' }}" id="payments-table">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -238,18 +238,18 @@
                                 <tbody id="payments-body">
                                     @foreach ($order->payments as $payment)
                                         <tr data-existing="1">
-                                            <td><span class="order-payment-date">{{ $payment->created_at->format('M d, Y H:i') }}</span></td>
-                                            <td>
+                                            <td data-label="Date"><span class="order-payment-date">{{ $payment->created_at->format('M d, Y H:i') }}</span></td>
+                                            <td data-label="Amount">
                                                 <input type="number" name="payments[{{ $payment->id }}][amount]" class="form-control form-control-sm" min="0" step="0.01" value="{{ old('payments.'.$payment->id.'.amount', $payment->amount) }}" required>
                                             </td>
-                                            <td>
+                                            <td data-label="Method">
                                                 <select name="payments[{{ $payment->id }}][payment_method]" class="form-control form-control-sm">
                                                     @foreach (['cod' => 'COD', 'cash' => 'Cash', 'bank_transfer' => 'Bank Transfer'] as $val => $label)
                                                         <option value="{{ $val }}" @selected(old('payments.'.$payment->id.'.payment_method', $payment->payment_method) === $val)>{{ $label }}</option>
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td>
+                                            <td data-label="Bank">
                                                 <select name="payments[{{ $payment->id }}][bank_name]" class="form-control form-control-sm">
                                                     <option value="">—</option>
                                                     @foreach ($banks as $key => $label)
@@ -257,10 +257,10 @@
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td>
+                                            <td data-label="Notes">
                                                 <input type="text" name="payments[{{ $payment->id }}][notes]" class="form-control form-control-sm" value="{{ old('payments.'.$payment->id.'.notes', $payment->notes) }}" placeholder="Optional note">
                                             </td>
-                                            <td class="text-center align-middle">
+                                            <td class="text-center align-middle order-mobile-actions" data-label="">
                                                 <label class="order-row-remove" title="Remove payment">
                                                     <input type="checkbox" name="delete_payments[]" value="{{ $payment->id }}">
                                                     <span><i class="fas fa-trash"></i></span>
@@ -426,10 +426,10 @@
 
     <template id="item-row-template">
         <tr>
-            <td><input type="text" name="new_items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
-            <td><input type="text" name="new_items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
-            <td><input type="text" name="new_items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
-            <td>
+            <td class="order-mobile-lead" data-label="Product"><input type="text" name="new_items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
+            <td data-label="Slug"><input type="text" name="new_items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
+            <td data-label="Link"><input type="text" name="new_items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
+            <td data-label="Image">
                 <div class="order-item-image-cell">
                     <span class="order-item-image-preview order-item-image-preview--empty">
                         <i class="fas fa-image"></i>
@@ -441,26 +441,26 @@
                     </label>
                 </div>
             </td>
-            <td><input type="text" name="new_items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
-            <td><input type="text" name="new_items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
-            <td><input type="number" name="new_items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
-            <td><input type="number" name="new_items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
-            <td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
+            <td data-label="Size"><input type="text" name="new_items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
+            <td data-label="Color"><input type="text" name="new_items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
+            <td data-label="Qty"><input type="number" name="new_items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
+            <td data-label="Price"><input type="number" name="new_items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
+            <td class="text-center order-mobile-actions" data-label=""><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 
     <template id="payment-row-template">
         <tr>
-            <td><span class="order-payment-date">New</span></td>
-            <td><input type="number" name="new_payments[__INDEX__][amount]" class="form-control form-control-sm" min="0.01" step="0.01" required></td>
-            <td>
+            <td data-label="Date"><span class="order-payment-date">New</span></td>
+            <td data-label="Amount"><input type="number" name="new_payments[__INDEX__][amount]" class="form-control form-control-sm" min="0.01" step="0.01" required></td>
+            <td data-label="Method">
                 <select name="new_payments[__INDEX__][payment_method]" class="form-control form-control-sm">
                     <option value="cod">COD</option>
                     <option value="cash">Cash</option>
                     <option value="bank_transfer">Bank Transfer</option>
                 </select>
             </td>
-            <td>
+            <td data-label="Bank">
                 <select name="new_payments[__INDEX__][bank_name]" class="form-control form-control-sm">
                     <option value="">—</option>
                     @foreach ($banks as $key => $label)
@@ -468,8 +468,8 @@
                     @endforeach
                 </select>
             </td>
-            <td><input type="text" name="new_payments[__INDEX__][notes]" class="form-control form-control-sm" placeholder="Optional note"></td>
-            <td class="text-center align-middle"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove payment"><i class="fas fa-trash"></i></button></td>
+            <td data-label="Notes"><input type="text" name="new_payments[__INDEX__][notes]" class="form-control form-control-sm" placeholder="Optional note"></td>
+            <td class="text-center align-middle order-mobile-actions" data-label=""><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove payment"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 @endsection

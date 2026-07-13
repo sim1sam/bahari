@@ -114,7 +114,7 @@
                     <div class="card-body p-0">
                         @error('items')<div class="text-danger px-3 pt-2">{{ $message }}</div>@enderror
                         <div class="table-responsive order-items-scroll">
-                        <table class="table mb-0 order-form-table" id="items-table">
+                        <table class="table mb-0 order-form-table order-mobile-stack-table" id="items-table">
                             <thead>
                                 <tr>
                                     <th style="width:18%">Product *</th>
@@ -154,8 +154,8 @@
                                 <p>Add a payment here, or set the amount paid in Payment Details.</p>
                             </div>
                         </div>
-                        <div class="table-responsive">
-                        <table class="table mb-0 d-none order-form-table" id="payments-table">
+                        <div class="table-responsive order-payments-scroll">
+                        <table class="table mb-0 d-none order-form-table order-mobile-stack-table" id="payments-table">
                             <thead>
                                 <tr>
                                     <th>Amount</th>
@@ -312,35 +312,40 @@
 
     <template id="item-row-template">
         <tr>
-            <td><input type="text" name="items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
-            <td><input type="text" name="items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
-            <td><input type="text" name="items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
-            <td>
-                <label class="order-item-upload">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <span>Upload</span>
-                    <input type="file" name="items[__INDEX__][image]" accept="image/*">
-                </label>
+            <td class="order-mobile-lead" data-label="Product"><input type="text" name="items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
+            <td data-label="Slug"><input type="text" name="items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
+            <td data-label="Link"><input type="text" name="items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
+            <td data-label="Image">
+                <div class="order-item-image-cell">
+                    <span class="order-item-image-preview order-item-image-preview--empty">
+                        <i class="fas fa-image"></i>
+                    </span>
+                    <label class="order-item-upload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Upload</span>
+                        <input type="file" name="items[__INDEX__][image]" accept="image/*">
+                    </label>
+                </div>
             </td>
-            <td><input type="text" name="items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
-            <td><input type="text" name="items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
-            <td><input type="number" name="items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
-            <td><input type="number" name="items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
-            <td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
+            <td data-label="Size"><input type="text" name="items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
+            <td data-label="Color"><input type="text" name="items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
+            <td data-label="Qty"><input type="number" name="items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
+            <td data-label="Price"><input type="number" name="items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
+            <td class="text-center order-mobile-actions" data-label=""><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 
     <template id="payment-row-template">
         <tr>
-            <td><input type="number" name="payments[__INDEX__][amount]" class="form-control form-control-sm" min="0.01" step="0.01" required></td>
-            <td>
+            <td data-label="Amount"><input type="number" name="payments[__INDEX__][amount]" class="form-control form-control-sm" min="0.01" step="0.01" required></td>
+            <td data-label="Method">
                 <select name="payments[__INDEX__][payment_method]" class="form-control form-control-sm">
                     <option value="cod">COD</option>
                     <option value="cash">Cash</option>
                     <option value="bank_transfer">Bank Transfer</option>
                 </select>
             </td>
-            <td>
+            <td data-label="Bank">
                 <select name="payments[__INDEX__][bank_name]" class="form-control form-control-sm">
                     <option value="">—</option>
                     @foreach ($banks as $key => $label)
@@ -348,8 +353,8 @@
                     @endforeach
                 </select>
             </td>
-            <td><input type="text" name="payments[__INDEX__][notes]" class="form-control form-control-sm" placeholder="Optional note"></td>
-            <td class="text-center align-middle"><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove payment"><i class="fas fa-trash"></i></button></td>
+            <td data-label="Notes"><input type="text" name="payments[__INDEX__][notes]" class="form-control form-control-sm" placeholder="Optional note"></td>
+            <td class="text-center align-middle order-mobile-actions" data-label=""><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove payment"><i class="fas fa-trash"></i></button></td>
         </tr>
     </template>
 @endsection
@@ -513,14 +518,26 @@
         if (e.target.type !== 'file') return;
         var label = e.target.closest('.order-item-upload');
         var text = label ? label.querySelector('span') : null;
-        if (!label || !text) return;
+        var preview = e.target.closest('.order-item-image-cell')?.querySelector('.order-item-image-preview');
+        var file = e.target.files && e.target.files[0];
 
-        if (e.target.files && e.target.files[0]) {
-            text.textContent = e.target.files[0].name;
-            label.classList.add('has-file');
-        } else {
-            text.textContent = 'Upload';
-            label.classList.remove('has-file');
+        if (label && text) {
+            if (file) {
+                text.textContent = file.name.length > 12 ? file.name.slice(0, 10) + '…' : file.name;
+                label.classList.add('has-file');
+            } else {
+                text.textContent = 'Upload';
+                label.classList.remove('has-file');
+            }
+        }
+
+        if (file && file.type.startsWith('image/') && preview) {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                preview.classList.remove('order-item-image-preview--empty');
+                preview.innerHTML = '<img src="' + event.target.result + '" alt="Preview">';
+            };
+            reader.readAsDataURL(file);
         }
     });
 
