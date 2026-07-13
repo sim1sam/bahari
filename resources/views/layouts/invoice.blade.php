@@ -50,11 +50,19 @@
             color: #fff;
         }
         .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 32px;
             padding-bottom: 24px;
             border-bottom: 2px solid #111827;
+        }
+        .invoice-header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-header-table td {
+            vertical-align: top;
+        }
+        .invoice-header-table .meta-cell {
+            text-align: right;
+            width: 45%;
         }
         .brand-logo {
             max-height: 72px;
@@ -128,10 +136,20 @@
         .status-partial { background: #fef3c7; color: #92400e; }
         .status-due { background: #fee2e2; color: #b91c1c; }
         .address-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
             margin: 28px 0;
+        }
+        .address-section-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .address-section-table td {
+            width: 50%;
+            vertical-align: top;
+            padding-right: 24px;
+        }
+        .address-section-table td:last-child {
+            padding-right: 0;
+            padding-left: 24px;
         }
         .address-box h3 {
             margin: 0 0 8px;
@@ -252,9 +270,21 @@
             }
 
             .invoice-header {
-                flex-direction: column;
-                gap: 20px;
                 padding-bottom: 20px;
+            }
+
+            .invoice-header-table,
+            .invoice-header-table tr,
+            .invoice-header-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .invoice-header-table .meta-cell {
+                text-align: left;
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #e5e7eb;
             }
 
             .brand-logo {
@@ -300,9 +330,22 @@
             }
 
             .address-section {
-                grid-template-columns: 1fr;
-                gap: 16px;
                 margin: 20px 0;
+            }
+
+            .address-section-table,
+            .address-section-table tr,
+            .address-section-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .address-section-table td {
+                padding: 0 0 16px;
+            }
+
+            .address-section-table td:last-child {
+                padding-bottom: 0;
             }
 
             .items-table-wrap {
@@ -430,7 +473,11 @@
                 padding: 10px 12px;
             }
             .invoice-header { flex-direction: row; }
+            .invoice-header-table tr { display: table-row; }
+            .invoice-header-table td { display: table-cell; }
             .invoice-meta { text-align: right; min-width: 240px; }
+            .address-section-table tr { display: table-row; }
+            .address-section-table td { display: table-cell; }
             .address-section { grid-template-columns: 1fr 1fr; }
             .totals-table { width: 320px; }
         }

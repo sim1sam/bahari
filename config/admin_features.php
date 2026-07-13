@@ -60,7 +60,7 @@ return [
         'label' => 'All Order',
         'icon' => 'fas fa-list',
         'route' => 'admin.orders.index',
-        'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit|admin.orders.invoice',
+        'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit|admin.orders.invoice|admin.orders.invoice.download',
         'permission' => 'orders',
     ],
     'account_heads_list' => [

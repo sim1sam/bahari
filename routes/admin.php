@@ -175,6 +175,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('orders/transfer-settings/generate', [OrderTransferSettingController::class, 'generate'])->name('orders.transfer-settings.generate');
             Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
             Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+            Route::get('orders/{order}/invoice/download', [OrderController::class, 'invoiceDownload'])->name('orders.invoice.download');
             Route::put('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
             Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
             Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');

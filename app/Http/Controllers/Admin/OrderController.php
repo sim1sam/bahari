@@ -12,8 +12,10 @@ use App\Services\MediaStorageService;
 use App\Services\OrderTransferService;
 use App\Services\SiteSettingsService;
 use App\Support\ShippingZone;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -222,13 +224,45 @@ class OrderController extends Controller
 
     public function invoice(Order $order): View
     {
-        return view('admin.orders.invoice', [
+        return view('admin.orders.invoice', $this->invoiceViewData($order));
+    }
+
+    public function invoiceDownload(Order $order): Response
+    {
+        $filename = 'invoice-'.preg_replace('/[^A-Za-z0-9._-]+/', '-', $order->number).'.pdf';
+
+        return Pdf::loadView('admin.orders.invoice-pdf', $this->invoiceViewData($order))
+            ->setPaper('a4', 'portrait')
+            ->download($filename);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function invoiceViewData(Order $order): array
+    {
+        return [
             'order' => $order->load('items'),
             'settings' => $this->siteSettings->get(),
             'siteName' => $this->siteSettings->siteName(),
-            'logoUrl' => $this->siteSettings->logoUrl(),
+            'logoUrl' => $this->invoiceLogoUrl(),
             'logoInitial' => $this->siteSettings->logoInitial(),
-        ]);
+        ];
+    }
+
+    private function invoiceLogoUrl(): ?string
+    {
+        $logoUrl = $this->siteSettings->logoUrl();
+
+        if ($logoUrl === null || $logoUrl === '') {
+            return null;
+        }
+
+        if (str_starts_with($logoUrl, 'http://') || str_starts_with($logoUrl, 'https://')) {
+            return $logoUrl;
+        }
+
+        return url($logoUrl);
     }
 
     public function edit(Order $order): View
