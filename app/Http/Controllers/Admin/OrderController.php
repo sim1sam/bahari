@@ -274,7 +274,7 @@ class OrderController extends Controller
             'items.*.product_name' => 'required_with:items|string|max:255',
             'items.*.product_slug' => 'nullable|string|max:255',
             'items.*.product_link' => 'nullable|string|max:500',
-            'items.*.image' => 'nullable|string|max:500',
+            'items.*.image' => 'nullable|image|max:5120',
             'items.*.size' => 'nullable|string|max:50',
             'items.*.color' => 'nullable|string|max:50',
             'items.*.quantity' => 'required_with:items|integer|min:1',
@@ -283,7 +283,7 @@ class OrderController extends Controller
             'new_items.*.product_name' => 'required_with:new_items|string|max:255',
             'new_items.*.product_slug' => 'nullable|string|max:255',
             'new_items.*.product_link' => 'nullable|string|max:500',
-            'new_items.*.image' => 'nullable|string|max:500',
+            'new_items.*.image' => 'nullable|image|max:5120',
             'new_items.*.size' => 'nullable|string|max:50',
             'new_items.*.color' => 'nullable|string|max:50',
             'new_items.*.quantity' => 'required_with:new_items|integer|min:1',
@@ -323,11 +323,24 @@ class OrderController extends Controller
                     continue;
                 }
 
+                $image = $item->image;
+                if ($request->hasFile("items.{$itemId}.image")) {
+                    if ($item->image && ! str_starts_with($item->image, 'http')) {
+                        $media->delete($item->image);
+                    }
+                    $image = $media->storeUpload(
+                        $request->file("items.{$itemId}.image"),
+                        'orders/items',
+                        $item->image,
+                        field: "items.{$itemId}.image"
+                    );
+                }
+
                 $item->update([
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $itemData['image'] ?? null,
+                    'image' => $image,
                     'size' => $itemData['size'] ?? null,
                     'color' => $itemData['color'] ?? null,
                     'quantity' => (int) $itemData['quantity'],
@@ -335,9 +348,18 @@ class OrderController extends Controller
                 ]);
             }
 
-            foreach ($validated['new_items'] ?? [] as $itemData) {
+            foreach ($validated['new_items'] ?? [] as $index => $itemData) {
                 if (empty($itemData['product_name'])) {
                     continue;
+                }
+
+                $itemImage = null;
+                if ($request->hasFile("new_items.{$index}.image")) {
+                    $itemImage = $media->storeUpload(
+                        $request->file("new_items.{$index}.image"),
+                        'orders/items',
+                        field: "new_items.{$index}.image"
+                    );
                 }
 
                 OrderItem::create([
@@ -345,7 +367,7 @@ class OrderController extends Controller
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $itemData['image'] ?? null,
+                    'image' => $itemImage,
                     'size' => $itemData['size'] ?? null,
                     'color' => $itemData['color'] ?? null,
                     'quantity' => (int) $itemData['quantity'],
