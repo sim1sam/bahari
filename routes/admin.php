@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShippingSettingsController;
+use App\Http\Controllers\Admin\WatermarkSettingsController;
 use App\Http\Controllers\Admin\SslCommerzSettingsController;
 use App\Http\Controllers\Admin\StorageLinkController;
 use App\Http\Controllers\Admin\TerminalController;
@@ -125,8 +126,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:api_content')->group(function () {
             Route::get('content', [ApiContentController::class, 'index'])->name('content.index');
-            Route::post('content/logo', [ApiContentController::class, 'uploadLogo'])->name('content.logo');
-            Route::put('content/logo-scale', [ApiContentController::class, 'updateLogoScale'])->name('content.logo-scale');
             Route::post('content/repair-images', [ApiContentController::class, 'repairImages'])->name('content.repair-images');
             Route::post('content/batch/process', [ApiContentController::class, 'processBatch'])->name('content.process-batch');
             Route::post('content/process-batch', [ApiContentController::class, 'processBatch']);
@@ -212,6 +211,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::put("settings/{$section}", fn (Request $request) => app(SettingsController::class)->update($request, $section))
                     ->name("settings.{$routeKey}.update");
             }
+
+            Route::get('settings/watermark', [WatermarkSettingsController::class, 'edit'])->name('settings.watermark.edit');
+            Route::post('settings/watermark/logo', [WatermarkSettingsController::class, 'uploadLogo'])->name('settings.watermark.logo');
+            Route::put('settings/watermark/logo-scale', [WatermarkSettingsController::class, 'updateLogoScale'])->name('settings.watermark.logo-scale');
 
             Route::get('ssl-settings', [SslCommerzSettingsController::class, 'edit'])->name('ssl-settings.edit');
             Route::put('ssl-settings', [SslCommerzSettingsController::class, 'update'])->name('ssl-settings.update');

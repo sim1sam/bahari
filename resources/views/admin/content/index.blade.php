@@ -29,7 +29,7 @@
             <div>
                 <span class="ecom-eyebrow">Ecommerce</span>
                 <h2>Import Product</h2>
-                <p>Review API-received images, apply your logo, and process them into your catalog pipeline.</p>
+                <p>Review API-received images and process them into your catalog pipeline.</p>
             </div>
             <div class="ecom-hero-actions">
                 <a href="{{ route('admin.processed.index') }}" class="btn btn-info">
@@ -46,16 +46,6 @@
                 </form>
             </div>
         </section>
-
-        @unless ($logoUrl)
-            <div class="content-alert content-alert--warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div>
-                    <strong>Logo required</strong>
-                    <span>Upload a logo below before clicking Process Selected.</span>
-                </div>
-            </div>
-        @endunless
 
         <section class="row ecom-stats">
             <div class="col-xl-3 col-sm-6 mb-3">
@@ -96,101 +86,42 @@
             </div>
         </section>
 
-        <div class="card ecom-card content-workflow-card">
-            <div class="content-workflow-head">
-                <span class="content-step content-step--1"><i class="fas fa-image"></i> Upload Logo</span>
-                <span class="content-step-arrow"><i class="fas fa-chevron-right"></i></span>
-                <span class="content-step content-step--2"><i class="fas fa-check-square"></i> Select Images</span>
-                <span class="content-step-arrow"><i class="fas fa-chevron-right"></i></span>
-                <span class="content-step content-step--3"><i class="fas fa-magic"></i> Process</span>
-            </div>
-            <div class="content-workflow-body">
-                <div class="content-upload-panel">
-                    <div class="content-panel-label">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Brand Logo</span>
-                    </div>
-                    <div class="content-logo-frame {{ $logoUrl ? 'content-logo-frame--has-logo' : '' }}">
-                        @if ($logoUrl)
-                            <img src="{{ $logoUrl }}" alt="Logo" id="content-logo-preview-img">
-                        @else
-                            <div class="content-logo-placeholder" id="content-logo-placeholder">
-                                <i class="fas fa-image"></i>
-                                <span>No logo uploaded</span>
-                            </div>
-                        @endif
-                    </div>
-                    <form action="{{ route('admin.content.logo') }}" method="POST" enctype="multipart/form-data" class="content-logo-upload">
-                        @csrf
-                        <label class="content-dropzone" for="content-logo-file">
-                            <input type="file" name="logo" id="content-logo-file" class="content-dropzone-input" accept="image/*" required>
-                            <span class="content-dropzone-icon"><i class="fas fa-file-image"></i></span>
-                            <span class="content-dropzone-title">Drop logo here or browse</span>
-                            <span class="content-dropzone-hint" id="content-logo-filename">PNG, JPG, WEBP up to 2MB</span>
-                        </label>
-                        <button type="submit" class="btn btn-info btn-block content-upload-btn">
-                            <i class="fas fa-upload mr-1"></i> Upload Logo
-                        </button>
-                    </form>
-                </div>
-
-                <div class="content-scale-panel">
-                    <div class="content-panel-label">
-                        <i class="fas fa-expand-arrows-alt"></i>
-                        <span>Logo Size</span>
-                    </div>
-                    <p class="content-scale-desc">How large the logo appears on each processed image.</p>
-                    <form action="{{ route('admin.content.logo-scale') }}" method="POST" class="content-scale-form">
-                        @csrf
-                        @method('PUT')
-                        <div class="content-scale-control">
-                            <input type="range" name="api_logo_scale" class="content-scale-range" min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" id="content-logo-scale-range">
-                            <div class="content-scale-value">
-                                <input type="number" class="form-control form-control-sm content-scale-number" min="10" max="50" step="1" value="{{ old('api_logo_scale', $logoScale) }}" id="content-logo-scale-number" aria-label="Logo scale percent">
-                                <span>%</span>
-                            </div>
-                        </div>
-                        <div class="content-scale-track">
-                            <span style="width: {{ $logoScale }}%" id="content-scale-fill"></span>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-save mr-1"></i> Save Size
-                        </button>
-                    </form>
-                </div>
-
-                <div class="content-process-panel">
-                    <div class="content-panel-label">
-                        <i class="fas fa-magic"></i>
-                        <span>Batch Process</span>
-                    </div>
-                    <div class="content-process-box">
-                        <div class="content-process-count">
-                            <strong>{{ number_format($pendingCount) }}</strong>
-                            <span>images waiting</span>
-                        </div>
-                        <button type="button" class="btn btn-info btn-lg btn-block content-process-btn" id="btn-process-selected" disabled>
-                            <i class="fas fa-magic mr-1"></i> Process Selected
-                        </button>
-                        <button type="button" class="btn btn-outline-danger btn-block content-delete-btn" id="btn-delete-selected" disabled>
-                            <i class="fas fa-trash mr-1"></i> Delete Selected
-                        </button>
-                        <p class="content-process-note">Select images below, then apply your logo in one batch.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="card ecom-card content-gallery-wrap">
-            <div class="content-toolbar">
-                <div class="content-toolbar-top">
-                    <div>
-                        <h3 class="mb-0">Received Images</h3>
-                        <p class="mb-0 text-muted">
-                            Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
-                        </p>
+            <div class="content-batch-bar" id="content-batch-bar">
+                <div class="content-batch-bar__top">
+                    <div class="content-batch-bar__lead">
+                        <span class="content-batch-bar__badge" id="batch-count-badge">0</span>
+                        <div>
+                            <h3 class="content-batch-bar__title">Batch Process</h3>
+                            <p class="content-batch-bar__summary" id="batch-selection-summary">Select images below to apply watermark</p>
+                        </div>
                     </div>
-                    <div class="content-select-toolbar">
+
+                    @if ($logoUrl)
+                        <a href="{{ route('admin.settings.watermark.edit') }}" class="content-batch-bar__watermark" title="Edit watermark">
+                            <span class="content-batch-bar__watermark-thumb">
+                                <img src="{{ $logoUrl }}" alt="Watermark">
+                            </span>
+                            <span class="content-batch-bar__watermark-meta">
+                                <strong>Watermark ready</strong>
+                                <span>{{ $logoScale }}% of image width</span>
+                            </span>
+                            <i class="fas fa-pen content-batch-bar__watermark-edit"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('admin.settings.watermark.edit') }}" class="content-batch-bar__watermark content-batch-bar__watermark--missing">
+                            <span class="content-batch-bar__watermark-thumb content-batch-bar__watermark-thumb--empty">
+                                <i class="fas fa-stamp"></i>
+                            </span>
+                            <span class="content-batch-bar__watermark-meta">
+                                <strong>Watermark required</strong>
+                                <span>Upload before processing</span>
+                            </span>
+                            <i class="fas fa-arrow-right content-batch-bar__watermark-edit"></i>
+                        </a>
+                    @endif
+
+                    <div class="content-batch-bar__select">
                         <label class="content-select-chip content-select-chip--page">
                             <input type="checkbox" id="select-page">
                             <span><i class="fas fa-check"></i> This page</span>
@@ -199,7 +130,37 @@
                             <input type="checkbox" id="select-all-pages">
                             <span><i class="fas fa-layer-group"></i> All pages</span>
                         </label>
-                        <span id="select-all-status" class="content-select-status d-none"></span>
+                    </div>
+
+                    <div class="content-batch-bar__actions">
+                        <button type="button" class="btn btn-info content-batch-bar__process" id="btn-process-selected" disabled>
+                            <i class="fas fa-magic"></i>
+                            <span>Process Selected</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger content-batch-bar__delete" id="btn-delete-selected" disabled>
+                            <i class="fas fa-trash"></i>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="content-batch-bar__steps" aria-hidden="true">
+                    <span class="content-batch-step content-batch-step--select"><i class="fas fa-check-square"></i> Select images</span>
+                    <span class="content-batch-step-line"></span>
+                    <span class="content-batch-step content-batch-step--process"><i class="fas fa-stamp"></i> Apply watermark</span>
+                    <span class="content-batch-step-line"></span>
+                    <span class="content-batch-step content-batch-step--done"><i class="fas fa-check-circle"></i> Move to processed</span>
+                </div>
+            </div>
+
+            <div class="content-toolbar">
+                <div class="content-toolbar-top">
+                    <div>
+                        <h3 class="mb-0">Received Images</h3>
+                        <p class="mb-0 text-muted">
+                            {{ number_format($pendingCount) }} pending ·
+                            Showing {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}
+                        </p>
                     </div>
                 </div>
 
@@ -346,46 +307,234 @@
         color: #b45309;
     }
 
-    .content-workflow-card { margin-bottom: 1.25rem; }
 
-    .content-workflow-head {
+    .content-batch-bar {
+        padding: 1rem 1.15rem 0.9rem;
+        border-bottom: 1px solid #dbeafe;
+        background:
+            radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.12), transparent 42%),
+            linear-gradient(135deg, #f0f9ff 0%, #ecfeff 55%, #f8fafc 100%);
+    }
+
+    .content-batch-bar--active {
+        background:
+            radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.18), transparent 42%),
+            linear-gradient(135deg, #e0f2fe 0%, #cffafe 55%, #f0fdfa 100%);
+        box-shadow: inset 0 -1px 0 rgba(8, 145, 178, 0.08);
+    }
+
+    .content-batch-bar__top {
+        display: grid;
+        grid-template-columns: minmax(200px, 1.2fr) minmax(180px, 1fr) auto auto;
+        gap: 0.85rem;
+        align-items: center;
+    }
+
+    .content-batch-bar__lead {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        min-width: 0;
+    }
+
+    .content-batch-bar__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 0.85rem;
+        background: #fff;
+        border: 2px solid #bae6fd;
+        color: #0891b2;
+        font-size: 1rem;
+        font-weight: 800;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .content-batch-bar--active .content-batch-bar__badge {
+        background: linear-gradient(135deg, #0891b2, #06b6d4);
+        border-color: #0891b2;
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(8, 145, 178, 0.28);
+    }
+
+    .content-batch-bar__title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .content-batch-bar__summary {
+        margin: 0.15rem 0 0;
+        color: #64748b;
+        font-size: 0.78rem;
+        line-height: 1.35;
+    }
+
+    .content-batch-bar--active .content-batch-bar__summary {
+        color: #0e7490;
+        font-weight: 600;
+    }
+
+    .content-batch-bar__watermark {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.7rem;
+        border: 1px solid #a5f3fc;
+        border-radius: 0.85rem;
+        background: rgba(255, 255, 255, 0.88);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        min-width: 0;
+    }
+
+    .content-batch-bar__watermark:hover {
+        border-color: #22d3ee;
+        box-shadow: 0 8px 20px rgba(8, 145, 178, 0.12);
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .content-batch-bar__watermark--missing {
+        border-color: #fde68a;
+        background: #fffbeb;
+    }
+
+    .content-batch-bar__watermark--missing:hover {
+        border-color: #fbbf24;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
+    }
+
+    .content-batch-bar__watermark-thumb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.65rem;
+        background: #ecfeff;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .content-batch-bar__watermark-thumb img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .content-batch-bar__watermark-thumb--empty {
+        color: #d97706;
+        background: #fef3c7;
+        font-size: 1rem;
+    }
+
+    .content-batch-bar__watermark-meta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .content-batch-bar__watermark-meta strong {
+        color: #0f172a;
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-batch-bar__watermark-meta span {
+        color: #64748b;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-batch-bar__watermark--missing .content-batch-bar__watermark-meta strong {
+        color: #b45309;
+    }
+
+    .content-batch-bar__watermark-edit {
+        margin-left: auto;
+        color: #94a3b8;
+        font-size: 0.72rem;
+        flex-shrink: 0;
+    }
+
+    .content-batch-bar__select {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .content-batch-bar__actions {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.85rem 1.15rem;
-        border-bottom: 1px solid #eef2f7;
-        background: #f8fafc;
-        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
-    .content-step {
+    .content-batch-bar__process,
+    .content-batch-bar__delete {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.35rem 0.65rem;
-        border-radius: 999px;
-        font-size: 0.78rem;
         font-weight: 700;
-        color: #475569;
-        background: #fff;
-        border: 1px solid #e2e8f0;
+        white-space: nowrap;
+        padding: 0.55rem 1rem;
     }
 
-    .content-step--1 { color: #0891b2; border-color: #a5f3fc; background: #ecfeff; }
-    .content-step--2 { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
-    .content-step--3 { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
+    .content-batch-bar__process {
+        box-shadow: 0 8px 20px rgba(8, 145, 178, 0.2);
+    }
 
-    .content-step-arrow {
-        color: #cbd5e1;
+    .content-batch-bar__steps {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.85rem;
+        padding-top: 0.8rem;
+        border-top: 1px dashed rgba(8, 145, 178, 0.18);
+        flex-wrap: wrap;
+    }
+
+    .content-batch-step {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.28rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #64748b;
         font-size: 0.7rem;
+        font-weight: 700;
     }
 
-    .content-workflow-body {
-        display: grid;
-        grid-template-columns: minmax(220px, 1.1fr) minmax(240px, 1.2fr) minmax(220px, 0.9fr);
-        gap: 1rem;
-        padding: 1.15rem;
-        align-items: stretch;
+    .content-batch-step--select { color: #2563eb; }
+    .content-batch-step--process { color: #0891b2; }
+    .content-batch-step--done { color: #059669; }
+
+    .content-batch-bar--active .content-batch-step--select {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .content-batch-step-line {
+        flex: 1;
+        min-width: 1.5rem;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #bae6fd, #ddd6fe);
+        opacity: 0.8;
     }
 
     .content-panel-label {
@@ -398,218 +547,6 @@
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-    }
-
-    .content-upload-panel,
-    .content-scale-panel,
-    .content-process-panel {
-        padding: 1rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.9rem;
-        background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
-    }
-
-    .content-logo-frame {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 6.5rem;
-        margin-bottom: 0.85rem;
-        border: 2px dashed #cbd5e1;
-        border-radius: 0.85rem;
-        background:
-            linear-gradient(135deg, rgba(236, 254, 255, 0.65) 0%, rgba(248, 250, 252, 1) 100%);
-        padding: 0.75rem;
-        transition: border-color 0.15s ease;
-    }
-
-    .content-logo-frame--has-logo {
-        border-style: solid;
-        border-color: #a5f3fc;
-        background: #fff;
-    }
-
-    .content-logo-frame img {
-        max-height: 5rem;
-        max-width: 100%;
-        object-fit: contain;
-    }
-
-    .content-logo-placeholder {
-        text-align: center;
-        color: #94a3b8;
-        font-size: 0.78rem;
-    }
-
-    .content-logo-placeholder i {
-        display: block;
-        margin-bottom: 0.35rem;
-        font-size: 1.35rem;
-        opacity: 0.55;
-    }
-
-    .content-dropzone {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.25rem;
-        margin-bottom: 0.75rem;
-        padding: 1rem 0.75rem;
-        border: 1.5px dashed #94a3b8;
-        border-radius: 0.85rem;
-        background: #fff;
-        cursor: pointer;
-        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-    }
-
-    .content-dropzone:hover,
-    .content-dropzone.content-dropzone--active {
-        border-color: #22d3ee;
-        background: #ecfeff;
-    }
-
-    .content-dropzone-input {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .content-dropzone-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.4rem;
-        height: 2.4rem;
-        border-radius: 999px;
-        background: #ecfeff;
-        color: #0891b2;
-        font-size: 1rem;
-    }
-
-    .content-dropzone-title {
-        color: #334155;
-        font-size: 0.82rem;
-        font-weight: 700;
-    }
-
-    .content-dropzone-hint {
-        color: #94a3b8;
-        font-size: 0.72rem;
-    }
-
-    .content-upload-btn {
-        font-weight: 700;
-    }
-
-    .content-scale-desc {
-        margin: 0 0 0.85rem;
-        color: #64748b;
-        font-size: 0.8rem;
-        line-height: 1.45;
-    }
-
-    .content-scale-control {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .content-scale-range {
-        flex: 1;
-        accent-color: #0891b2;
-        cursor: pointer;
-    }
-
-    .content-scale-value {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        flex-shrink: 0;
-    }
-
-    .content-scale-number {
-        width: 3.5rem;
-        text-align: center;
-        font-weight: 700;
-        border-radius: 0.5rem;
-    }
-
-    .content-scale-value > span {
-        color: #64748b;
-        font-size: 0.85rem;
-        font-weight: 700;
-    }
-
-    .content-scale-track {
-        height: 0.35rem;
-        margin-bottom: 0.85rem;
-        border-radius: 999px;
-        background: #e2e8f0;
-        overflow: hidden;
-    }
-
-    .content-scale-track > span {
-        display: block;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #0891b2, #22d3ee);
-        transition: width 0.15s ease;
-    }
-
-    .content-process-box {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: calc(100% - 1.8rem);
-        padding: 0.5rem 0;
-    }
-
-    .content-process-count {
-        text-align: center;
-        margin-bottom: 1rem;
-        padding: 0.85rem;
-        border-radius: 0.85rem;
-        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-        border: 1px solid #fed7aa;
-    }
-
-    .content-process-count strong {
-        display: block;
-        color: #c2410c;
-        font-size: 1.75rem;
-        line-height: 1;
-    }
-
-    .content-process-count span {
-        display: block;
-        margin-top: 0.25rem;
-        color: #9a3412;
-        font-size: 0.78rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .content-process-btn {
-        font-weight: 700;
-        box-shadow: 0 8px 20px rgba(8, 145, 178, 0.2);
-    }
-
-    .content-delete-btn {
-        margin-top: 0.55rem;
-        font-weight: 700;
-    }
-
-    .content-process-note {
-        margin: 0.75rem 0 0;
-        text-align: center;
-        color: #64748b;
-        font-size: 0.78rem;
-        line-height: 1.4;
     }
 
     .content-toolbar {
@@ -1054,8 +991,25 @@
         font-size: 0.86rem;
     }
 
+    @media (max-width: 1199.98px) {
+        .content-batch-bar__top {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .content-batch-bar__actions {
+            grid-column: 1 / -1;
+            justify-content: stretch;
+        }
+
+        .content-batch-bar__process,
+        .content-batch-bar__delete {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+
     @media (max-width: 991.98px) {
-        .content-workflow-body {
+        .content-batch-bar__top {
             grid-template-columns: 1fr;
         }
 
@@ -1069,6 +1023,23 @@
     }
 
     @media (max-width: 767.98px) {
+        .content-batch-bar__select {
+            width: 100%;
+        }
+
+        .content-batch-bar__actions {
+            flex-direction: column;
+        }
+
+        .content-batch-bar__process,
+        .content-batch-bar__delete {
+            width: 100%;
+        }
+
+        .content-batch-bar__steps {
+            display: none;
+        }
+
         .content-toolbar-top {
             flex-direction: column;
         }
@@ -1096,6 +1067,9 @@
     var selectPage = document.getElementById('select-page');
     var selectAllPagesCheckbox = document.getElementById('select-all-pages');
     var selectAllStatus = document.getElementById('select-all-status');
+    var batchBar = document.getElementById('content-batch-bar');
+    var batchCountBadge = document.getElementById('batch-count-badge');
+    var batchSummary = document.getElementById('batch-selection-summary');
     var btn = document.getElementById('btn-process-selected');
     var deleteBtn = document.getElementById('btn-delete-selected');
     var form = document.getElementById('batch-form');
@@ -1115,7 +1089,35 @@
         return selectAllPages || selectedChecks().length > 0;
     }
 
+    function selectionCount() {
+        if (selectAllPages) {
+            return filteredTotal;
+        }
+
+        return selectedChecks().length;
+    }
+
     function updateSelectAllStatus() {
+        var count = selectionCount();
+
+        if (batchCountBadge) {
+            batchCountBadge.textContent = String(count);
+        }
+
+        if (batchSummary) {
+            if (selectAllPages && filteredTotal > 0) {
+                batchSummary.textContent = 'All ' + filteredTotal + ' matching images selected across all pages';
+            } else if (count > 0) {
+                batchSummary.textContent = count + ' image' + (count === 1 ? '' : 's') + ' ready to process';
+            } else {
+                batchSummary.textContent = 'Select images below to apply watermark';
+            }
+        }
+
+        if (batchBar) {
+            batchBar.classList.toggle('content-batch-bar--active', count > 0);
+        }
+
         if (!selectAllStatus) return;
         if (selectAllPages && filteredTotal > 0) {
             selectAllStatus.textContent = 'All ' + filteredTotal + ' matching items selected (all pages)';
@@ -1286,7 +1288,7 @@
                 alert('Please select at least one received item.');
                 return;
             }
-            if (!confirm('Apply logo and process ' + selectionCountLabel() + ' images?')) {
+            if (!confirm('Apply watermark and process ' + selectionCountLabel() + ' images?')) {
                 return;
             }
             prepareBatchSubmit();
@@ -1308,71 +1310,7 @@
         });
     }
 
-    document.querySelectorAll('.content-dropzone-input').forEach(function (input) {
-        var dropzone = input.closest('.content-dropzone');
-        var filenameEl = document.getElementById('content-logo-filename');
-        var previewImg = document.getElementById('content-logo-preview-img');
-        var placeholder = document.getElementById('content-logo-placeholder');
-        var logoFrame = document.querySelector('.content-logo-frame');
-
-        input.addEventListener('change', function () {
-            var file = this.files && this.files[0];
-            if (filenameEl) {
-                filenameEl.textContent = file ? file.name : 'PNG, JPG, WEBP up to 2MB';
-            }
-            if (!file || !file.type.startsWith('image/')) return;
-
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                if (previewImg) {
-                    previewImg.src = event.target.result;
-                } else if (logoFrame) {
-                    if (placeholder) placeholder.remove();
-                    var img = document.createElement('img');
-                    img.id = 'content-logo-preview-img';
-                    img.alt = 'Logo preview';
-                    img.src = event.target.result;
-                    logoFrame.appendChild(img);
-                    logoFrame.classList.add('content-logo-frame--has-logo');
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-
-        if (dropzone) {
-            dropzone.addEventListener('dragover', function (e) {
-                e.preventDefault();
-                dropzone.classList.add('content-dropzone--active');
-            });
-            dropzone.addEventListener('dragleave', function () {
-                dropzone.classList.remove('content-dropzone--active');
-            });
-            dropzone.addEventListener('drop', function (e) {
-                e.preventDefault();
-                dropzone.classList.remove('content-dropzone--active');
-            });
-        }
-    });
-
-    var scaleRange = document.getElementById('content-logo-scale-range');
-    var scaleNumber = document.getElementById('content-logo-scale-number');
-    var scaleFill = document.getElementById('content-scale-fill');
-
-    function syncScale(value) {
-        var num = Math.min(50, Math.max(10, parseInt(value, 10) || 28));
-        if (scaleRange) scaleRange.value = num;
-        if (scaleNumber) scaleNumber.value = num;
-        if (scaleFill) scaleFill.style.width = num + '%';
-    }
-
-    if (scaleRange) {
-        scaleRange.addEventListener('input', function () { syncScale(this.value); });
-    }
-    if (scaleNumber) {
-        scaleNumber.addEventListener('input', function () { syncScale(this.value); });
-    }
-
-    updateCardStates();
+    updateBtn();
 })();
 </script>
 @endpush

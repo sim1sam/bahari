@@ -91,30 +91,6 @@ class ApiContentController extends Controller
         ]);
     }
 
-    public function uploadLogo(Request $request, ProductLogoService $logoService): RedirectResponse
-    {
-        $request->validate(['logo' => 'required|image|max:2048']);
-
-        $logoService->storeSiteLogo($request->file('logo'));
-        $this->settings->clearCache();
-
-        return back()->with('success', 'Logo uploaded. Select images and click Process.');
-    }
-
-    public function updateLogoScale(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'api_logo_scale' => 'required|integer|min:10|max:50',
-        ]);
-
-        $settings = SiteSetting::current();
-        $settings->api_logo_scale = (int) $validated['api_logo_scale'];
-        $settings->save();
-        $this->settings->clearCache();
-
-        return back()->with('success', 'Logo size updated to '.$settings->api_logo_scale.'% of image width.');
-    }
-
     public function repairImages(ApiReceivedImageService $images, ApiReceivedPriceService $prices, ApiReceivedMetadataService $metadata, ApiReceivedBrandService $brands, ApiReceivedCategoryService $categories): RedirectResponse
     {
         $fixed = 0;

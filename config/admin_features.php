@@ -210,6 +210,13 @@ return [
         'active' => 'admin.settings.branding.*',
         'permission' => 'settings',
     ],
+    'settings_watermark' => [
+        'label' => 'Watermark',
+        'icon' => 'fas fa-stamp',
+        'route' => 'admin.settings.watermark.edit',
+        'active' => 'admin.settings.watermark.*',
+        'permission' => 'settings',
+    ],
     'settings_footer' => [
         'label' => 'Footer',
         'icon' => 'fas fa-shoe-prints',

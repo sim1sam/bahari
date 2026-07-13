@@ -107,21 +107,24 @@
             </div>
 
             <div class="card card-primary">
-                <div class="card-header"><h3 class="card-title">Process with Logo</h3></div>
+                <div class="card-header"><h3 class="card-title">Process with Watermark</h3></div>
                 <div class="card-body">
                     @if ($logoUrl)
-                        <p class="small text-muted mb-2">Logo ({{ $logoScale }}% of image width):</p>
-                        <img src="{{ $logoUrl }}" alt="Logo" class="img-thumbnail mb-3" style="max-height:48px">
+                        <p class="small text-muted mb-2">Watermark ({{ $logoScale }}% of image width):</p>
+                        <img src="{{ $logoUrl }}" alt="Watermark" class="img-thumbnail mb-3" style="max-height:48px">
                         <p class="small text-muted mb-0">
-                            <a href="{{ route('admin.content.index') }}">Change logo size</a> on the Content page before processing.
+                            <a href="{{ route('admin.settings.watermark.edit') }}">Change watermark</a> in Settings before processing.
                         </p>
                     @else
-                        <p class="text-warning">Upload logo on Content page first.</p>
+                        <p class="text-warning">
+                            Upload a watermark in
+                            <a href="{{ route('admin.settings.watermark.edit') }}">Settings → Watermark</a> first.
+                        </p>
                     @endif
                     <form action="{{ route('admin.content.process', $item) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-primary btn-block" @disabled(! $logoUrl || ! $item->image)>
-                            <i class="fas fa-magic"></i> Apply Logo & Process
+                            <i class="fas fa-magic"></i> Apply Watermark & Process
                         </button>
                     </form>
                     <p class="text-muted small mt-2 mb-0">Moves to <strong>Processed</strong> menu when done.</p>

@@ -74,6 +74,7 @@ return [
             'items' => [
                 'homepage',
                 'settings_branding',
+                'settings_watermark',
                 'settings_footer',
                 'settings_top_bar',
                 'settings_website_colors',

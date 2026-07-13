@@ -5,6 +5,9 @@
     <a href="{{ route('admin.settings.branding.edit') }}" class="settings-nav-link @if (request()->routeIs('admin.settings.branding.*')) active @endif">
         <i class="fas fa-paint-brush"></i> Branding
     </a>
+    <a href="{{ route('admin.settings.watermark.edit') }}" class="settings-nav-link @if (request()->routeIs('admin.settings.watermark.*')) active @endif">
+        <i class="fas fa-stamp"></i> Watermark
+    </a>
     <a href="{{ route('admin.settings.footer.edit') }}" class="settings-nav-link @if (request()->routeIs('admin.settings.footer.*')) active @endif">
         <i class="fas fa-shoe-prints"></i> Footer
     </a>
