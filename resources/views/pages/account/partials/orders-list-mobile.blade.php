@@ -1,7 +1,7 @@
 @if ($orders->isEmpty())
     <div class="rounded-2xl bg-surface-elevated border border-border p-8 text-center">
         <p class="font-medium text-ink">No orders yet</p>
-        <a href="{{ route('home') }}" class="inline-block mt-4 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold">Shop Now</a>
+        <a href="{{ route('account.custom-order') }}" class="inline-block mt-4 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold">Place Custom Order</a>
     </div>
 @else
     <div class="space-y-3">

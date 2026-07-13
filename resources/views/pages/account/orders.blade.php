@@ -25,7 +25,7 @@
                 <div class="account-panel-body text-center py-16">
                     <p class="text-lg font-medium text-ink">No orders found</p>
                     <p class="text-ink-muted mt-1">Your order history will appear here</p>
-                    <a href="{{ route('home') }}" class="inline-block mt-5 px-6 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium">Start Shopping</a>
+                    <a href="{{ route('account.custom-order') }}" class="inline-block mt-5 px-6 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium">Place Custom Order</a>
                 </div>
             </div>
         @else

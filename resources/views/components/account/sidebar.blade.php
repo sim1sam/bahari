@@ -12,7 +12,7 @@
 
 <aside class="account-sidebar hidden lg:flex lg:flex-col lg:w-72 lg:shrink-0 lg:h-full bg-surface-elevated border-r border-border">
     <div class="px-6 py-5 border-b border-border">
-        <a href="{{ route('home') }}">
+        <a href="{{ route('account.dashboard') }}">
             <x-site.logo :show-name="true" />
         </a>
         <p class="text-xs text-ink-muted mt-2">Customer Portal</p>

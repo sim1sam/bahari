@@ -10,6 +10,5 @@
             @endif
             <h1 class="text-lg font-semibold text-ink truncate">{{ $title }}</h1>
         </div>
-        <a href="{{ route('home') }}" class="shrink-0 text-xs font-medium text-brand-600">Store</a>
     </div>
 </header>
