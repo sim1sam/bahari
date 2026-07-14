@@ -89,6 +89,7 @@ return [
             'items' => [
                 'users',
                 'roles',
+                'activity_logs',
             ],
         ],
         'terminal' => [

@@ -31,6 +31,12 @@ return [
         'route' => 'admin.users.index',
         'active' => 'admin.users.*',
     ],
+    'activity_logs' => [
+        'label' => 'Logs',
+        'icon' => 'fas fa-history',
+        'route' => 'admin.activity-logs.index',
+        'active' => 'admin.activity-logs.*',
+    ],
     'customers' => [
         'label' => 'Customers',
         'icon' => 'fas fa-users',

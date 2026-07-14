@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ApiContentController;
 use App\Http\Controllers\Admin\ApiProcessedController;
 use App\Http\Controllers\Admin\ApiReceivedImageController;
 use App\Http\Controllers\Admin\ApiSettingsController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
@@ -48,7 +49,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->name('login.submit');
     });
 
-    Route::middleware(['auth', 'admin'])->group(function () {
+    Route::middleware(['auth', 'admin', 'admin.activity'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
         Route::middleware('admin.feature:dashboard')->group(function () {
@@ -77,6 +78,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:users')->group(function () {
             Route::resource('users', UserController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:activity_logs')->group(function () {
+            Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         });
 
         Route::middleware('admin.feature:customers')->group(function () {

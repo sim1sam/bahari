@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'admin.guest' => \App\Http\Middleware\AdminGuestMiddleware::class,
             'admin.feature' => \App\Http\Middleware\CheckAdminFeature::class,
+            'admin.activity' => \App\Http\Middleware\LogAdminActivity::class,
             'customer' => \App\Http\Middleware\CustomerMiddleware::class,
             'api.source' => \App\Http\Middleware\VerifyApiSource::class,
         ]);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use App\Support\AdminFeatures;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,11 +61,29 @@ class AuthController extends Controller
             return back()->with('error', 'Your role has no admin features assigned.')->onlyInput('email');
         }
 
+        app(ActivityLogger::class)->log(
+            'login',
+            'Logged in to admin panel',
+            auth()->user(),
+            $request,
+        );
+
         return redirect()->intended(route($route));
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = auth()->user();
+
+        if ($user) {
+            app(ActivityLogger::class)->log(
+                'logout',
+                'Logged out of admin panel',
+                $user,
+                $request,
+            );
+        }
+
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
