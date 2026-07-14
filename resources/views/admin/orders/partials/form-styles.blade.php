@@ -452,14 +452,20 @@
         margin-bottom: 0.3rem;
     }
 
+    .order-item-meta-row {
+        row-gap: 0.75rem;
+    }
+
     .order-item-image-block {
         display: flex;
         align-items: center;
         gap: 0.65rem;
+        width: 100%;
+        min-width: 0;
     }
 
     .order-item-image-fields {
-        flex: 0 0 auto;
+        flex: 1 1 auto;
         min-width: 0;
     }
 
@@ -494,11 +500,13 @@
     }
 
     .order-item-upload {
+        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 0.3rem;
-        width: auto;
+        width: 100%;
+        max-width: 100%;
         min-height: 2.25rem;
         margin: 0;
         padding: 0.4rem 0.85rem;
@@ -511,6 +519,9 @@
         font-weight: 600;
         white-space: nowrap;
         line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
     }
 
     .order-item-upload i {
@@ -552,6 +563,21 @@
             align-items: flex-start;
             flex-direction: column;
             padding: 1.1rem;
+        }
+
+        .order-item-meta-row > [class*="col-"] {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .order-item-image-block {
+            gap: 0.5rem;
+        }
+
+        .order-item-upload {
+            justify-content: flex-start;
+            padding-left: 0.7rem;
+            padding-right: 0.7rem;
         }
 
         .order-form-hero h2,

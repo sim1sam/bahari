@@ -346,8 +346,8 @@
                     </div>
                 </div>
             </div>
-            <div class="row mt-2 align-items-end">
-                <div class="col-6">
+            <div class="row mt-2 align-items-end order-item-meta-row">
+                <div class="col-12 col-sm-7">
                     <div class="form-group mb-0">
                         <label>Image</label>
                         <div class="order-item-image-block">
@@ -364,7 +364,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-12 col-sm-5">
                     <div class="form-group mb-0">
                         <label>Amount</label>
                         <input type="text" class="form-control item-amount" value="0" readonly tabindex="-1">
