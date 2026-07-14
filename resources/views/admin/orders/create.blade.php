@@ -206,8 +206,11 @@
                         </div>
                         <div class="form-group">
                             <label>Shipping (BDT)</label>
-                            <input type="number" name="shipping" id="shipping" class="form-control" min="0" step="0.01" value="{{ old('shipping', 0) }}" required>
-                            <small class="text-muted">Auto-calculated from items. Free above {{ money($freeShippingThreshold) }}.</small>
+                            <input type="number" name="shipping" id="shipping" class="form-control" min="0" step="0.01" value="{{ old('shipping', $shippingFeeInside) }}" required>
+                            <small class="text-muted">
+                                Inside {{ money($shippingFeeInside) }} · Outside {{ money($shippingFeeOutside) }}.
+                                Free above {{ money($freeShippingThreshold) }}. Updates automatically.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label>Coupon Code</label>
@@ -221,12 +224,6 @@
                             <span>Order total</span>
                             <strong id="total-preview">{{ money(old('total', 0)) }}</strong>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-info btn-block mb-2" id="calc-from-items">
-                            <i class="fas fa-sync-alt mr-1"></i> Calculate from items
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-block" id="calc-total">
-                            Recalculate total
-                        </button>
                     </div>
                 </div>
 
@@ -476,7 +473,7 @@
     }
 
     function calcShipping(subtotal) {
-        if (subtotal <= 0 || subtotal >= freeShippingThreshold) return 0;
+        if (subtotal > 0 && subtotal >= freeShippingThreshold) return 0;
         return zoneShippingFee();
     }
 
@@ -740,8 +737,6 @@
         recalcTotal();
     }
 
-    document.getElementById('calc-from-items').addEventListener('click', function () { syncTotalsFromItems(); });
-
     function recalcTotal() {
         var sub = parseFloat(document.getElementById('subtotal').value) || 0;
         var disc = parseFloat(document.getElementById('discount').value) || 0;
@@ -760,16 +755,27 @@
         });
     }
 
-    document.getElementById('calc-total').addEventListener('click', function () {
-        var sub = parseFloat(document.getElementById('subtotal').value) || 0;
+    function applyShippingAndTotal() {
+        var sub = sumItems();
+        if (sub <= 0) {
+            sub = parseFloat(document.getElementById('subtotal').value) || 0;
+        } else {
+            document.getElementById('subtotal').value = sub.toFixed(2);
+        }
         document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
         recalcTotal();
-    });
+    }
 
-    document.getElementById('shipping_zone').addEventListener('change', function () {
-        var sub = parseFloat(document.getElementById('subtotal').value) || 0;
-        document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
-        recalcTotal();
+    document.getElementById('shipping_zone').addEventListener('change', applyShippingAndTotal);
+
+    ['subtotal', 'discount', 'shipping'].forEach(function (id) {
+        document.getElementById(id).addEventListener('input', function () {
+            if (id !== 'shipping') {
+                var sub = parseFloat(document.getElementById('subtotal').value) || 0;
+                document.getElementById('shipping').value = calcShipping(sub).toFixed(2);
+            }
+            recalcTotal();
+        });
     });
 
     document.getElementById('total').addEventListener('input', function () {
@@ -834,7 +840,7 @@
 
     addItemCard();
     toggleManualPaymentFields();
-    updateTotalPreview(parseFloat(document.getElementById('total').value) || 0);
+    applyShippingAndTotal();
 })();
 </script>
 @endpush
