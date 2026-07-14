@@ -44,9 +44,14 @@ class OrderController extends Controller
 
     public function create(): View
     {
+        $customers = User::customers()
+            ->with(['addresses' => fn ($query) => $query->orderByDesc('is_default')->orderBy('id')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
         return view('admin.orders.create', [
             'banks' => config('payment.banks', []),
-            'customers' => User::customers()->orderBy('name')->get(['id', 'name', 'email']),
+            'customers' => $customers,
             'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
             'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
             'freeShippingThreshold' => $this->siteSettings->freeShippingThreshold(),
@@ -57,7 +62,7 @@ class OrderController extends Controller
     public function store(Request $request, MediaStorageService $media, OrderTransferService $transfer): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => 'nullable|integer|exists:users,id',
+            'user_id' => 'required|integer|exists:users,id',
             'customer_name' => 'required|string|max:200',
             'customer_email' => 'required|email|max:150',
             'customer_phone' => 'nullable|string|max:20',
@@ -81,11 +86,9 @@ class OrderController extends Controller
             'payment_screenshot' => 'nullable|image|max:5120',
             'items' => 'required|array|min:1',
             'items.*.product_name' => 'required|string|max:255',
-            'items.*.product_slug' => 'nullable|string|max:255',
             'items.*.product_link' => 'nullable|string|max:500',
             'items.*.image' => 'nullable|image|max:5120',
             'items.*.size' => 'nullable|string|max:50',
-            'items.*.color' => 'nullable|string|max:50',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'payments' => 'nullable|array',
@@ -138,23 +141,18 @@ class OrderController extends Controller
                     continue;
                 }
 
-                $itemImage = null;
-                if ($request->hasFile("items.{$index}.image")) {
-                    $itemImage = $media->storeUpload(
-                        $request->file("items.{$index}.image"),
-                        'orders/items',
-                        field: "items.{$index}.image"
-                    );
-                }
-
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $itemImage,
+                    'image' => $this->resolveItemImage(
+                        $request,
+                        $media,
+                        "items.{$index}.image"
+                    ),
                     'size' => $itemData['size'] ?? null,
-                    'color' => $itemData['color'] ?? null,
+                    'color' => null,
                     'quantity' => (int) $itemData['quantity'],
                     'price' => round((float) $itemData['price'], 2),
                 ]);
@@ -267,9 +265,15 @@ class OrderController extends Controller
 
     public function edit(Order $order): View
     {
+        $customers = User::customers()
+            ->with(['addresses' => fn ($query) => $query->orderByDesc('is_default')->orderBy('id')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
         return view('admin.orders.edit', [
             'order' => $order->load(['items', 'payments']),
             'banks' => config('payment.banks', []),
+            'customers' => $customers,
             'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
             'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
             'freeShippingThreshold' => $this->siteSettings->freeShippingThreshold(),
@@ -283,6 +287,7 @@ class OrderController extends Controller
         $wasProcessing = $order->status === 'processing';
 
         $validated = $request->validate([
+            'user_id' => 'nullable|integer|exists:users,id',
             'customer_name' => 'required|string|max:200',
             'customer_email' => 'required|email|max:150',
             'customer_phone' => 'nullable|string|max:20',
@@ -306,20 +311,16 @@ class OrderController extends Controller
             'remove_payment_screenshot' => 'nullable|boolean',
             'items' => 'nullable|array',
             'items.*.product_name' => 'required_with:items|string|max:255',
-            'items.*.product_slug' => 'nullable|string|max:255',
             'items.*.product_link' => 'nullable|string|max:500',
             'items.*.image' => 'nullable|image|max:5120',
             'items.*.size' => 'nullable|string|max:50',
-            'items.*.color' => 'nullable|string|max:50',
             'items.*.quantity' => 'required_with:items|integer|min:1',
             'items.*.price' => 'required_with:items|numeric|min:0',
             'new_items' => 'nullable|array',
             'new_items.*.product_name' => 'required_with:new_items|string|max:255',
-            'new_items.*.product_slug' => 'nullable|string|max:255',
             'new_items.*.product_link' => 'nullable|string|max:500',
             'new_items.*.image' => 'nullable|image|max:5120',
             'new_items.*.size' => 'nullable|string|max:50',
-            'new_items.*.color' => 'nullable|string|max:50',
             'new_items.*.quantity' => 'required_with:new_items|integer|min:1',
             'new_items.*.price' => 'required_with:new_items|numeric|min:0',
             'delete_items' => 'nullable|array',
@@ -357,26 +358,17 @@ class OrderController extends Controller
                     continue;
                 }
 
-                $image = $item->image;
-                if ($request->hasFile("items.{$itemId}.image")) {
-                    if ($item->image && ! str_starts_with($item->image, 'http')) {
-                        $media->delete($item->image);
-                    }
-                    $image = $media->storeUpload(
-                        $request->file("items.{$itemId}.image"),
-                        'orders/items',
-                        $item->image,
-                        field: "items.{$itemId}.image"
-                    );
-                }
-
                 $item->update([
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $image,
+                    'image' => $this->resolveItemImage(
+                        $request,
+                        $media,
+                        "items.{$itemId}.image",
+                        $item->image
+                    ),
                     'size' => $itemData['size'] ?? null,
-                    'color' => $itemData['color'] ?? null,
                     'quantity' => (int) $itemData['quantity'],
                     'price' => round((float) $itemData['price'], 2),
                 ]);
@@ -387,23 +379,18 @@ class OrderController extends Controller
                     continue;
                 }
 
-                $itemImage = null;
-                if ($request->hasFile("new_items.{$index}.image")) {
-                    $itemImage = $media->storeUpload(
-                        $request->file("new_items.{$index}.image"),
-                        'orders/items',
-                        field: "new_items.{$index}.image"
-                    );
-                }
-
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
-                    'image' => $itemImage,
+                    'image' => $this->resolveItemImage(
+                        $request,
+                        $media,
+                        "new_items.{$index}.image"
+                    ),
                     'size' => $itemData['size'] ?? null,
-                    'color' => $itemData['color'] ?? null,
+                    'color' => null,
                     'quantity' => (int) $itemData['quantity'],
                     'price' => round((float) $itemData['price'], 2),
                 ]);
@@ -469,6 +456,7 @@ class OrderController extends Controller
             }
 
             $order->update([
+                'user_id' => $validated['user_id'] ?? $order->user_id,
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'],
                 'customer_phone' => $validated['customer_phone'] ?? null,
@@ -678,5 +666,25 @@ class OrderController extends Controller
         }
 
         return Str::slug($itemData['product_name'] ?? '') ?: 'custom';
+    }
+
+    private function resolveItemImage(
+        Request $request,
+        MediaStorageService $media,
+        string $fileField,
+        ?string $current = null
+    ): ?string {
+        if ($request->hasFile($fileField)) {
+            $replace = $current && ! $media->isExternal($current) ? $current : null;
+
+            return $media->storeUpload(
+                $request->file($fileField),
+                'orders/items',
+                $replace,
+                field: $fileField
+            );
+        }
+
+        return $current;
     }
 }

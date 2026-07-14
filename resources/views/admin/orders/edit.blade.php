@@ -74,44 +74,78 @@
                         <span class="order-section-number">01</span>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Customer Name *</label>
-                                    <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', $order->customer_name) }}" required>
-                                    @error('customer_name')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                        <div class="form-group mb-3">
+                            <label>Customer *</label>
+                            <div class="customer-picker" id="customer-picker">
+                                <input type="hidden" name="user_id" id="customer-select" value="{{ old('user_id', $order->user_id) }}">
+                                <div class="customer-picker-control">
+                                    <i class="fas fa-search customer-picker-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="customer-search"
+                                        class="form-control customer-picker-input"
+                                        placeholder="Search by name, mobile, or email"
+                                        autocomplete="off"
+                                        value=""
+                                    >
+                                    <button type="button" class="customer-picker-clear" id="customer-clear" title="Clear">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
+                                <div class="customer-picker-dropdown d-none" id="customer-dropdown"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Email *</label>
-                                    <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', $order->customer_email) }}" required>
-                                    @error('customer_email')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                                </div>
+                            <small class="text-muted">Type to search by name, mobile number, or email.</small>
+                        </div>
+
+                        <input type="hidden" name="customer_name" id="customer_name" value="{{ old('customer_name', $order->customer_name) }}">
+                        <input type="hidden" name="customer_email" id="customer_email" value="{{ old('customer_email', $order->customer_email) }}">
+                        <input type="hidden" name="city" id="customer_city" value="{{ old('city', $order->city) }}">
+                        <input type="hidden" name="zip" id="customer_zip" value="{{ old('zip', $order->zip) }}">
+                        @error('customer_name')<div class="text-danger mb-2">{{ $message }}</div>@enderror
+                        @error('user_id')<div class="text-danger mb-2">{{ $message }}</div>@enderror
+
+                        @php
+                            $customerPickerData = $customers->map(function ($customer) {
+                                $defaultAddress = $customer->addresses->firstWhere('is_default', true) ?? $customer->addresses->first();
+                                $phones = $customer->addresses->pluck('phone')->filter()->unique()->values();
+                                $primaryPhone = $defaultAddress?->phone ?: ($phones->first() ?? '');
+
+                                return [
+                                    'id' => $customer->id,
+                                    'name' => $customer->name,
+                                    'email' => $customer->email,
+                                    'phone' => $primaryPhone,
+                                    'address' => $defaultAddress?->address_line ?? '',
+                                    'city' => $defaultAddress?->city ?? '',
+                                    'zip' => $defaultAddress?->zip ?? '',
+                                    'search' => strtolower(trim(implode(' ', array_filter([
+                                        $customer->name,
+                                        $customer->email,
+                                        $phones->implode(' '),
+                                    ])))),
+                                ];
+                            })->values();
+                        @endphp
+                        <script type="application/json" id="customer-picker-data">@json($customerPickerData)</script>
+
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <strong class="d-block" style="font-size:0.9rem;color:#334155">Delivery Address</strong>
+                                <small class="text-muted" id="delivery-hint">Select a customer to auto-fill, or edit manually.</small>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Phone</label>
-                                    <input type="text" name="customer_phone" class="form-control" value="{{ old('customer_phone', $order->customer_phone) }}">
-                                </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="toggle-delivery-address">
+                                <i class="fas fa-plus mr-1"></i> Add Address
+                            </button>
+                        </div>
+
+                        <div id="delivery-address-panel" class="order-delivery-panel">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="text" name="customer_phone" id="customer_phone" class="form-control" value="{{ old('customer_phone', $order->customer_phone) }}" placeholder="01XXXXXXXXX">
                             </div>
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label>Address</label>
-                                    <input type="text" name="address" class="form-control" value="{{ old('address', $order->address) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-md-0">
-                                    <label>City</label>
-                                    <input type="text" name="city" class="form-control" value="{{ old('city', $order->city) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-0">
-                                    <label>ZIP</label>
-                                    <input type="text" name="zip" class="form-control" value="{{ old('zip', $order->zip) }}">
-                                </div>
+                            <div class="form-group mb-0">
+                                <label>Address</label>
+                                <textarea name="address" id="customer_address" class="form-control" rows="3" placeholder="Full delivery address">{{ old('address', $order->address) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -129,36 +163,54 @@
                         </button>
                         <span class="order-section-number">02</span>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive order-items-scroll">
-                            <table class="table mb-0 order-form-table order-mobile-stack-table" id="items-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width:18%">Product *</th>
-                                        <th style="width:12%">Slug</th>
-                                        <th style="width:15%">Link</th>
-                                        <th style="width:14%">Image</th>
-                                        <th style="width:8%">Size</th>
-                                        <th style="width:8%">Color</th>
-                                        <th style="width:7%">Qty</th>
-                                        <th style="width:9%">Price</th>
-                                        <th style="width:5%"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="items-body">
-                                    @foreach ($order->items as $item)
-                                        <tr data-existing="1">
-                                            <td class="order-mobile-lead" data-label="Product">
-                                                <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control form-control-sm item-name" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
-                                            </td>
-                                            <td data-label="Slug">
-                                                <input type="text" name="items[{{ $item->id }}][product_slug]" class="form-control form-control-sm item-slug" value="{{ old('items.'.$item->id.'.product_slug', $item->product_slug) }}" data-manual="1">
-                                            </td>
-                                            <td data-label="Link">
-                                                <input type="text" name="items[{{ $item->id }}][product_link]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.product_link', $item->product_link) }}" placeholder="https://...">
-                                            </td>
-                                            <td data-label="Image">
-                                                <div class="order-item-image-cell">
+                    <div class="card-body">
+                        <div id="items-body" class="order-item-cards">
+                            @foreach ($order->items as $item)
+                                @php
+                                    $itemQty = (float) old('items.'.$item->id.'.quantity', $item->quantity);
+                                    $itemPrice = (float) old('items.'.$item->id.'.price', $item->price);
+                                @endphp
+                                <div class="order-item-card" data-existing="1">
+                                    <div class="order-item-card-header">
+                                        <span class="order-item-card-title">Product Item</span>
+                                        <label class="order-row-remove mb-0" title="Remove item">
+                                            <input type="checkbox" name="delete_items[]" value="{{ $item->id }}" class="item-delete-check">
+                                            <span><i class="fas fa-trash"></i></span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Product Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control item-name" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Product URL</label>
+                                        <input type="text" name="items[{{ $item->id }}][product_link]" class="form-control" value="{{ old('items.'.$item->id.'.product_link', $item->product_link) }}" placeholder="https://...">
+                                    </div>
+                                    <div class="row align-items-end">
+                                        <div class="col-4">
+                                            <div class="form-group mb-0">
+                                                <label>Size</label>
+                                                <input type="text" name="items[{{ $item->id }}][size]" class="form-control" value="{{ old('items.'.$item->id.'.size', $item->size) }}" placeholder="Size">
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-group mb-0">
+                                                <label>Quantity <span class="text-danger">*</span></label>
+                                                <input type="number" name="items[{{ $item->id }}][quantity]" class="form-control item-qty" min="1" value="{{ $itemQty }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-group mb-0">
+                                                <label>Price <span class="text-danger">*</span></label>
+                                                <input type="number" name="items[{{ $item->id }}][price]" class="form-control item-price" min="0" step="0.01" value="{{ $itemPrice }}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2 align-items-end">
+                                        <div class="col-6">
+                                            <div class="form-group mb-0">
+                                                <label>Image</label>
+                                                <div class="order-item-image-block">
                                                     @if ($item->imageUrl())
                                                         <a href="{{ $item->imageUrl() }}" target="_blank" rel="noopener" class="order-item-image-preview">
                                                             <img src="{{ $item->imageUrl() }}" alt="{{ $item->product_name }}">
@@ -168,35 +220,25 @@
                                                             <i class="fas fa-image"></i>
                                                         </span>
                                                     @endif
-                                                    <label class="order-item-upload">
-                                                        <i class="fas fa-cloud-upload-alt"></i>
-                                                        <span>{{ $item->imageUrl() ? 'Replace' : 'Upload' }}</span>
-                                                        <input type="file" name="items[{{ $item->id }}][image]" accept="image/*">
-                                                    </label>
+                                                    <div class="order-item-image-fields">
+                                                        <label class="order-item-upload">
+                                                            <i class="fas fa-cloud-upload-alt"></i>
+                                                            <span>{{ $item->imageUrl() ? 'Replace' : 'Upload' }}</span>
+                                                            <input type="file" name="items[{{ $item->id }}][image]" accept="image/*">
+                                                        </label>
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td data-label="Size">
-                                                <input type="text" name="items[{{ $item->id }}][size]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.size', $item->size) }}">
-                                            </td>
-                                            <td data-label="Color">
-                                                <input type="text" name="items[{{ $item->id }}][color]" class="form-control form-control-sm" value="{{ old('items.'.$item->id.'.color', $item->color) }}">
-                                            </td>
-                                            <td data-label="Qty">
-                                                <input type="number" name="items[{{ $item->id }}][quantity]" class="form-control form-control-sm item-qty" min="1" value="{{ old('items.'.$item->id.'.quantity', $item->quantity) }}" required>
-                                            </td>
-                                            <td data-label="Price">
-                                                <input type="number" name="items[{{ $item->id }}][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="{{ old('items.'.$item->id.'.price', $item->price) }}" required>
-                                            </td>
-                                            <td class="text-center order-mobile-actions" data-label="">
-                                                <label class="order-row-remove" title="Remove item">
-                                                    <input type="checkbox" name="delete_items[]" value="{{ $item->id }}">
-                                                    <span><i class="fas fa-trash"></i></span>
-                                                </label>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group mb-0">
+                                                <label>Amount</label>
+                                                <input type="text" class="form-control item-amount" value="{{ number_format($itemQty * $itemPrice, 2, '.', '') }}" readonly tabindex="-1">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -425,28 +467,65 @@
     </form>
 
     <template id="item-row-template">
-        <tr>
-            <td class="order-mobile-lead" data-label="Product"><input type="text" name="new_items[__INDEX__][product_name]" class="form-control form-control-sm item-name" placeholder="Product name" required></td>
-            <td data-label="Slug"><input type="text" name="new_items[__INDEX__][product_slug]" class="form-control form-control-sm item-slug" placeholder="Auto generated" readonly></td>
-            <td data-label="Link"><input type="text" name="new_items[__INDEX__][product_link]" class="form-control form-control-sm" placeholder="https://..."></td>
-            <td data-label="Image">
-                <div class="order-item-image-cell">
-                    <span class="order-item-image-preview order-item-image-preview--empty">
-                        <i class="fas fa-image"></i>
-                    </span>
-                    <label class="order-item-upload">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Upload</span>
-                        <input type="file" name="new_items[__INDEX__][image]" accept="image/*">
-                    </label>
+        <div class="order-item-card">
+            <div class="order-item-card-header">
+                <span class="order-item-card-title">Product Item</span>
+                <button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Product Name <span class="text-danger">*</span></label>
+                <input type="text" name="new_items[__INDEX__][product_name]" class="form-control item-name" placeholder="Product name" required>
+            </div>
+            <div class="form-group">
+                <label>Product URL</label>
+                <input type="text" name="new_items[__INDEX__][product_link]" class="form-control" placeholder="https://...">
+            </div>
+            <div class="row align-items-end">
+                <div class="col-4">
+                    <div class="form-group mb-0">
+                        <label>Size</label>
+                        <input type="text" name="new_items[__INDEX__][size]" class="form-control" placeholder="Size">
+                    </div>
                 </div>
-            </td>
-            <td data-label="Size"><input type="text" name="new_items[__INDEX__][size]" class="form-control form-control-sm" placeholder="Size"></td>
-            <td data-label="Color"><input type="text" name="new_items[__INDEX__][color]" class="form-control form-control-sm" placeholder="Color"></td>
-            <td data-label="Qty"><input type="number" name="new_items[__INDEX__][quantity]" class="form-control form-control-sm item-qty" min="1" value="1" required></td>
-            <td data-label="Price"><input type="number" name="new_items[__INDEX__][price]" class="form-control form-control-sm item-price" min="0" step="0.01" value="0" required></td>
-            <td class="text-center order-mobile-actions" data-label=""><button type="button" class="btn btn-xs btn-outline-danger remove-row" title="Remove item"><i class="fas fa-trash"></i></button></td>
-        </tr>
+                <div class="col-4">
+                    <div class="form-group mb-0">
+                        <label>Quantity <span class="text-danger">*</span></label>
+                        <input type="number" name="new_items[__INDEX__][quantity]" class="form-control item-qty" min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group mb-0">
+                        <label>Price <span class="text-danger">*</span></label>
+                        <input type="number" name="new_items[__INDEX__][price]" class="form-control item-price" min="0" step="0.01" value="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 align-items-end">
+                <div class="col-6">
+                    <div class="form-group mb-0">
+                        <label>Image</label>
+                        <div class="order-item-image-block">
+                            <span class="order-item-image-preview order-item-image-preview--empty">
+                                <i class="fas fa-image"></i>
+                            </span>
+                            <div class="order-item-image-fields">
+                                <label class="order-item-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Upload</span>
+                                    <input type="file" name="new_items[__INDEX__][image]" accept="image/*">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group mb-0">
+                        <label>Amount</label>
+                        <input type="text" class="form-control item-amount" value="0" readonly tabindex="-1">
+                    </div>
+                </div>
+            </div>
+        </div>
     </template>
 
     <template id="payment-row-template">
@@ -493,62 +572,280 @@
     }
 
     function calcShipping(subtotal) {
-        if (subtotal <= 0 || subtotal >= freeShippingThreshold) {
-            return 0;
-        }
-
+        if (subtotal <= 0 || subtotal >= freeShippingThreshold) return 0;
         return zoneShippingFee();
     }
 
-    function addRow(templateId, bodyId, tableId, noMsgId) {
-        var tpl = document.getElementById(templateId);
-        var html = tpl.innerHTML.replace(/__INDEX__/g, templateId === 'item-row-template' ? itemIndex++ : paymentIndex++);
-        document.getElementById(bodyId).insertAdjacentHTML('beforeend', html);
-        if (tableId) {
-            document.getElementById(tableId).classList.remove('d-none');
-        }
-        if (noMsgId) {
-            var msg = document.getElementById(noMsgId);
-            if (msg) msg.classList.add('d-none');
-        }
-        if (templateId === 'payment-row-template') {
-            toggleManualPaymentFields();
+    function openDeliveryPanel(filled) {
+        var panel = document.getElementById('delivery-address-panel');
+        var btn = document.getElementById('toggle-delivery-address');
+        var hint = document.getElementById('delivery-hint');
+        panel.classList.remove('d-none');
+        btn.innerHTML = '<i class="fas fa-times mr-1"></i> Hide Address';
+        if (hint) {
+            hint.textContent = filled
+                ? 'Delivery address for this order.'
+                : 'Enter the delivery address for this order.';
         }
     }
 
-    document.getElementById('add-item-row').addEventListener('click', function () {
-        addRow('item-row-template', 'items-body');
+    function closeDeliveryPanel() {
+        var panel = document.getElementById('delivery-address-panel');
+        var btn = document.getElementById('toggle-delivery-address');
+        var hint = document.getElementById('delivery-hint');
+        panel.classList.add('d-none');
+        btn.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Address';
+        if (hint) hint.textContent = 'Select a customer to auto-fill, or edit manually.';
+    }
+
+    function applyCustomer(customer, overwriteAddress) {
+        var picker = document.getElementById('customer-picker');
+        var hidden = document.getElementById('customer-select');
+        var search = document.getElementById('customer-search');
+        var clearBtn = document.getElementById('customer-clear');
+
+        if (!customer) {
+            hidden.value = '';
+            search.value = '';
+            clearBtn.classList.remove('is-visible');
+            picker.classList.remove('has-value');
+            return;
+        }
+
+        hidden.value = customer.id;
+        search.value = customer.name + (customer.phone ? ' · ' + customer.phone : '') + ' · ' + customer.email;
+        clearBtn.classList.add('is-visible');
+        picker.classList.add('has-value');
+        document.getElementById('customer_name').value = customer.name || '';
+        document.getElementById('customer_email').value = customer.email || '';
+
+        if (overwriteAddress) {
+            document.getElementById('customer_phone').value = customer.phone || '';
+            document.getElementById('customer_city').value = customer.city || '';
+            document.getElementById('customer_zip').value = customer.zip || '';
+            var addressParts = [customer.address, customer.city, customer.zip]
+                .map(function (part) { return (part || '').trim(); })
+                .filter(Boolean);
+            document.getElementById('customer_address').value = addressParts.join(', ');
+            openDeliveryPanel(!!(customer.address || customer.phone));
+        }
+    }
+
+    (function initCustomerPicker() {
+        var customers = [];
+        try {
+            customers = JSON.parse(document.getElementById('customer-picker-data').textContent || '[]');
+        } catch (e) { customers = []; }
+
+        var picker = document.getElementById('customer-picker');
+        var search = document.getElementById('customer-search');
+        var dropdown = document.getElementById('customer-dropdown');
+        var clearBtn = document.getElementById('customer-clear');
+        var hidden = document.getElementById('customer-select');
+        var activeIndex = -1;
+
+        function hideDropdown() {
+            dropdown.classList.add('d-none');
+            dropdown.innerHTML = '';
+            activeIndex = -1;
+            dropdown._results = [];
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function highlightActive() {
+            dropdown.querySelectorAll('.customer-picker-option').forEach(function (el, index) {
+                el.classList.toggle('is-active', index === activeIndex);
+            });
+        }
+
+        function showCustomers(list) {
+            if (!list.length) {
+                dropdown.innerHTML = '<div class="customer-picker-empty">No customer found</div>';
+                dropdown.classList.remove('d-none');
+                activeIndex = -1;
+                dropdown._results = [];
+                return;
+            }
+            dropdown.innerHTML = list.map(function (customer, index) {
+                return '<button type="button" class="customer-picker-option" data-index="' + index + '" data-id="' + customer.id + '">' +
+                    '<span class="customer-picker-option-name">' + escapeHtml(customer.name) + '</span>' +
+                    '<span class="customer-picker-option-meta">' +
+                        (customer.phone ? '<span><i class="fas fa-phone"></i> ' + escapeHtml(customer.phone) + '</span>' : '') +
+                        '<span><i class="fas fa-envelope"></i> ' + escapeHtml(customer.email) + '</span>' +
+                    '</span></button>';
+            }).join('');
+            dropdown.classList.remove('d-none');
+            activeIndex = 0;
+            highlightActive();
+            dropdown._results = list;
+        }
+
+        function filterCustomers(term) {
+            term = (term || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            if (!term) return customers.slice(0, 20);
+            return customers.filter(function (customer) {
+                return (customer.search || '').indexOf(term) > -1;
+            }).slice(0, 30);
+        }
+
+        search.addEventListener('focus', function () {
+            showCustomers(filterCustomers(search.value));
+        });
+        search.addEventListener('input', function () {
+            hidden.value = '';
+            clearBtn.classList.remove('is-visible');
+            picker.classList.remove('has-value');
+            showCustomers(filterCustomers(this.value));
+        });
+        search.addEventListener('keydown', function (e) {
+            var results = dropdown._results || [];
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!results.length) return;
+                activeIndex = (activeIndex + 1) % results.length;
+                highlightActive();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!results.length) return;
+                activeIndex = (activeIndex - 1 + results.length) % results.length;
+                highlightActive();
+            } else if (e.key === 'Enter') {
+                if (!dropdown.classList.contains('d-none') && results[activeIndex]) {
+                    e.preventDefault();
+                    applyCustomer(results[activeIndex], true);
+                    hideDropdown();
+                }
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            }
+        });
+        dropdown.addEventListener('mousedown', function (e) {
+            var option = e.target.closest('.customer-picker-option');
+            if (!option) return;
+            e.preventDefault();
+            var id = option.getAttribute('data-id');
+            var customer = customers.find(function (item) { return String(item.id) === String(id); });
+            if (customer) applyCustomer(customer, true);
+            hideDropdown();
+        });
+        clearBtn.addEventListener('click', function () {
+            applyCustomer(null, false);
+            search.focus();
+            showCustomers(filterCustomers(''));
+        });
+        document.addEventListener('click', function (e) {
+            if (!picker.contains(e.target)) hideDropdown();
+        });
+
+        if (hidden.value) {
+            var selected = customers.find(function (item) { return String(item.id) === String(hidden.value); });
+            if (selected) {
+                search.value = selected.name + (selected.phone ? ' · ' + selected.phone : '') + ' · ' + selected.email;
+                clearBtn.classList.add('is-visible');
+                picker.classList.add('has-value');
+            } else {
+                var name = document.getElementById('customer_name').value;
+                var email = document.getElementById('customer_email').value;
+                search.value = [name, email].filter(Boolean).join(' · ');
+                if (search.value) {
+                    clearBtn.classList.add('is-visible');
+                    picker.classList.add('has-value');
+                }
+            }
+        } else {
+            var fallbackName = document.getElementById('customer_name').value;
+            var fallbackEmail = document.getElementById('customer_email').value;
+            search.value = [fallbackName, fallbackEmail].filter(Boolean).join(' · ');
+            if (search.value) {
+                clearBtn.classList.add('is-visible');
+                picker.classList.add('has-value');
+            }
+        }
+    })();
+
+    openDeliveryPanel(true);
+
+    document.getElementById('toggle-delivery-address').addEventListener('click', function () {
+        var panel = document.getElementById('delivery-address-panel');
+        if (panel.classList.contains('d-none')) openDeliveryPanel(false);
+        else closeDeliveryPanel();
     });
 
-    document.getElementById('add-payment-row').addEventListener('click', function () {
-        addRow('payment-row-template', 'payments-body', 'payments-table', 'no-payments-msg');
-    });
+    function addItemCard() {
+        var tpl = document.getElementById('item-row-template');
+        var index = itemIndex++;
+        var html = tpl.innerHTML.replace(/__INDEX__/g, index);
+        document.getElementById('items-body').insertAdjacentHTML('beforeend', html);
+        updateItemAmounts();
+    }
+
+    function addPaymentRow() {
+        var tpl = document.getElementById('payment-row-template');
+        var index = paymentIndex++;
+        var html = tpl.innerHTML.replace(/__INDEX__/g, index);
+        document.getElementById('payments-body').insertAdjacentHTML('beforeend', html);
+        document.getElementById('payments-table').classList.remove('d-none');
+        var msg = document.getElementById('no-payments-msg');
+        if (msg) msg.classList.add('d-none');
+        toggleManualPaymentFields();
+    }
+
+    document.getElementById('add-item-row').addEventListener('click', function () { addItemCard(); });
+    document.getElementById('add-payment-row').addEventListener('click', function () { addPaymentRow(); });
 
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('.remove-row');
-        if (btn) {
-            btn.closest('tr').remove();
+        if (!btn) return;
+        var card = btn.closest('.order-item-card');
+        if (card) {
+            card.remove();
+            updateItemAmounts();
+            syncTotalsFromItems();
+            return;
+        }
+        var row = btn.closest('tr');
+        if (row) {
+            row.remove();
             toggleManualPaymentFields();
         }
     });
 
+    function updateItemAmounts() {
+        document.querySelectorAll('#items-body .order-item-card').forEach(function (card) {
+            var qty = parseFloat(card.querySelector('.item-qty')?.value) || 0;
+            var price = parseFloat(card.querySelector('.item-price')?.value) || 0;
+            var amount = card.querySelector('.item-amount');
+            if (amount) amount.value = (qty * price).toFixed(2);
+        });
+    }
+
     function sumItems() {
         var total = 0;
-        document.querySelectorAll('#items-body tr').forEach(function (row) {
-            if (row.querySelector('input[name^="delete_items"]')?.checked) return;
-            var qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
-            var price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+        document.querySelectorAll('#items-body .order-item-card').forEach(function (card) {
+            if (card.querySelector('.item-delete-check')?.checked) return;
+            if (card.classList.contains('is-marked-delete')) return;
+            var qty = parseFloat(card.querySelector('.item-qty')?.value) || 0;
+            var price = parseFloat(card.querySelector('.item-price')?.value) || 0;
             total += qty * price;
         });
         return total;
     }
 
-    document.getElementById('calc-from-items').addEventListener('click', function () {
+    function syncTotalsFromItems() {
         var subtotal = sumItems();
         document.getElementById('subtotal').value = subtotal.toFixed(2);
         document.getElementById('shipping').value = calcShipping(subtotal).toFixed(2);
         recalcTotal();
-    });
+    }
+
+    document.getElementById('calc-from-items').addEventListener('click', function () { syncTotalsFromItems(); });
 
     function recalcTotal() {
         var sub = parseFloat(document.getElementById('subtotal').value) || 0;
@@ -585,55 +882,50 @@
     });
 
     document.getElementById('items-body').addEventListener('input', function (e) {
-        if (!e.target.classList.contains('item-qty') && !e.target.classList.contains('item-price')) {
-            return;
+        if (e.target.classList.contains('item-qty') || e.target.classList.contains('item-price')) {
+            updateItemAmounts();
+            syncTotalsFromItems();
         }
-
-        var subtotal = sumItems();
-        document.getElementById('subtotal').value = subtotal.toFixed(2);
-        document.getElementById('shipping').value = calcShipping(subtotal).toFixed(2);
-        recalcTotal();
     });
 
     document.getElementById('items-body').addEventListener('change', function (e) {
-        if (e.target.type === 'file') {
-            var label = e.target.closest('.order-item-upload');
-            var text = label ? label.querySelector('span') : null;
-            var preview = e.target.closest('.order-item-image-cell')?.querySelector('.order-item-image-preview');
-            var file = e.target.files && e.target.files[0];
-
-            if (label && text) {
-                if (file) {
-                    text.textContent = file.name.length > 12 ? file.name.slice(0, 10) + '…' : file.name;
-                    label.classList.add('has-file');
-                } else {
-                    text.textContent = preview && preview.querySelector('img') ? 'Replace' : 'Upload';
-                    label.classList.remove('has-file');
-                }
-            }
-
-            if (file && file.type.startsWith('image/') && preview) {
-                var reader = new FileReader();
-                reader.onload = function (event) {
-                    if (preview.tagName === 'A') {
-                        var img = preview.querySelector('img');
-                        if (img) img.src = event.target.result;
-                    } else {
-                        preview.classList.remove('order-item-image-preview--empty');
-                        preview.innerHTML = '<img src="' + event.target.result + '" alt="Preview">';
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-
+        if (e.target.classList.contains('item-delete-check')) {
+            var card = e.target.closest('.order-item-card');
+            if (card) card.classList.toggle('is-marked-delete', e.target.checked);
+            syncTotalsFromItems();
             return;
         }
 
-        if (e.target.name !== 'delete_items[]') return;
-        var subtotal = sumItems();
-        document.getElementById('subtotal').value = subtotal.toFixed(2);
-        document.getElementById('shipping').value = calcShipping(subtotal).toFixed(2);
-        recalcTotal();
+        if (e.target.type !== 'file') return;
+        var label = e.target.closest('.order-item-upload');
+        var text = label ? label.querySelector('span') : null;
+        var preview = e.target.closest('.order-item-card')?.querySelector('.order-item-image-preview');
+        var file = e.target.files && e.target.files[0];
+
+        if (label && text) {
+            if (file) {
+                text.textContent = file.name.length > 12 ? file.name.slice(0, 10) + '…' : file.name;
+                label.classList.add('has-file');
+            } else {
+                text.textContent = preview && preview.querySelector('img') ? 'Replace' : 'Upload';
+                label.classList.remove('has-file');
+            }
+        }
+
+        if (file && file.type.startsWith('image/') && preview) {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                if (preview.tagName === 'A') {
+                    var img = preview.querySelector('img');
+                    if (img) img.src = event.target.result;
+                    preview.href = event.target.result;
+                } else {
+                    preview.classList.remove('order-item-image-preview--empty');
+                    preview.innerHTML = '<img src="' + event.target.result + '" alt="Preview">';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     });
 
     function toggleManualPaymentFields() {
@@ -644,33 +936,8 @@
         if (manualStatus) manualStatus.style.display = hasPayments ? 'none' : 'block';
     }
 
-    function slugify(text) {
-        return text.toString().toLowerCase().trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '') || 'custom';
-    }
-
-    document.getElementById('items-body').addEventListener('input', function (e) {
-        if (!e.target.classList.contains('item-name')) return;
-        var slugInput = e.target.closest('tr').querySelector('.item-slug');
-        if (slugInput && slugInput.dataset.manual !== '1') {
-            slugInput.value = slugify(e.target.value);
-        }
-    });
-
-    document.getElementById('items-body').addEventListener('focusin', function (e) {
-        if (!e.target.classList.contains('item-slug')) return;
-        e.target.readOnly = false;
-    });
-
-    document.getElementById('items-body').addEventListener('input', function (e) {
-        if (!e.target.classList.contains('item-slug')) return;
-        e.target.dataset.manual = '1';
-        e.target.readOnly = false;
-    });
-
     toggleManualPaymentFields();
+    updateItemAmounts();
     updateTotalPreview(parseFloat(document.getElementById('total').value) || 0);
 })();
 </script>
