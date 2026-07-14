@@ -328,6 +328,9 @@
         }
 
         .admin-sidebar .nav-sidebar .nav-link {
+            position: relative;
+            display: flex;
+            align-items: center;
             border-radius: 0.55rem;
             margin: 0.1rem 0.35rem;
             padding: 0.62rem 0.85rem;
@@ -336,6 +339,11 @@
         }
 
         .admin-sidebar .nav-sidebar .nav-link p {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            margin: 0;
+            padding-right: 1.35rem;
             font-weight: 500;
             letter-spacing: 0.01em;
         }
@@ -346,6 +354,7 @@
             width: 1.6rem;
             margin-right: 0.55rem;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .admin-sidebar .nav-sidebar .nav-link:hover {
@@ -367,14 +376,22 @@
             font-weight: 600;
         }
 
+        .admin-sidebar .nav-sidebar .nav-link > p > .right,
         .admin-sidebar .admin-nav-chevron {
+            position: absolute;
+            right: 0.85rem;
+            top: 50%;
+            margin-left: 0;
+            margin-top: 0 !important;
             font-size: 0.7rem;
             opacity: 0.75;
+            line-height: 1;
+            transform: translateY(-50%);
             transition: transform 0.2s ease;
         }
 
         .admin-sidebar .menu-open > .nav-link .admin-nav-chevron {
-            transform: rotate(180deg);
+            transform: translateY(-50%) rotate(180deg);
         }
 
         .admin-sidebar .admin-nav-submenu {
