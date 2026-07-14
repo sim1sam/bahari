@@ -17,7 +17,7 @@
 
         <div class="row">
             <div class="col-xl-7">
-                <form action="{{ route('admin.bank-inter-transfers.store') }}" method="POST">
+                <form action="{{ route('admin.bank-inter-transfers.store') }}" method="POST" class="inter-transfer-form">
                     @csrf
                     <div class="settings-card">
                         <div class="settings-card-body">
@@ -50,14 +50,14 @@
                                         @error('to_bank_id')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="settings-field">
                                         <label for="amount">Amount (BDT) *</label>
                                         <input type="number" name="amount" id="amount" class="form-control @error('amount') is-invalid @enderror" min="0.01" step="0.01" value="{{ old('amount') }}" required>
                                         @error('amount')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="settings-field">
                                         <label for="transfer_date">Transfer Date *</label>
                                         <input type="date" name="transfer_date" id="transfer_date" class="form-control @error('transfer_date') is-invalid @enderror" value="{{ old('transfer_date', now()->toDateString()) }}" required>
@@ -113,4 +113,42 @@
 
 @push('styles')
     @include('admin.settings.partials.page-styles')
+    <style>
+        .inter-transfer-form .settings-card-body {
+            padding: 1.5rem 1.5rem 1.35rem;
+        }
+
+        .inter-transfer-form .settings-field {
+            margin-bottom: 1.35rem;
+        }
+
+        .inter-transfer-form .settings-field label {
+            margin-bottom: 0.55rem;
+            display: block;
+        }
+
+        .inter-transfer-form .row {
+            margin-left: -0.75rem;
+            margin-right: -0.75rem;
+        }
+
+        .inter-transfer-form .row > [class*="col-"] {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .inter-transfer-form .settings-field.mb-0 {
+            margin-bottom: 0.35rem;
+        }
+
+        .inter-transfer-form .form-control,
+        .inter-transfer-form .settings-textarea {
+            min-height: 2.55rem;
+        }
+
+        .inter-transfer-form textarea.form-control {
+            min-height: 6rem;
+        }
+    </style>
 @endpush

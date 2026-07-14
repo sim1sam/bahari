@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
-@section('title', 'Payment Banks')
-@section('page_title', 'Payment Banks')
+@section('title', 'Bank')
+@section('page_title', 'Bank')
 
 @section('content')
     <div class="payment-banks-page">
         <section class="payment-banks-hero">
             <div>
                 <span class="payment-banks-eyebrow">Payment settings</span>
-                <h2>Payment Banks</h2>
+                <h2>Bank</h2>
                 <p>Manage bank accounts, mobile wallets, and QR codes shown at checkout.</p>
             </div>
             <div class="payment-banks-hero-actions">
@@ -48,7 +48,7 @@
             </div>
         </section>
 
-        <div class="row">
+        <div class="row payment-banks-layout">
             <div class="col-xl-4">
                 <div class="card payment-banks-card payment-banks-card--sticky">
                     <div class="payment-banks-card-head">
@@ -63,60 +63,71 @@
 
                     <form action="{{ route('admin.payment-banks.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <div class="card-body payment-banks-form-body">
+                        <div class="card-body payment-banks-form-body payment-banks-form-body--compact">
                             <div class="form-group">
                                 <label>Name *</label>
-                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="bKash, Nagad, Bank name" required>
+                                <input type="text" name="name" class="form-control form-control-sm @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="bKash, Nagad, Bank name" required>
                                 @error('name')<span class="invalid-feedback">{{ $message }}</span>@enderror
                             </div>
                             <div class="form-group">
                                 <label>Account Name</label>
-                                <input type="text" name="account_name" class="form-control" value="{{ old('account_name') }}" placeholder="Account holder name">
+                                <input type="text" name="account_name" class="form-control form-control-sm" value="{{ old('account_name') }}" placeholder="Account holder name">
                             </div>
                             <div class="form-group">
                                 <label>Account Number</label>
-                                <input type="text" name="account_number" class="form-control" value="{{ old('account_number') }}" placeholder="01XXXXXXXXX">
+                                <input type="text" name="account_number" class="form-control form-control-sm" value="{{ old('account_number') }}" placeholder="01XXXXXXXXX">
                             </div>
-                            <div class="form-group">
-                                <label>Branch / Type</label>
-                                <input type="text" name="branch" class="form-control" value="{{ old('branch') }}" placeholder="Personal, Merchant, Branch name">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label>Branch / Type</label>
+                                        <input type="text" name="branch" class="form-control form-control-sm" value="{{ old('branch') }}" placeholder="Personal / Branch">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label>Sort Order</label>
+                                        <input type="number" name="sort_order" class="form-control form-control-sm" value="{{ old('sort_order', 0) }}" min="0">
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Instructions</label>
-                                <input type="text" name="instructions" class="form-control" value="{{ old('instructions') }}" placeholder="Send money then upload screenshot">
+                                <input type="text" name="instructions" class="form-control form-control-sm" value="{{ old('instructions') }}" placeholder="Send money then upload screenshot">
                             </div>
-                            <div class="form-group">
-                                <label>Expense Charge (%)</label>
-                                <input type="number" name="charge_percent" class="form-control @error('charge_percent') is-invalid @enderror" value="{{ old('charge_percent', 0) }}" min="0" max="100" step="0.01">
-                                @error('charge_percent')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                                <small class="form-text text-muted">Automatically added when an expense is paid from this bank.</small>
-                            </div>
-                            <div class="form-group">
-                                <label>Opening Balance (BDT)</label>
-                                <input type="number" name="opening_balance" class="form-control @error('opening_balance') is-invalid @enderror" value="{{ old('opening_balance', 0) }}" min="0" step="0.01">
-                                @error('opening_balance')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label>Expense Charge (%)</label>
+                                        <input type="number" name="charge_percent" class="form-control form-control-sm @error('charge_percent') is-invalid @enderror" value="{{ old('charge_percent', 0) }}" min="0" max="100" step="0.01">
+                                        @error('charge_percent')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label>Opening Balance</label>
+                                        <input type="number" name="opening_balance" class="form-control form-control-sm @error('opening_balance') is-invalid @enderror" value="{{ old('opening_balance', 0) }}" min="0" step="0.01">
+                                        @error('opening_balance')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>QR / Bank Image</label>
                                 <div class="payment-banks-file">
                                     <input type="file" name="image" id="add-bank-image" class="payment-banks-file-input" accept="image/*">
-                                    <label for="add-bank-image" class="payment-banks-file-label">
+                                    <label for="add-bank-image" class="payment-banks-file-label payment-banks-file-label--sm">
                                         <i class="fas fa-cloud-upload-alt"></i>
                                         <span>Choose image</span>
                                     </label>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label>Sort Order</label>
-                                <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order', 0) }}" min="0">
-                            </div>
-                            <div class="custom-control custom-switch payment-banks-switch">
+                            <div class="custom-control custom-switch payment-banks-switch mb-0">
                                 <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1" checked>
                                 <label class="custom-control-label" for="is_active">Active on checkout</label>
                             </div>
                         </div>
-                        <div class="payment-banks-card-footer">
-                            <button type="submit" class="btn btn-info btn-block">
+                        <div class="payment-banks-card-footer payment-banks-card-footer--compact">
+                            <button type="submit" class="btn btn-info btn-sm btn-block">
                                 <i class="fas fa-plus mr-1"></i> Add Bank
                             </button>
                         </div>
@@ -378,9 +389,69 @@
         margin-bottom: 1rem;
     }
 
+    .payment-banks-layout {
+        align-items: flex-start;
+    }
+
     .payment-banks-card--sticky {
         position: sticky;
-        top: 1rem;
+        top: 4.5rem;
+        z-index: 20;
+        margin-bottom: 0;
+    }
+
+    .payment-banks-card--sticky .payment-banks-card-head {
+        padding: 0.75rem 0.9rem;
+    }
+
+    .payment-banks-card--sticky .payment-banks-card-head h3 {
+        font-size: 0.92rem;
+    }
+
+    .payment-banks-card--sticky .payment-banks-card-head p {
+        font-size: 0.72rem;
+    }
+
+    .payment-banks-card--sticky .payment-banks-section-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.55rem;
+        font-size: 0.8rem;
+    }
+
+    .payment-banks-form-body--compact {
+        padding: 0.75rem 0.9rem 0.65rem;
+    }
+
+    .payment-banks-form-body--compact .form-group {
+        margin-bottom: 0.55rem;
+    }
+
+    .payment-banks-form-body--compact label {
+        margin-bottom: 0.2rem;
+        font-size: 0.68rem;
+    }
+
+    .payment-banks-form-body--compact .form-control-sm {
+        height: calc(1.6rem + 2px);
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 0.45rem;
+    }
+
+    .payment-banks-file-label--sm {
+        padding: 0.4rem 0.55rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 0.5rem !important;
+        min-height: 2rem;
+    }
+
+    .payment-banks-card-footer--compact {
+        padding: 0.55rem 0.9rem;
+    }
+
+    .payment-banks-card--sticky .payment-banks-switch .custom-control-label {
+        font-size: 0.78rem;
     }
 
     .payment-banks-card-head,

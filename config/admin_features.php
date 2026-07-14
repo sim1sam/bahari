@@ -109,7 +109,7 @@ return [
         'active' => 'admin.transactions.*',
     ],
     'payment_banks' => [
-        'label' => 'Payment Banks',
+        'label' => 'Bank',
         'icon' => 'fas fa-university',
         'route' => 'admin.payment-banks.index',
         'active' => 'admin.payment-banks.*',
