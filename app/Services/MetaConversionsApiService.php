@@ -26,41 +26,58 @@ class MetaConversionsApiService
         ?string $eventSourceUrl = null,
         ?string $actionSource = 'website',
     ): bool {
-        if (! $this->settings->metaCapiEnabled()) {
-            return false;
-        }
-
-        $pixelId = $this->settings->metaPixelId();
-        $token = $this->settings->metaCapiAccessToken();
-
-        if (! $pixelId || ! $token) {
-            return false;
-        }
-
-        $payload = [
-            'data' => [[
-                'event_name' => $eventName,
-                'event_time' => time(),
-                'event_id' => $eventId,
-                'event_source_url' => $eventSourceUrl ?: url()->previous() ?: config('app.url'),
-                'action_source' => $actionSource,
-                'user_data' => $this->normalizeUserData($userData),
-                'custom_data' => $this->normalizeCustomData($customData),
-            ]],
-        ];
-
-        $testCode = $this->settings->metaCapiTestEventCode();
-        if ($testCode) {
-            $payload['test_event_code'] = $testCode;
-        }
-
-        $version = config('services.meta.api_version', 'v21.0');
-        $url = "https://graph.facebook.com/{$version}/{$pixelId}/events";
-
         try {
+            if (! $this->settings->metaCapiEnabled()) {
+                Log::info('Meta CAPI skipped (disabled or missing credentials)', [
+                    'event' => $eventName,
+                    'pixel' => $this->settings->metaPixelId(),
+                    'has_token' => filled($this->settings->metaCapiAccessToken()),
+                ]);
+
+                return false;
+            }
+
+            $pixelId = $this->settings->metaPixelId();
+            $token = $this->settings->metaCapiAccessToken();
+
+            if (! $pixelId || ! $token) {
+                return false;
+            }
+
+            $userData = $this->normalizeUserData($userData);
+            if (empty($userData['client_ip_address'])) {
+                $userData['client_ip_address'] = request()->ip() ?: '0.0.0.0';
+            }
+            if (empty($userData['client_user_agent'])) {
+                $userData['client_user_agent'] = request()->userAgent() ?: 'Laravel';
+            }
+
+            $payload = [
+                'data' => [[
+                    'event_name' => $eventName,
+                    'event_time' => time(),
+                    'event_id' => $eventId,
+                    'event_source_url' => $eventSourceUrl
+                        ?: (string) (request()->headers->get('referer') ?: url()->current() ?: config('app.url')),
+                    'action_source' => $actionSource ?: 'website',
+                    'user_data' => $userData,
+                    'custom_data' => $this->normalizeCustomData($customData),
+                ]],
+                'access_token' => $token,
+            ];
+
+            $testCode = $this->settings->metaCapiTestEventCode();
+            if ($testCode) {
+                $payload['test_event_code'] = $testCode;
+            }
+
+            $version = config('services.meta.api_version', 'v21.0');
+            $url = "https://graph.facebook.com/{$version}/{$pixelId}/events";
+
             $response = Http::asJson()
                 ->timeout(8)
-                ->post($url.'?access_token='.urlencode($token), $payload);
+                ->acceptJson()
+                ->post($url, $payload);
 
             if (! $response->successful()) {
                 Log::warning('Meta CAPI request failed', [
@@ -72,6 +89,12 @@ class MetaConversionsApiService
 
                 return false;
             }
+
+            Log::info('Meta CAPI sent', [
+                'event' => $eventName,
+                'event_id' => $eventId,
+                'events_received' => data_get($response->json(), 'events_received'),
+            ]);
 
             return true;
         } catch (ConnectionException|Throwable $e) {

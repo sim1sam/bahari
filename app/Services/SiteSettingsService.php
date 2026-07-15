@@ -6,6 +6,7 @@ use App\Models\SiteSetting;
 use App\Support\ShippingZone;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class SiteSettingsService
 {
@@ -191,12 +192,21 @@ class SiteSettingsService
             return false;
         }
 
-        if ((bool) ($this->get()->meta_capi_enabled ?? false)) {
+        // .env credentials always enable CAPI (production-friendly).
+        if (filled(config('services.meta.access_token'))) {
             return true;
         }
 
-        // Auto-enable when credentials are provided via .env (Admin toggle still preferred).
-        return filled(config('services.meta.access_token'));
+        // DB-only token requires admin toggle ON.
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('site_settings', 'meta_capi_enabled')) {
+                return (bool) SiteSetting::query()->value('meta_capi_enabled');
+            }
+        } catch (Throwable) {
+            return true;
+        }
+
+        return true;
     }
 
     public function metaPixelId(): ?string
@@ -208,26 +218,44 @@ class SiteSettingsService
 
     public function metaCapiAccessToken(): ?string
     {
-        $fromDb = $this->get()->meta_capi_access_token ?? null;
-        if (filled($fromDb)) {
-            return (string) $fromDb;
+        // Prefer .env — do not depend on DB / encrypted cached settings.
+        $fromEnv = trim((string) config('services.meta.access_token', ''));
+        if ($fromEnv !== '') {
+            return $fromEnv;
         }
 
-        $fromEnv = trim((string) config('services.meta.access_token', ''));
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasColumn('site_settings', 'meta_capi_access_token')) {
+                return null;
+            }
 
-        return $fromEnv !== '' ? $fromEnv : null;
+            // Fresh model so encrypted cast decrypts once (avoid get() cache+toArray issue).
+            $token = SiteSetting::query()->first()?->meta_capi_access_token;
+
+            return filled($token) ? (string) $token : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public function metaCapiTestEventCode(): ?string
     {
-        $fromDb = trim((string) ($this->get()->meta_capi_test_event_code ?? ''));
-        if ($fromDb !== '') {
-            return $fromDb;
+        $fromEnv = trim((string) config('services.meta.test_event_code', ''));
+        if ($fromEnv !== '') {
+            return $fromEnv;
         }
 
-        $fromEnv = trim((string) config('services.meta.test_event_code', ''));
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasColumn('site_settings', 'meta_capi_test_event_code')) {
+                return null;
+            }
 
-        return $fromEnv !== '' ? $fromEnv : null;
+            $code = SiteSetting::query()->value('meta_capi_test_event_code');
+
+            return filled($code) ? trim((string) $code) : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public function sslCommerzEnabled(): bool
