@@ -199,44 +199,8 @@
     window.BahariTracking = BahariTracking;
 
     document.addEventListener('DOMContentLoaded', () => {
-        const boot = window.__TRACKING__;
-        if (!boot) {
-            BahariTracking.pageInfo();
-            return;
-        }
-
-        BahariTracking.pageInfo({ page_type: boot.page_type || 'page' });
-
-        if (boot.user) {
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push(Object.assign({}, boot.user));
-        }
-
-        if (boot.view_item) {
-            BahariTracking.viewItem(boot.view_item, boot.event_id);
-        }
-        if (boot.view_cart) {
-            BahariTracking.viewCart(boot.view_cart, boot.event_id);
-        }
-        if (boot.begin_checkout) {
-            BahariTracking.beginCheckout(boot.begin_checkout, boot.event_id);
-        }
-        if (boot.purchase) {
-            BahariTracking.purchase(boot.purchase, boot.event_id);
-        }
-        if (boot.login) {
-            BahariTracking.login(boot.login, boot.login.event_id || boot.event_id);
-        }
-        if (boot.sign_up) {
-            BahariTracking.signUp(boot.sign_up, boot.sign_up.event_id || boot.event_id);
-        }
-        if (boot.search) {
-            BahariTracking.search(boot.search.term, boot.search.results, boot.event_id);
-        }
-        if (boot.impressions && boot.impressions.length) {
-            BahariTracking.productImpression(boot.impressions, boot.list_name);
-        }
-
+        // Page boot events are pushed inline in tracking-boot (before GTM).
+        // Only wire interactive handlers here.
         document.querySelectorAll('[data-track-product]').forEach((el) => {
             el.addEventListener('click', () => {
                 const p = BahariTracking.productFromDataset(el);
