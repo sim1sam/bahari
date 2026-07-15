@@ -71,7 +71,7 @@ class SslCommerzController extends Controller
                     (float) $order->shipping,
                 );
 
-                $this->metaCapi->send(
+                $this->metaCapi->sendLater(
                     'Purchase',
                     $eventId,
                     [

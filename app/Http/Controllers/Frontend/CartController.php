@@ -127,7 +127,7 @@ class CartController extends Controller
             'color' => $validated['color'] ?? null,
         ]), $quantity);
 
-        $this->metaCapi->send(
+        $this->metaCapi->sendLater(
             'AddToCart',
             $eventId,
             [

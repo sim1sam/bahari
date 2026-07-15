@@ -23,6 +23,7 @@
         const data = Object.assign({}, payload, {
             event: eventName,
             event_id: id,
+            eventID: id, // Meta Pixel eventID for CAPI dedupe
             currency: payload.currency || currency(),
             presentment_currency: payload.presentment_currency || payload.currency || currency(),
             page_currency: payload.page_currency || payload.currency || currency(),

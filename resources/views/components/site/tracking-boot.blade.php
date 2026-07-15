@@ -64,14 +64,19 @@
         window.__TRACKING_BOOTED__ = true;
 
         function push(eventName, data, eventId) {
+            var id = eventId || (data && data.event_id) || (boot.event_id) || undefined;
             var payload = Object.assign({}, data || {}, {
                 event: eventName,
-                event_id: eventId || (data && data.event_id) || (boot.event_id) || undefined,
+                event_id: id,
+                eventID: id, // Meta Pixel / CAPI dedupe
                 currency: (data && data.currency) || boot.currency || 'BDT',
                 presentment_currency: (data && data.presentment_currency) || boot.currency || 'BDT',
                 page_currency: (data && data.page_currency) || boot.currency || 'BDT',
                 meta_currency: (data && data.meta_currency) || boot.currency || 'BDT'
             });
+            if (payload.meta_event_name) {
+                payload.meta_event_id = payload.meta_event_id || id;
+            }
             window.dataLayer.push(payload);
             return payload.event_id;
         }

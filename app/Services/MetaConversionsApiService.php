@@ -184,6 +184,49 @@ class MetaConversionsApiService
         ];
     }
 
+    /**
+     * Queue a CAPI call after the HTTP response is sent (avoids Hostinger timeouts).
+     *
+     * @param  array<string, mixed>  $customData
+     * @param  array<string, mixed>  $userData
+     */
+    public function sendLater(
+        string $eventName,
+        string $eventId,
+        array $customData = [],
+        array $userData = [],
+        ?string $eventSourceUrl = null,
+        ?string $actionSource = 'website',
+    ): void {
+        // Capture request context now — request() is empty after response.
+        if (empty($userData['client_ip_address'])) {
+            $userData['client_ip_address'] = request()->ip() ?: '0.0.0.0';
+        }
+        if (empty($userData['client_user_agent'])) {
+            $userData['client_user_agent'] = request()->userAgent() ?: 'Laravel-Meta-CAPI';
+        }
+        if (empty($userData['fbp']) && request()->cookie('_fbp')) {
+            $userData['fbp'] = request()->cookie('_fbp');
+        }
+        if (empty($userData['fbc']) && request()->cookie('_fbc')) {
+            $userData['fbc'] = request()->cookie('_fbc');
+        }
+
+        $eventSourceUrl = $eventSourceUrl
+            ?: (string) (request()->headers->get('referer') ?: url()->current() ?: config('app.url'));
+
+        dispatch(function () use ($eventName, $eventId, $customData, $userData, $eventSourceUrl, $actionSource) {
+            app(self::class)->send(
+                $eventName,
+                $eventId,
+                $customData,
+                $userData,
+                $eventSourceUrl,
+                $actionSource,
+            );
+        })->afterResponse();
+    }
+
     public function newEventId(): string
     {
         return (string) Str::uuid();

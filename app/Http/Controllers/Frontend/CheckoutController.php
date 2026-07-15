@@ -59,7 +59,7 @@ class CheckoutController extends Controller
         $trackingCart['shipping_tier'] = $this->cart->shippingZone();
         $trackingCart['payment_type'] = old('payment');
 
-        $this->metaCapi->send(
+        $this->metaCapi->sendLater(
             'InitiateCheckout',
             $eventId,
             [
@@ -386,7 +386,7 @@ class CheckoutController extends Controller
             (float) $order->shipping,
         );
 
-        $this->metaCapi->send(
+        $this->metaCapi->sendLater(
             'Purchase',
             $eventId,
             [

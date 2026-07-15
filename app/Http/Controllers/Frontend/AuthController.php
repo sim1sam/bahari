@@ -116,7 +116,7 @@ class AuthController extends Controller
             'user' => $userFields,
         ]);
 
-        $this->metaCapi->send(
+        $this->metaCapi->sendLater(
             'CompleteRegistration',
             $eventId,
             [

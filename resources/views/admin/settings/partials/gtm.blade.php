@@ -122,7 +122,8 @@
             </div>
             <div class="settings-side-body">
                 <p class="settings-side-text">Existing GTM loads your container. The store pushes ecommerce events into <code>dataLayer</code> so GA4/FB tags fire.</p>
-                <p class="settings-side-text mb-0">CAPI sends the same events server-side with matching <code>event_id</code> so Meta dedupes browser + server.</p>
+                <p class="settings-side-text">CAPI sends the same events server-side with matching <code>event_id</code> so Meta dedupes browser + server.</p>
+                <p class="settings-side-text mb-0"><strong>Avoid duplicates in GTM:</strong> On every FB Pixel tag, set Event ID to <code>{{dlv - event_id}}</code> (not the Unique Event ID template). Pause the Custom HTML “Meta Pixel ID …” tag if “FB Pixel - All Pages” already fires PageView.</p>
             </div>
         </div>
     </div>

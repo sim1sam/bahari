@@ -27,7 +27,8 @@ class ProductController extends Controller
         $eventId = $this->metaCapi->newEventId();
         $trackingProduct = TrackingPayload::fromProduct($product);
 
-        $this->metaCapi->send(
+        // Meta CAPI ViewContent (server) — same event_id as web dataLayer view_item
+        $this->metaCapi->sendLater(
             'ViewContent',
             $eventId,
             [
@@ -37,12 +38,13 @@ class ProductController extends Controller
                 'content_name' => $trackingProduct['product_name'],
                 'content_category' => $trackingProduct['product_type'],
                 'currency' => $trackingProduct['currency'],
-                'value' => $trackingProduct['total_value'],
+                'value' => (float) $trackingProduct['total_value'],
             ],
             Auth::check()
                 ? $this->metaCapi->userDataFromCustomer([
                     'email' => Auth::user()->email,
                     'name' => Auth::user()->name,
+                    'phone' => Auth::user()->phone ?? null,
                 ], Auth::id())
                 : $this->metaCapi->userDataFromCustomer([]),
             route('products.show', $slug),
