@@ -96,14 +96,14 @@
                         </div>
                         @error('meta_capi_test_event_code')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                         <small class="settings-field-hint">
-                            From Meta Events Manager → Test Events.
-                            Pixel ID for API: <code>META_PIXEL_ID</code> in <code>.env</code>
+                            Leave empty for <strong>live</strong> CAPI (Overview). Set only while testing in Meta → Test events.
+                            Pixel ID: <code>META_PIXEL_ID</code> in <code>.env</code>
                             @if ($metaPixelConfigured)
                                 (set)
                             @else
                                 (missing)
                             @endif
-                            — not injected as a second browser pixel.
+                            — browser Pixel stays in GTM.
                         </small>
                     </div>
                 </section>
