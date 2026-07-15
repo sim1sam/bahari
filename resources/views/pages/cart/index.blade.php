@@ -164,3 +164,11 @@
         </div>
     </section>
 @endsection
+
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="cart"
+        :event-id="$trackingEventId ?? null"
+        :view-cart="$trackingCart ?? null"
+    />
+@endsection

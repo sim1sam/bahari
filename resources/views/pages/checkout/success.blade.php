@@ -100,3 +100,11 @@
         </div>
     </section>
 @endsection
+
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="purchase"
+        :event-id="$trackingEventId ?? null"
+        :purchase="$trackingPurchase ?? null"
+    />
+@endsection

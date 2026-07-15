@@ -185,6 +185,51 @@ class SiteSettingsService
         return (bool) ($this->get()->gtm_enabled ?? false) && $this->gtmContainerId() !== null;
     }
 
+    public function metaCapiEnabled(): bool
+    {
+        if ($this->metaPixelId() === null || $this->metaCapiAccessToken() === null) {
+            return false;
+        }
+
+        if ((bool) ($this->get()->meta_capi_enabled ?? false)) {
+            return true;
+        }
+
+        // Auto-enable when credentials are provided via .env (Admin toggle still preferred).
+        return filled(config('services.meta.access_token'));
+    }
+
+    public function metaPixelId(): ?string
+    {
+        $id = trim((string) config('services.meta.pixel_id', ''));
+
+        return $id !== '' ? $id : null;
+    }
+
+    public function metaCapiAccessToken(): ?string
+    {
+        $fromDb = $this->get()->meta_capi_access_token ?? null;
+        if (filled($fromDb)) {
+            return (string) $fromDb;
+        }
+
+        $fromEnv = trim((string) config('services.meta.access_token', ''));
+
+        return $fromEnv !== '' ? $fromEnv : null;
+    }
+
+    public function metaCapiTestEventCode(): ?string
+    {
+        $fromDb = trim((string) ($this->get()->meta_capi_test_event_code ?? ''));
+        if ($fromDb !== '') {
+            return $fromDb;
+        }
+
+        $fromEnv = trim((string) config('services.meta.test_event_code', ''));
+
+        return $fromEnv !== '' ? $fromEnv : null;
+    }
+
     public function sslCommerzEnabled(): bool
     {
         return (bool) ($this->get()->sslcommerz_enabled ?? false);

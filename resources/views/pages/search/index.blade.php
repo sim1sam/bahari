@@ -73,3 +73,12 @@
         </div>
     </section>
 @endsection
+
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="search"
+        :search="$query !== '' ? ['term' => $query, 'results' => count($products)] : null"
+        :impressions="$trackingImpressions ?? []"
+        list-name="Search Results"
+    />
+@endsection

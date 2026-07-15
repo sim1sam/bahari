@@ -12,13 +12,16 @@ use App\Models\User;
 use App\Services\CartService;
 use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
+use App\Services\MetaConversionsApiService;
 use App\Services\SiteSettingsService;
 use App\Services\SslCommerzService;
 use App\Support\ShippingZone;
+use App\Support\TrackingPayload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -29,6 +32,7 @@ class CheckoutController extends Controller
         private SiteSettingsService $siteSettings,
         private SslCommerzService $sslCommerz,
         private FinancialTransactionService $financialTransactions,
+        private MetaConversionsApiService $metaCapi,
     ) {}
 
     public function index(): View|RedirectResponse
@@ -43,8 +47,42 @@ class CheckoutController extends Controller
             ? $addresses->firstWhere('id', (int) old('address_id'))
             : $user->defaultAddress();
 
+        $items = array_values($this->cart->items());
+        $eventId = $this->metaCapi->newEventId();
+        $trackingCart = TrackingPayload::fromCartItems(
+            $items,
+            (float) $this->cart->total(),
+            $this->cart->coupon()['code'] ?? null,
+            (float) $this->cart->discount(),
+            (float) $this->cart->shipping(),
+        );
+        $trackingCart['shipping_tier'] = $this->cart->shippingZone();
+        $trackingCart['payment_type'] = old('payment');
+
+        $this->metaCapi->send(
+            'InitiateCheckout',
+            $eventId,
+            [
+                'content_ids' => $trackingCart['meta_content_ids'],
+                'content_type' => 'product',
+                'contents' => $trackingCart['meta_contents'],
+                'currency' => $trackingCart['currency'],
+                'value' => $trackingCart['total_value'],
+                'num_items' => $trackingCart['total_quantity'],
+            ],
+            $this->metaCapi->userDataFromCustomer([
+                'name' => $selectedAddress?->recipient_name ?? $user->name,
+                'email' => $user->email,
+                'phone' => $selectedAddress?->phone,
+                'address' => $selectedAddress?->address_line,
+                'city' => $selectedAddress?->city,
+                'zip' => $selectedAddress?->zip,
+            ], $user->id),
+            route('checkout.index'),
+        );
+
         return view('pages.checkout.index', [
-            'items' => $this->cart->items(),
+            'items' => $items,
             'subtotal' => $this->cart->subtotal(),
             'shipping' => $this->cart->shipping(),
             'discount' => $this->cart->discount(),
@@ -68,6 +106,16 @@ class CheckoutController extends Controller
                 'city' => $selectedAddress?->city,
                 'zip' => $selectedAddress?->zip,
             ],
+            'trackingEventId' => $eventId,
+            'trackingCart' => $trackingCart,
+            'trackingUser' => TrackingPayload::userFields([
+                'name' => $selectedAddress?->recipient_name ?? $user->name,
+                'email' => $user->email,
+                'phone' => $selectedAddress?->phone,
+                'address' => $selectedAddress?->address_line,
+                'city' => $selectedAddress?->city,
+                'zip' => $selectedAddress?->zip,
+            ], $user->id),
         ]);
     }
 
@@ -179,8 +227,9 @@ class CheckoutController extends Controller
         $total = $this->cart->total();
         $shippingZone = $validated['shipping_zone'];
         $isSslCommerz = $validated['payment'] === 'sslcommerz';
+        $trackingEventId = $this->metaCapi->newEventId();
 
-        $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $shippingZone, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz) {
+        $order = DB::transaction(function () use ($validated, $orderNumber, $items, $subtotal, $shipping, $shippingZone, $discount, $coupon, $total, $bank, $screenshotPath, $isSslCommerz, $trackingEventId) {
             $isBankTransfer = $validated['payment'] === 'bank_transfer';
             $paymentAmount = $isSslCommerz ? $total : round((float) $validated['payment_amount'], 2);
             $chargeSplit = $isBankTransfer && $bank
@@ -192,7 +241,7 @@ class CheckoutController extends Controller
                     'total_amount' => $paymentAmount,
                 ];
 
-            $order = Order::create([
+            $orderData = [
                 'user_id' => Auth::id(),
                 'number' => $orderNumber,
                 'customer_name' => $validated['name'],
@@ -218,7 +267,13 @@ class CheckoutController extends Controller
                 'status' => 'pending',
                 'payment_status' => $isSslCommerz || $isBankTransfer ? 'pending' : 'due',
                 'amount_paid' => 0,
-            ]);
+            ];
+
+            if (Schema::hasColumn('orders', 'tracking_event_id')) {
+                $orderData['tracking_event_id'] = $trackingEventId;
+            }
+
+            $order = Order::create($orderData);
 
             foreach ($items as $item) {
                 OrderItem::create([
@@ -265,9 +320,12 @@ class CheckoutController extends Controller
             return redirect()->away($gatewayUrl);
         }
 
+        $this->sendPurchaseCapi($order, $validated, $items, $trackingEventId);
+
         session([
             'last_order' => [
                 'number' => $orderNumber,
+                'tracking_event_id' => $trackingEventId,
                 'customer' => $validated,
                 'items' => $items,
                 'subtotal' => $subtotal,
@@ -292,7 +350,57 @@ class CheckoutController extends Controller
             return redirect()->route('home');
         }
 
-        return view('pages.checkout.success', compact('order'));
+        $eventId = $order['tracking_event_id'] ?? $this->metaCapi->newEventId();
+        $trackingPurchase = TrackingPayload::fromCartItems(
+            $order['items'] ?? [],
+            (float) ($order['total'] ?? 0),
+            is_array($order['coupon'] ?? null) ? ($order['coupon']['code'] ?? null) : ($order['coupon'] ?? null),
+            (float) ($order['discount'] ?? 0),
+            (float) ($order['shipping'] ?? 0),
+        );
+        $trackingPurchase['transaction_id'] = $order['number'] ?? null;
+        $trackingPurchase['order_id'] = $order['number'] ?? null;
+        $trackingPurchase['order_name'] = $order['number'] ?? null;
+        $trackingPurchase = array_merge(
+            $trackingPurchase,
+            TrackingPayload::userFields($order['customer'] ?? null, Auth::id())
+        );
+
+        return view('pages.checkout.success', [
+            'order' => $order,
+            'trackingEventId' => $eventId,
+            'trackingPurchase' => $trackingPurchase,
+        ]);
+    }
+
+    /** @param  array<string, mixed>  $customer
+     *  @param  array<int, array<string, mixed>>  $items
+     */
+    private function sendPurchaseCapi(Order $order, array $customer, array $items, string $eventId): void
+    {
+        $payload = TrackingPayload::fromCartItems(
+            $items,
+            (float) $order->total,
+            $order->coupon_code,
+            (float) $order->discount,
+            (float) $order->shipping,
+        );
+
+        $this->metaCapi->send(
+            'Purchase',
+            $eventId,
+            [
+                'content_ids' => $payload['meta_content_ids'],
+                'content_type' => 'product',
+                'contents' => $payload['meta_contents'],
+                'currency' => $payload['currency'],
+                'value' => (float) $order->total,
+                'num_items' => $payload['total_quantity'],
+                'order_id' => $order->number,
+            ],
+            $this->metaCapi->userDataFromCustomer($customer, $order->user_id),
+            route('order.success'),
+        );
     }
 
     private function user(): User

@@ -8,9 +8,27 @@
     'badgeVariant' => 'default',
     'rating' => null,
     'href' => '#',
+    'brand' => null,
+    'category' => null,
+    'position' => null,
+    'listName' => null,
 ])
 
-<article {{ $attributes->merge(['class' => 'group relative flex flex-col w-full bg-surface-elevated rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all duration-300']) }}>
+<article
+    {{ $attributes->merge(['class' => 'group relative flex flex-col w-full bg-surface-elevated rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all duration-300']) }}
+    @if ($slug)
+        data-track-product
+        data-product-id="{{ $slug }}"
+        data-slug="{{ $slug }}"
+        data-product-sku="{{ $slug }}"
+        data-product-name="{{ $name }}"
+        data-product-price="{{ $price }}"
+        data-product-type="{{ $category }}"
+        data-product-brand="{{ $brand ?? config('app.name') }}"
+        @if ($position) data-product-position="{{ $position }}" @endif
+        @if ($listName) data-list-name="{{ $listName }}" @endif
+    @endif
+>
     <div class="relative aspect-[3/4] bg-brand-50 overflow-hidden">
         <a href="{{ $href }}" class="block w-full h-full">
             @if ($image)
@@ -43,7 +61,21 @@
 
         @if ($slug)
             <div class="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
-                <form action="{{ route('cart.add') }}" method="POST" x-data @submit.prevent="$dispatch('cart:add', { form: $el })">
+                <form
+                    action="{{ route('cart.add') }}"
+                    method="POST"
+                    x-data
+                    @submit.prevent="$dispatch('cart:add', { form: $el })"
+                    data-track-add-to-cart
+                    data-product-id="{{ $slug }}"
+                    data-slug="{{ $slug }}"
+                    data-product-sku="{{ $slug }}"
+                    data-product-name="{{ $name }}"
+                    data-product-price="{{ $price }}"
+                    data-product-type="{{ $category }}"
+                    data-product-brand="{{ $brand ?? config('app.name') }}"
+                    data-quantity="1"
+                >
                     @csrf
                     <input type="hidden" name="slug" value="{{ $slug }}">
                     <input type="hidden" name="quantity" value="1">

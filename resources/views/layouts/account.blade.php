@@ -41,6 +41,11 @@
     <x-pwa.install-banner />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @hasSection('tracking_boot')
+        @yield('tracking_boot')
+    @else
+        <x-site.tracking-boot page-type="account" />
+    @endif
     @stack('scripts')
 </body>
 </html>

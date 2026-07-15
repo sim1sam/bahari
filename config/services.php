@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    /*
+    | Meta Conversions API (server-side). Browser Pixel stays in GTM.
+    | Pixel ID is required for Graph API URL only — not for injecting fbq.
+    */
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID'),
+        'access_token' => env('META_CAPI_ACCESS_TOKEN'),
+        'test_event_code' => env('META_CAPI_TEST_EVENT_CODE'),
+        'api_version' => env('META_CAPI_API_VERSION', 'v21.0'),
+    ],
+
 ];

@@ -27,6 +27,10 @@
                     :badgeVariant="$product['badge_variant'] ?? 'default'"
                     :rating="$product['rating'] ?? null"
                     :href="$product['href'] ?? '#'"
+                    :brand="$product['brand'] ?? null"
+                    :category="$product['category'] ?? null"
+                    :position="$loop->iteration"
+                    :list-name="$title"
                 />
             @endforeach
         </div>

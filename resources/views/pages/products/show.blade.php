@@ -110,7 +110,24 @@
                     @endif
 
                     {{-- Add to cart --}}
-                    <form action="{{ route('cart.add') }}" method="POST" class="mt-8" x-data="{ qty: 1 }" @submit.prevent="$dispatch('cart:add', { form: $el })">
+                    <form
+                        action="{{ route('cart.add') }}"
+                        method="POST"
+                        class="mt-8"
+                        x-data="{ qty: 1 }"
+                        @submit.prevent="$dispatch('cart:add', { form: $el })"
+                        data-track-add-to-cart
+                        data-product-id="{{ $product['slug'] }}"
+                        data-slug="{{ $product['slug'] }}"
+                        data-product-sku="{{ $product['sku'] ?? $product['slug'] }}"
+                        data-product-name="{{ $product['name'] }}"
+                        data-product-price="{{ $product['price'] }}"
+                        data-product-type="{{ $product['category'] ?? '' }}"
+                        data-product-brand="{{ $product['brand'] ?? config('app.name') }}"
+                        data-quantity="1"
+                        @change.debounce.100ms="$el.dataset.quantity = String(qty)"
+                        x-init="$watch('qty', value => $el.dataset.quantity = String(value))"
+                    >
                         @csrf
                         <input type="hidden" name="slug" value="{{ $product['slug'] }}">
 
@@ -234,10 +251,31 @@
                             :badgeVariant="$item['badge_variant'] ?? 'default'"
                             :rating="$item['rating'] ?? null"
                             :href="$item['href']"
+                            :brand="$item['brand'] ?? null"
+                            :category="$item['category'] ?? null"
+                            :position="$loop->iteration"
+                            list-name="Related Products"
                         />
                     @endforeach
                 </div>
             </div>
         </section>
     @endif
+@endsection
+
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="product"
+        :event-id="$trackingEventId ?? null"
+        :view-item="$trackingProduct ?? null"
+        :impressions="collect($related ?? [])->values()->map(fn ($item, $i) => [
+            'product_id' => $item['slug'] ?? '',
+            'product_name' => $item['name'] ?? '',
+            'product_price' => $item['price'] ?? 0,
+            'product_type' => $item['category'] ?? '',
+            'product_brand' => $item['brand'] ?? config('app.name'),
+            'product_position' => $i + 1,
+        ])->all()"
+        list-name="Related Products"
+    />
 @endsection

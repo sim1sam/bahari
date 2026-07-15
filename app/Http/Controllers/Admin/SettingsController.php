@@ -158,6 +158,9 @@ class SettingsController extends Controller
                     'regex:/^GTM-[A-Z0-9]+$/i',
                     Rule::requiredIf($request->boolean('gtm_enabled') && Schema::hasColumn('site_settings', 'gtm_container_id')),
                 ],
+                'meta_capi_enabled' => 'boolean',
+                'meta_capi_access_token' => 'nullable|string|max:512',
+                'meta_capi_test_event_code' => 'nullable|string|max:64',
             ],
             default => [],
         };
@@ -179,12 +182,20 @@ class SettingsController extends Controller
                 'gtm_container_id' => filled($validated['gtm_container_id'] ?? null)
                     ? strtoupper(trim($validated['gtm_container_id']))
                     : null,
+                'meta_capi_enabled' => $request->boolean('meta_capi_enabled'),
+                'meta_capi_test_event_code' => filled($validated['meta_capi_test_event_code'] ?? null)
+                    ? trim($validated['meta_capi_test_event_code'])
+                    : null,
             ],
             default => [],
         };
 
         if ($section === 'footer') {
             $data['newsletter_enabled'] = $request->boolean('newsletter_enabled');
+        }
+
+        if ($section === 'gtm' && filled($validated['meta_capi_access_token'] ?? null)) {
+            $data['meta_capi_access_token'] = trim($validated['meta_capi_access_token']);
         }
 
         return $data;

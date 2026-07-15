@@ -80,6 +80,16 @@
                 }
 
                 this.applyCart(cart);
+                if (window.BahariTracking) {
+                    const product = window.BahariTracking.productFromDataset(form)
+                        || window.BahariTracking.productFromDataset(form.closest('[data-track-product]'));
+                    if (product) {
+                        const qtyInput = form.querySelector('[name="quantity"]');
+                        if (qtyInput) product.quantity = parseInt(qtyInput.value || '1', 10) || 1;
+                        const eventId = cart.tracking_event_id || undefined;
+                        window.BahariTracking.addToCart(product, eventId);
+                    }
+                }
                 if ({{ $canUseCartDrawer ? 'true' : 'false' }}) {
                     this.cartOpen = true;
                 }
@@ -137,6 +147,16 @@
                 }
 
                 const cart = await response.json();
+                if (window.BahariTracking) {
+                    window.BahariTracking.removeFromCart({
+                        product_id: item.slug,
+                        product_sku: item.slug,
+                        product_name: item.name,
+                        product_price: item.price,
+                        quantity: item.quantity,
+                        variant_id: [item.size, item.color].filter(Boolean).join(' / ') || item.slug,
+                    }, cart.tracking_event_id);
+                }
                 this.applyCart(cart);
             } catch (error) {
                 form.requestSubmit();

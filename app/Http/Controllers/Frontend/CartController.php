@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Services\CartService;
+use App\Services\MetaConversionsApiService;
 use App\Services\ProductCatalog;
 use App\Services\SiteSettingsService;
 use App\Support\ShippingZone;
+use App\Support\TrackingPayload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ class CartController extends Controller
         private CartService $cart,
         private ProductCatalog $catalog,
         private SiteSettingsService $settings,
+        private MetaConversionsApiService $metaCapi,
     ) {}
 
     public function index(): View
@@ -26,9 +29,20 @@ class CartController extends Controller
         $items = collect($this->cart->items())->map(function ($item) {
             $product = $this->catalog->find($item['slug']);
             $item['size_hint'] = implode(', ', $product['sizes'] ?? []);
+            $item['category'] = $product['category'] ?? null;
+            $item['brand'] = $product['brand'] ?? null;
 
             return $item;
         })->all();
+
+        $eventId = $this->metaCapi->newEventId();
+        $trackingCart = TrackingPayload::fromCartItems(
+            $items,
+            (float) $this->cart->total(),
+            $this->cart->coupon()['code'] ?? null,
+            (float) $this->cart->discount(),
+            (float) $this->cart->shipping(),
+        );
 
         return view('pages.cart.index', [
             'items' => $items,
@@ -40,6 +54,8 @@ class CartController extends Controller
             'shippingFeeInside' => $this->settings->shippingFeeInsideDhaka(),
             'shippingFeeOutside' => $this->settings->shippingFeeOutsideDhaka(),
             'freeShippingAt' => $this->settings->freeShippingThreshold(),
+            'trackingEventId' => $eventId,
+            'trackingCart' => $trackingCart,
         ]);
     }
 
@@ -103,8 +119,39 @@ class CartController extends Controller
             return back()->with('error', $message);
         }
 
+        $product = $this->catalog->find($validated['slug']) ?? [];
+        $quantity = (int) ($validated['quantity'] ?? 1);
+        $eventId = $this->metaCapi->newEventId();
+        $trackingProduct = TrackingPayload::fromProduct(array_merge($product, [
+            'size' => $validated['size'] ?? null,
+            'color' => $validated['color'] ?? null,
+        ]), $quantity);
+
+        $this->metaCapi->send(
+            'AddToCart',
+            $eventId,
+            [
+                'content_ids' => $trackingProduct['meta_content_ids'],
+                'content_type' => 'product',
+                'contents' => $trackingProduct['meta_contents'],
+                'currency' => $trackingProduct['currency'],
+                'value' => $trackingProduct['total_value'],
+            ],
+            Auth::check()
+                ? $this->metaCapi->userDataFromCustomer([
+                    'email' => Auth::user()->email,
+                    'name' => Auth::user()->name,
+                    'phone' => Auth::user()->phone ?? null,
+                ], Auth::id())
+                : $this->metaCapi->userDataFromCustomer([]),
+            url()->previous() ?: route('home'),
+        );
+
         if ($request->expectsJson()) {
-            return response()->json($this->cartPayload());
+            return response()->json(array_merge($this->cartPayload(), [
+                'tracking_event_id' => $eventId,
+                'tracking_product' => $trackingProduct,
+            ]));
         }
 
         return back()
@@ -137,7 +184,9 @@ class CartController extends Controller
         $this->cart->remove($key);
 
         if ($request->expectsJson()) {
-            return response()->json($this->cartPayload());
+            return response()->json(array_merge($this->cartPayload(), [
+                'tracking_event_id' => $this->metaCapi->newEventId(),
+            ]));
         }
 
         $redirect = $request->boolean('cart_drawer')

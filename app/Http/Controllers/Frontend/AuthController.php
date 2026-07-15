@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\MetaConversionsApiService;
+use App\Support\TrackingPayload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +15,10 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private MetaConversionsApiService $metaCapi,
+    ) {}
+
     public function showLogin(): View|RedirectResponse
     {
         return view('pages.auth.login');
@@ -42,6 +48,21 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+
+        /** @var User $user */
+        $user = auth()->user();
+        $eventId = $this->metaCapi->newEventId();
+
+        session()->flash('tracking_auth', [
+            'event' => 'login',
+            'event_id' => $eventId,
+            'method' => 'email',
+            'user' => TrackingPayload::userFields([
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? null,
+            ], $user->id),
+        ]);
 
         $intended = session()->pull('url.intended');
         $destination = $intended && (
@@ -81,6 +102,34 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        $eventId = $this->metaCapi->newEventId();
+        $userFields = TrackingPayload::userFields([
+            'name' => $user->name,
+            'email' => $user->email,
+        ], $user->id);
+
+        session()->flash('tracking_auth', [
+            'event' => 'sign_up',
+            'event_id' => $eventId,
+            'method' => 'email',
+            'user' => $userFields,
+        ]);
+
+        $this->metaCapi->send(
+            'CompleteRegistration',
+            $eventId,
+            [
+                'content_name' => 'Account Registration',
+                'status' => true,
+                'currency' => TrackingPayload::currency(),
+            ],
+            $this->metaCapi->userDataFromCustomer([
+                'name' => $user->name,
+                'email' => $user->email,
+            ], $user->id),
+            route('register'),
+        );
 
         return redirect()->route('account.dashboard')->with('success', 'Account created successfully!');
     }

@@ -1,4 +1,9 @@
-@php $gtmEnabled = (bool) old('gtm_enabled', $settings->gtm_enabled ?? false); @endphp
+@php
+    $gtmEnabled = (bool) old('gtm_enabled', $settings->gtm_enabled ?? false);
+    $metaCapiEnabled = (bool) old('meta_capi_enabled', $settings->meta_capi_enabled ?? false);
+    $hasMetaToken = filled($settings->meta_capi_access_token) || filled(config('services.meta.access_token'));
+    $metaPixelConfigured = filled(config('services.meta.pixel_id'));
+@endphp
 
 <div class="row">
     <div class="col-lg-8 mb-3">
@@ -23,8 +28,8 @@
                             <span class="settings-toggle-label">{{ $gtmEnabled ? 'Enabled' : 'Disabled' }}</span>
                         </label>
                     </div>
-                    <small class="settings-field-hint d-block mb-3">Saved in site settings (database). No <code>.env</code> entry needed — works the same after git push/pull.</small>
-                    <div class="settings-field mb-0">
+                    <small class="settings-field-hint d-block mb-3">Saved in site settings (database). FB Pixel &amp; GA4 IDs stay in your GTM workspace.</small>
+                    <div class="settings-field mb-4">
                         <label for="gtm_container_id">Container ID</label>
                         <div class="settings-input-wrap" style="max-width:280px">
                             <span class="settings-input-icon"><i class="fas fa-tag"></i></span>
@@ -43,6 +48,64 @@
                             Find this in your <a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer">Google Tag Manager</a> workspace.
                         </small>
                     </div>
+
+                    <div class="settings-form-panel-head mt-2">
+                        <span class="settings-form-panel-icon settings-form-panel-icon--gtm"><i class="fab fa-facebook"></i></span>
+                        <div>
+                            <h4>Meta Conversions API (server)</h4>
+                            <p>Server-side events with the same <code>event_id</code> as web GTM for deduplication. Browser Pixel stays in GTM.</p>
+                        </div>
+                    </div>
+                    <div class="settings-toggle-card {{ $metaCapiEnabled ? 'settings-toggle-card--on' : '' }}">
+                        <div class="settings-toggle-copy">
+                            <h5>Enable Meta CAPI</h5>
+                            <p>Send Purchase and funnel events from Laravel.</p>
+                        </div>
+                        <label class="settings-toggle" for="meta_capi_enabled">
+                            <input type="checkbox" class="settings-toggle-input" id="meta_capi_enabled" name="meta_capi_enabled" value="1" @checked($metaCapiEnabled)>
+                            <span class="settings-toggle-track"><span class="settings-toggle-thumb"></span></span>
+                            <span class="settings-toggle-label">{{ $metaCapiEnabled ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
+                    <div class="settings-field mb-3">
+                        <label for="meta_capi_access_token">Access token</label>
+                        <input
+                            type="password"
+                            name="meta_capi_access_token"
+                            id="meta_capi_access_token"
+                            class="form-control @error('meta_capi_access_token') is-invalid @enderror"
+                            value=""
+                            autocomplete="new-password"
+                            placeholder="{{ $hasMetaToken ? '•••••••• (leave blank to keep current)' : 'Paste Meta CAPI access token' }}"
+                        >
+                        @error('meta_capi_access_token')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                        <small class="settings-field-hint">Or set <code>META_CAPI_ACCESS_TOKEN</code> in <code>.env</code>. Leave blank to keep the saved / env token.</small>
+                    </div>
+                    <div class="settings-field mb-0">
+                        <label for="meta_capi_test_event_code">Test event code (optional)</label>
+                        <div class="settings-input-wrap" style="max-width:280px">
+                            <span class="settings-input-icon"><i class="fas fa-flask"></i></span>
+                            <input
+                                type="text"
+                                name="meta_capi_test_event_code"
+                                id="meta_capi_test_event_code"
+                                class="form-control @error('meta_capi_test_event_code') is-invalid @enderror"
+                                value="{{ old('meta_capi_test_event_code', $settings->meta_capi_test_event_code) }}"
+                                placeholder="TEST12345"
+                            >
+                        </div>
+                        @error('meta_capi_test_event_code')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                        <small class="settings-field-hint">
+                            From Meta Events Manager → Test Events.
+                            Pixel ID for API: <code>META_PIXEL_ID</code> in <code>.env</code>
+                            @if ($metaPixelConfigured)
+                                (set)
+                            @else
+                                (missing)
+                            @endif
+                            — not injected as a second browser pixel.
+                        </small>
+                    </div>
                 </section>
             </div>
         </div>
@@ -54,12 +117,12 @@
                 <span class="settings-side-icon settings-side-icon--info"><i class="fas fa-info-circle"></i></span>
                 <div>
                     <h4>How It Works</h4>
-                    <p>What happens when GTM is enabled.</p>
+                    <p>Web GTM + server CAPI together.</p>
                 </div>
             </div>
             <div class="settings-side-body">
-                <p class="settings-side-text">The GTM container script is injected in the storefront <code>&lt;head&gt;</code> and <code>&lt;body&gt;</code>. Configure tags, triggers, and variables inside your GTM workspace.</p>
-                <p class="settings-side-text mb-0">Container ID format: <code>GTM-XXXXXXX</code></p>
+                <p class="settings-side-text">Existing GTM loads your container. The store pushes ecommerce events into <code>dataLayer</code> so GA4/FB tags fire.</p>
+                <p class="settings-side-text mb-0">CAPI sends the same events server-side with matching <code>event_id</code> so Meta dedupes browser + server.</p>
             </div>
         </div>
     </div>

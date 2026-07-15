@@ -19,9 +19,19 @@ class SearchController extends Controller
         $query = trim((string) $request->query('q', ''));
         $products = $query !== '' ? $this->products->search($query) : [];
 
+        $impressions = collect($products)->values()->map(fn ($p, $i) => [
+            'product_id' => $p['slug'] ?? '',
+            'product_name' => $p['name'] ?? '',
+            'product_price' => $p['price'] ?? 0,
+            'product_type' => $p['category'] ?? '',
+            'product_brand' => $p['brand'] ?? config('app.name'),
+            'product_position' => $i + 1,
+        ])->all();
+
         return view('pages.search.index', [
             'query' => $query,
             'products' => $products,
+            'trackingImpressions' => $impressions,
         ]);
     }
 

@@ -13,6 +13,7 @@
     <x-site.theme-styles />
     <x-pwa.head />
     <x-site.google-tag-manager location="head" />
+    @stack('tracking')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     @stack('styles')
 </head>
@@ -31,6 +32,11 @@
     <x-pwa.install-banner />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @hasSection('tracking_boot')
+        @yield('tracking_boot')
+    @else
+        <x-site.tracking-boot page-type="page" />
+    @endif
     @stack('scripts')
 </body>
 </html>

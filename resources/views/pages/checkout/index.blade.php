@@ -711,6 +711,15 @@
     </section>
 @endsection
 
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="checkout"
+        :event-id="$trackingEventId ?? null"
+        :begin-checkout="$trackingCart ?? null"
+        :user="$trackingUser ?? null"
+    />
+@endsection
+
 @push('styles')
 <style>
     .checkout-payment-body {
