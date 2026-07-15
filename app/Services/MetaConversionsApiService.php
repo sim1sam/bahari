@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -27,20 +25,23 @@ class MetaConversionsApiService
         ?string $actionSource = 'website',
     ): bool {
         try {
-            if (! $this->settings->metaCapiEnabled()) {
-                Log::info('Meta CAPI skipped (disabled or missing credentials)', [
+            $pixelId = $this->settings->metaPixelId();
+            $token = $this->settings->metaCapiAccessToken();
+
+            if (! $pixelId || ! $token) {
+                Log::warning('Meta CAPI skipped: missing pixel or token', [
                     'event' => $eventName,
-                    'pixel' => $this->settings->metaPixelId(),
-                    'has_token' => filled($this->settings->metaCapiAccessToken()),
+                    'pixel' => $pixelId,
+                    'has_token' => filled($token),
+                    'enabled' => $this->settings->metaCapiEnabled(),
                 ]);
 
                 return false;
             }
 
-            $pixelId = $this->settings->metaPixelId();
-            $token = $this->settings->metaCapiAccessToken();
+            if (! $this->settings->metaCapiEnabled()) {
+                Log::warning('Meta CAPI skipped: disabled', ['event' => $eventName]);
 
-            if (! $pixelId || ! $token) {
                 return false;
             }
 
@@ -49,7 +50,7 @@ class MetaConversionsApiService
                 $userData['client_ip_address'] = request()->ip() ?: '0.0.0.0';
             }
             if (empty($userData['client_user_agent'])) {
-                $userData['client_user_agent'] = request()->userAgent() ?: 'Laravel';
+                $userData['client_user_agent'] = request()->userAgent() ?: 'Laravel-Meta-CAPI';
             }
 
             $payload = [
@@ -74,17 +75,15 @@ class MetaConversionsApiService
             $version = config('services.meta.api_version', 'v21.0');
             $url = "https://graph.facebook.com/{$version}/{$pixelId}/events";
 
-            $response = Http::asJson()
-                ->timeout(8)
-                ->acceptJson()
-                ->post($url, $payload);
+            $result = $this->postJson($url, $payload);
 
-            if (! $response->successful()) {
+            if (! ($result['ok'] ?? false)) {
                 Log::warning('Meta CAPI request failed', [
                     'event' => $eventName,
                     'event_id' => $eventId,
-                    'status' => $response->status(),
-                    'body' => $response->json() ?? $response->body(),
+                    'status' => $result['status'] ?? null,
+                    'body' => $result['body'] ?? null,
+                    'error' => $result['error'] ?? null,
                 ]);
 
                 return false;
@@ -93,11 +92,13 @@ class MetaConversionsApiService
             Log::info('Meta CAPI sent', [
                 'event' => $eventName,
                 'event_id' => $eventId,
-                'events_received' => data_get($response->json(), 'events_received'),
+                'events_received' => data_get($result['json'], 'events_received'),
+                'fbtrace_id' => data_get($result['json'], 'fbtrace_id'),
+                'test_event_code' => $testCode,
             ]);
 
             return true;
-        } catch (ConnectionException|Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning('Meta CAPI exception: '.$e->getMessage(), [
                 'event' => $eventName,
                 'event_id' => $eventId,
@@ -107,9 +108,121 @@ class MetaConversionsApiService
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{ok: bool, status?: int, body?: string, json?: mixed, error?: string}
+     */
+    private function postJson(string $url, array $payload): array
+    {
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return ['ok' => false, 'error' => 'json_encode failed'];
+        }
+
+        // Prefer cURL — more reliable on shared hosting than Guzzle TLS quirks.
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $json,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                ],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 15,
+                CURLOPT_CONNECTTIMEOUT => 8,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
+
+            $body = curl_exec($ch);
+            $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($body === false) {
+                return ['ok' => false, 'status' => $status, 'error' => $curlError ?: 'curl_exec failed'];
+            }
+
+            $decoded = json_decode($body, true);
+
+            return [
+                'ok' => $status >= 200 && $status < 300,
+                'status' => $status,
+                'body' => $body,
+                'json' => $decoded,
+                'error' => $curlError ?: null,
+            ];
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                'content' => $json,
+                'timeout' => 15,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $body = @file_get_contents($url, false, $context);
+        $status = 0;
+        if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m)) {
+            $status = (int) $m[1];
+        }
+
+        if ($body === false) {
+            return ['ok' => false, 'status' => $status, 'error' => 'file_get_contents failed'];
+        }
+
+        return [
+            'ok' => $status >= 200 && $status < 300,
+            'status' => $status,
+            'body' => $body,
+            'json' => json_decode($body, true),
+        ];
+    }
+
     public function newEventId(): string
     {
         return (string) Str::uuid();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function diagnostics(): array
+    {
+        $pixel = $this->settings->metaPixelId();
+        $token = $this->settings->metaCapiAccessToken();
+        $test = $this->settings->metaCapiTestEventCode();
+
+        return [
+            'enabled' => $this->settings->metaCapiEnabled(),
+            'pixel_id' => $pixel,
+            'has_token' => filled($token),
+            'token_length' => $token ? strlen($token) : 0,
+            'test_event_code' => $test,
+            'api_version' => config('services.meta.api_version', 'v21.0'),
+            'curl' => function_exists('curl_init'),
+            'config_pixel' => config('services.meta.pixel_id'),
+            'env_pixel' => $this->rawEnv('META_PIXEL_ID'),
+            'env_has_token' => filled($this->rawEnv('META_CAPI_ACCESS_TOKEN')),
+        ];
+    }
+
+    private function rawEnv(string $key): ?string
+    {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+
+        if ($value === false || $value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : null;
     }
 
     /**

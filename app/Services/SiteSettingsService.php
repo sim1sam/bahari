@@ -186,42 +186,35 @@ class SiteSettingsService
         return (bool) ($this->get()->gtm_enabled ?? false) && $this->gtmContainerId() !== null;
     }
 
-    public function metaCapiEnabled(): bool
-    {
-        if ($this->metaPixelId() === null || $this->metaCapiAccessToken() === null) {
-            return false;
-        }
-
-        // .env credentials always enable CAPI (production-friendly).
-        if (filled(config('services.meta.access_token'))) {
-            return true;
-        }
-
-        // DB-only token requires admin toggle ON.
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('site_settings', 'meta_capi_enabled')) {
-                return (bool) SiteSetting::query()->value('meta_capi_enabled');
-            }
-        } catch (Throwable) {
-            return true;
-        }
-
-        return true;
-    }
-
     public function metaPixelId(): ?string
     {
-        $id = trim((string) config('services.meta.pixel_id', ''));
+        foreach ([
+            config('services.meta.pixel_id'),
+            $_ENV['META_PIXEL_ID'] ?? null,
+            $_SERVER['META_PIXEL_ID'] ?? null,
+            getenv('META_PIXEL_ID') ?: null,
+        ] as $candidate) {
+            $id = trim((string) ($candidate ?: ''));
+            if ($id !== '') {
+                return $id;
+            }
+        }
 
-        return $id !== '' ? $id : null;
+        return null;
     }
 
     public function metaCapiAccessToken(): ?string
     {
-        // Prefer .env — do not depend on DB / encrypted cached settings.
-        $fromEnv = trim((string) config('services.meta.access_token', ''));
-        if ($fromEnv !== '') {
-            return $fromEnv;
+        foreach ([
+            config('services.meta.access_token'),
+            $_ENV['META_CAPI_ACCESS_TOKEN'] ?? null,
+            $_SERVER['META_CAPI_ACCESS_TOKEN'] ?? null,
+            getenv('META_CAPI_ACCESS_TOKEN') ?: null,
+        ] as $candidate) {
+            $token = trim((string) ($candidate ?: ''));
+            if ($token !== '') {
+                return $token;
+            }
         }
 
         try {
@@ -229,7 +222,6 @@ class SiteSettingsService
                 return null;
             }
 
-            // Fresh model so encrypted cast decrypts once (avoid get() cache+toArray issue).
             $token = SiteSetting::query()->first()?->meta_capi_access_token;
 
             return filled($token) ? (string) $token : null;
@@ -240,9 +232,16 @@ class SiteSettingsService
 
     public function metaCapiTestEventCode(): ?string
     {
-        $fromEnv = trim((string) config('services.meta.test_event_code', ''));
-        if ($fromEnv !== '') {
-            return $fromEnv;
+        foreach ([
+            config('services.meta.test_event_code'),
+            $_ENV['META_CAPI_TEST_EVENT_CODE'] ?? null,
+            $_SERVER['META_CAPI_TEST_EVENT_CODE'] ?? null,
+            getenv('META_CAPI_TEST_EVENT_CODE') ?: null,
+        ] as $candidate) {
+            $code = trim((string) ($candidate ?: ''));
+            if ($code !== '') {
+                return $code;
+            }
         }
 
         try {
@@ -256,6 +255,16 @@ class SiteSettingsService
         } catch (Throwable) {
             return null;
         }
+    }
+
+    public function metaCapiEnabled(): bool
+    {
+        if ($this->metaPixelId() === null || $this->metaCapiAccessToken() === null) {
+            return false;
+        }
+
+        // Token present in environment/config => always on.
+        return true;
     }
 
     public function sslCommerzEnabled(): bool
