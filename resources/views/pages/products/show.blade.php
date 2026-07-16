@@ -115,7 +115,7 @@
                         method="POST"
                         class="mt-8"
                         x-data="{ qty: 1 }"
-                        @submit.prevent="$dispatch('cart:add', { form: $el })"
+                        @submit.prevent="window.dispatchEvent(new CustomEvent('cart:add', { detail: { form: $el } }))"
                         data-track-add-to-cart
                         data-product-id="{{ $product['slug'] }}"
                         data-slug="{{ $product['slug'] }}"

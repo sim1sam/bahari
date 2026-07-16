@@ -12,6 +12,7 @@
     $siteName = $settings->siteName();
 @endphp
 
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{{ $pageTitle }}</title>
 @if ($favicon)
     <link rel="icon" href="{{ $favicon }}" type="image/x-icon">

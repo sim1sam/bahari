@@ -60,12 +60,13 @@
         @endif
 
         @if ($slug)
-            <div class="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
+            <div class="absolute inset-x-0 bottom-0 p-3 z-10 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-transform duration-300">
                 <form
                     action="{{ route('cart.add') }}"
                     method="POST"
                     x-data
-                    @submit.prevent="$dispatch('cart:add', { form: $el })"
+                    @click.stop
+                    @submit.prevent="window.dispatchEvent(new CustomEvent('cart:add', { detail: { form: $el } }))"
                     data-track-add-to-cart
                     data-product-id="{{ $slug }}"
                     data-slug="{{ $slug }}"
