@@ -52,6 +52,16 @@ return [
                 'api_processed',
             ],
         ],
+        'marketing' => [
+            'label' => 'Marketing',
+            'icon' => 'fas fa-bullhorn',
+            'items' => [
+                'shop_page',
+                'shop_page_products',
+                'shop_page_brands',
+                'coupons',
+            ],
+        ],
         'finance' => [
             'label' => 'Reports',
             'icon' => 'fas fa-chart-line',
@@ -79,7 +89,6 @@ return [
                 'settings_top_bar',
                 'settings_website_colors',
                 'settings_gtm',
-                'coupons',
                 'shipping',
             ],
         ],

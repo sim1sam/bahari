@@ -110,8 +110,18 @@ class CategoryCatalog
     public function slugForName(string $name): ?string
     {
         foreach ($this->categories() as $slug => $category) {
-            if (in_array($name, $category['product_categories'], true)) {
+            if (strcasecmp((string) ($category['name'] ?? ''), $name) === 0) {
                 return $slug;
+            }
+
+            if (in_array($name, $category['product_categories'] ?? [], true)) {
+                return $slug;
+            }
+
+            foreach ($category['product_categories'] ?? [] as $alias) {
+                if (strcasecmp((string) $alias, $name) === 0) {
+                    return $slug;
+                }
             }
         }
 
@@ -141,6 +151,22 @@ class CategoryCatalog
                 'active' => request()->routeIs('home'),
             ],
         ];
+
+        $shopEnabled = false;
+
+        try {
+            $shopEnabled = app(ShopPageService::class)->isEnabled();
+        } catch (\Throwable) {
+            $shopEnabled = false;
+        }
+
+        if ($shopEnabled) {
+            $links[] = [
+                'label' => 'Shop',
+                'href' => route('shop.index'),
+                'active' => request()->routeIs('shop.*'),
+            ];
+        }
 
         foreach ($this->all() as $category) {
             $links[] = [

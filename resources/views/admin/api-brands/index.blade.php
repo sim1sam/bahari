@@ -57,10 +57,10 @@
             </div>
             <div class="col-xl-3 col-sm-6 mb-3">
                 <article class="ecom-stat ecom-stat--api">
-                    <span class="ecom-stat-icon"><i class="fas fa-images"></i></span>
+                    <span class="ecom-stat-icon"><i class="fas fa-image"></i></span>
                     <div>
-                        <div class="ecom-stat-value">{{ number_format($stats['received_items']) }}</div>
-                        <div class="ecom-stat-label">Received Items</div>
+                        <div class="ecom-stat-value">{{ number_format($stats['with_images'] ?? 0) }}</div>
+                        <div class="ecom-stat-label">With Images</div>
                     </div>
                 </article>
             </div>
@@ -118,7 +118,11 @@
                                 <tr>
                                     <td>
                                         <div class="ecom-brand-cell">
-                                            <span class="ecom-brand-icon">{{ strtoupper(substr($brand->name, 0, 1)) }}</span>
+                                            @if ($brand->imageUrl())
+                                                <img src="{{ $brand->imageUrl() }}" alt="{{ $brand->name }}" class="ecom-brand-thumb rounded" style="width:40px;height:52px;object-fit:cover">
+                                            @else
+                                                <span class="ecom-brand-icon">{{ strtoupper(substr($brand->name, 0, 1)) }}</span>
+                                            @endif
                                             <div>
                                                 <div class="ecom-brand-name">{{ $brand->name }}</div>
                                                 <code class="ecom-brand-slug">{{ $brand->slug }}</code>

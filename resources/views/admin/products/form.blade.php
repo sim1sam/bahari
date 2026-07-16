@@ -76,7 +76,47 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Brand</label>
-                            <input type="text" name="brand" class="form-control" value="{{ old('brand', $product->brand) }}" {{ $isApiProduct ? 'readonly' : '' }} placeholder="e.g. Bahari">
+                            @php
+                                $currentBrand = old('brand', $product->brand);
+                                $brandOptions = $brands ?? collect();
+                                $isCustomBrand = $currentBrand && ! $brandOptions->contains($currentBrand);
+                                $selectedBrand = old('brand_select', $isCustomBrand ? '__custom__' : ($currentBrand ?: ''));
+                            @endphp
+                            @if ($isApiProduct)
+                                <select name="brand" class="form-control @error('brand') is-invalid @enderror">
+                                    <option value="">— Select brand —</option>
+                                    @foreach ($brandOptions as $brandName)
+                                        <option value="{{ $brandName }}" @selected($currentBrand === $brandName)>{{ $brandName }}</option>
+                                    @endforeach
+                                    @if ($currentBrand && ! $brandOptions->contains($currentBrand))
+                                        <option value="{{ $currentBrand }}" selected>{{ $currentBrand }}</option>
+                                    @endif
+                                </select>
+                            @else
+                                <select
+                                    name="brand_select"
+                                    id="product-brand-select"
+                                    class="form-control @error('brand') is-invalid @enderror"
+                                >
+                                    <option value="">— Select brand —</option>
+                                    @foreach ($brandOptions as $brandName)
+                                        <option value="{{ $brandName }}" @selected($selectedBrand === $brandName)>{{ $brandName }}</option>
+                                    @endforeach
+                                    <option value="__custom__" @selected($selectedBrand === '__custom__')>— Add new brand —</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    name="brand_custom"
+                                    id="product-brand-custom"
+                                    class="form-control mt-2 @error('brand') is-invalid @enderror"
+                                    value="{{ old('brand_custom', $isCustomBrand ? $currentBrand : '') }}"
+                                    placeholder="Type new brand name"
+                                    style="{{ $selectedBrand === '__custom__' ? '' : 'display:none' }}"
+                                >
+                                <input type="hidden" name="brand" id="product-brand-value" value="{{ $currentBrand }}">
+                            @endif
+                            @error('brand')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                            <small class="form-text text-muted">Choose a live brand from the list{{ $isApiProduct ? '' : ', or add a new one' }}.</small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -328,3 +368,45 @@
         </script>
     @endpush
 @endunless
+
+@push('scripts')
+<script>
+(function () {
+    var select = document.getElementById('product-brand-select');
+    var custom = document.getElementById('product-brand-custom');
+    var hidden = document.getElementById('product-brand-value');
+    if (!select || !hidden) return;
+
+    function syncBrand() {
+        if (select.value === '__custom__') {
+            if (custom) {
+                custom.style.display = '';
+                hidden.value = custom.value.trim();
+            }
+            return;
+        }
+
+        if (custom) {
+            custom.style.display = 'none';
+        }
+        hidden.value = select.value;
+    }
+
+    select.addEventListener('change', syncBrand);
+    if (custom) {
+        custom.addEventListener('input', function () {
+            if (select.value === '__custom__') {
+                hidden.value = custom.value.trim();
+            }
+        });
+    }
+
+    var form = select.closest('form');
+    if (form) {
+        form.addEventListener('submit', syncBrand);
+    }
+
+    syncBrand();
+})();
+</script>
+@endpush

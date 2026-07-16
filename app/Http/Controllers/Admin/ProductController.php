@@ -48,6 +48,7 @@ class ProductController extends Controller
         return view('admin.products.form', [
             'product' => new Product(['is_active' => true, 'is_manual' => true, 'stock' => 0]),
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'brands' => $this->brandOptions(),
         ]);
     }
 
@@ -85,6 +86,7 @@ class ProductController extends Controller
         return view('admin.products.form', [
             'product' => $product,
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'brands' => $this->brandOptions($product->brand),
             'isApiProduct' => $product->isLiveFromApi() && ! $product->isManualProduct(),
         ]);
     }
@@ -176,11 +178,17 @@ class ProductController extends Controller
 
     private function validateProduct(Request $request, ?Product $product = null): array
     {
+        $request->merge([
+            'brand' => $this->resolveBrandInput($request),
+        ]);
+
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'slug' => 'nullable|string|max:100',
             'name' => 'required|string|max:200',
             'brand' => 'nullable|string|max:120',
+            'brand_select' => 'nullable|string|max:120',
+            'brand_custom' => 'nullable|string|max:120',
             'purchase_price' => 'nullable|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0|gte:price',
@@ -224,6 +232,7 @@ class ProductController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_manual'] = true;
         $validated['badge_variant'] = $validated['badge_variant'] ?: 'default';
+        $validated['brand'] = filled($validated['brand'] ?? null) ? trim((string) $validated['brand']) : null;
 
         if (empty($validated['slug']) && ! empty($validated['name'])) {
             $validated['slug'] = Str::slug($validated['name']);
@@ -240,7 +249,14 @@ class ProductController extends Controller
             $validated['badge_variant'] = 'sale';
         }
 
-        unset($validated['thumbnail'], $validated['gallery'], $validated['thumbnail_url'], $validated['gallery_urls']);
+        unset(
+            $validated['thumbnail'],
+            $validated['gallery'],
+            $validated['thumbnail_url'],
+            $validated['gallery_urls'],
+            $validated['brand_select'],
+            $validated['brand_custom'],
+        );
 
         return $validated;
     }
@@ -266,6 +282,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
+            'brand' => 'nullable|string|max:120',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
             'stock' => 'nullable|integer|min:0',
@@ -277,8 +294,55 @@ class ProductController extends Controller
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_new_arrival'] = $request->boolean('is_new_arrival');
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['brand'] = filled($validated['brand'] ?? null) ? trim((string) $validated['brand']) : null;
 
         return $validated;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function brandOptions(?string $current = null)
+    {
+        $fromProducts = Product::query()
+            ->whereNotNull('brand')
+            ->where('brand', '!=', '')
+            ->distinct()
+            ->orderBy('brand')
+            ->pluck('brand');
+
+        $fromApiBrands = \App\Models\ApiReceivedBrand::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name');
+
+        return $fromProducts
+            ->merge($fromApiBrands)
+            ->when(filled($current), fn ($c) => $c->push($current))
+            ->map(fn ($brand) => trim((string) $brand))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    private function resolveBrandInput(Request $request): ?string
+    {
+        $select = trim((string) $request->input('brand_select', ''));
+
+        if ($select === '__custom__') {
+            $custom = trim((string) $request->input('brand_custom', ''));
+
+            return $custom !== '' ? $custom : null;
+        }
+
+        if ($select !== '') {
+            return $select;
+        }
+
+        $brand = trim((string) $request->input('brand', ''));
+
+        return $brand !== '' ? $brand : null;
     }
 
     private function syncImages(Request $request, Product $product): array

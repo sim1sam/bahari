@@ -27,7 +27,7 @@
     ];
 @endphp
 
-<a href="{{ $href }}" class="group relative flex flex-col items-center justify-center p-6 rounded-2xl text-white overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-h-[160px]">
+<a href="{{ $href }}" {{ $attributes->merge(['class' => 'group relative flex flex-col items-center justify-center p-6 rounded-2xl text-white overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-h-[160px]']) }}>
     @if ($image)
         <img
             src="{{ $image }}"

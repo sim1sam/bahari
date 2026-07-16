@@ -67,6 +67,71 @@
         background: linear-gradient(to top, color-mix(in srgb, var(--theme-primary-dark) 50%, transparent) 0%, transparent 100%);
     }
 
+    /* Shop page banners — theme-colored overlays */
+    .shop-banner-overlay {
+        background: linear-gradient(
+            to right,
+            color-mix(in srgb, var(--theme-primary-dark) 88%, transparent) 0%,
+            color-mix(in srgb, var(--theme-primary-dark) 55%, transparent) 42%,
+            color-mix(in srgb, var(--theme-primary) 18%, transparent) 100%
+        );
+    }
+
+    .shop-banner-overlay-bottom {
+        background: linear-gradient(
+            to top,
+            color-mix(in srgb, var(--theme-primary-dark) 55%, transparent) 0%,
+            transparent 65%
+        );
+    }
+
+    .shop-banner-overlay-promo {
+        background: linear-gradient(
+            to right,
+            color-mix(in srgb, var(--theme-primary-dark) 86%, transparent) 0%,
+            color-mix(in srgb, var(--theme-primary-dark) 50%, transparent) 45%,
+            color-mix(in srgb, var(--theme-primary) 15%, transparent) 100%
+        );
+    }
+
+    .shop-banner-overlay-strip {
+        background:
+            radial-gradient(
+                ellipse at top right,
+                color-mix(in srgb, var(--theme-primary) 40%, transparent),
+                transparent 55%
+            ),
+            linear-gradient(
+                105deg,
+                color-mix(in srgb, var(--theme-primary-dark) 92%, transparent) 0%,
+                color-mix(in srgb, var(--theme-primary-dark) 72%, transparent) 45%,
+                color-mix(in srgb, var(--theme-primary) 55%, transparent) 100%
+            );
+    }
+
+    .shop-banner-overlay-empty {
+        background:
+            radial-gradient(
+                ellipse at 70% 20%,
+                color-mix(in srgb, var(--theme-primary) 55%, transparent),
+                transparent 55%
+            ),
+            linear-gradient(
+                135deg,
+                var(--theme-primary-dark) 0%,
+                var(--theme-primary) 55%,
+                color-mix(in srgb, var(--theme-primary-dark) 80%, black) 100%
+            );
+    }
+
+    .shop-spotlight-wash {
+        background: radial-gradient(
+            ellipse at 80% 20%,
+            color-mix(in srgb, var(--theme-primary) 35%, transparent),
+            transparent 55%
+        );
+    }
+
     .category-layout {
         display: flex;
         flex-direction: column;

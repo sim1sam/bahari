@@ -34,6 +34,9 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShippingSettingsController;
+use App\Http\Controllers\Admin\ShopPageBrandController;
+use App\Http\Controllers\Admin\ShopPageController;
+use App\Http\Controllers\Admin\ShopPageProductController;
 use App\Http\Controllers\Admin\WatermarkSettingsController;
 use App\Http\Controllers\Admin\SslCommerzSettingsController;
 use App\Http\Controllers\Admin\StorageLinkController;
@@ -191,6 +194,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:coupons')->group(function () {
             Route::resource('coupons', CouponController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:shop_page')->group(function () {
+            Route::get('shop-page', [ShopPageController::class, 'edit'])->name('shop-page.edit');
+            Route::put('shop-page', [ShopPageController::class, 'update'])->name('shop-page.update');
+            Route::get('shop-page/products', [ShopPageProductController::class, 'edit'])->name('shop-page.products.edit');
+            Route::put('shop-page/products', [ShopPageProductController::class, 'update'])->name('shop-page.products.update');
+            Route::get('shop-page/brands', [ShopPageBrandController::class, 'edit'])->name('shop-page.brands.edit');
+            Route::put('shop-page/brands', [ShopPageBrandController::class, 'update'])->name('shop-page.brands.update');
         });
 
         Route::middleware('admin.feature:reports')->group(function () {

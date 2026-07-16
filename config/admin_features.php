@@ -96,6 +96,26 @@ return [
         'route' => 'admin.coupons.index',
         'active' => 'admin.coupons.*',
     ],
+    'shop_page' => [
+        'label' => 'Shop Page',
+        'icon' => 'fas fa-store',
+        'route' => 'admin.shop-page.edit',
+        'active' => 'admin.shop-page.edit|admin.shop-page.update',
+    ],
+    'shop_page_products' => [
+        'label' => 'Shop Products',
+        'icon' => 'fas fa-tshirt',
+        'route' => 'admin.shop-page.products.edit',
+        'active' => 'admin.shop-page.products.*',
+        'permission' => 'shop_page',
+    ],
+    'shop_page_brands' => [
+        'label' => 'Shop Brands',
+        'icon' => 'fas fa-copyright',
+        'route' => 'admin.shop-page.brands.edit',
+        'active' => 'admin.shop-page.brands.*',
+        'permission' => 'shop_page',
+    ],
     'shipping' => [
         'label' => 'Shipping Fee (BDT)',
         'icon' => 'fas fa-truck',

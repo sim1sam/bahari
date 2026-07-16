@@ -12,6 +12,7 @@ use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\SearchController;
+use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SslCommerzController;
 use App\Http\Controllers\Frontend\PwaController;
 use App\Http\Controllers\MetaCapiDebugController;
@@ -30,6 +31,7 @@ Route::get('/media/{path}', [PublicStorageController::class, 'show'])
     ->name('storage.file');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
