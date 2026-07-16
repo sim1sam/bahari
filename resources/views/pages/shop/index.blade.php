@@ -221,6 +221,8 @@
                                             :badge="$product['badge'] ?? null"
                                             :badgeVariant="$product['badge_variant'] ?? 'default'"
                                             :rating="$product['rating'] ?? null"
+                                            :brand="$product['brand'] ?? null"
+                                            :category="$product['category'] ?? ($category['name'] ?? null)"
                                             :href="$product['href']"
                                             list-name="Shop — {{ $category['name'] }}"
                                             :position="$loop->iteration"
@@ -315,4 +317,13 @@
         .shop-landing-product { animation: none !important; }
     }
 </style>
+@endsection
+
+@section('tracking_boot')
+    <x-site.tracking-boot
+        page-type="shop"
+        :impression-groups="$trackingImpressionGroups ?? []"
+        list-name="Shop"
+        :page-extra="$trackingPageExtra ?? null"
+    />
 @endsection

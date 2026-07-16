@@ -1397,6 +1397,7 @@ namespace App\Models {
 	 *
 	 * @property \Illuminate\Support\Carbon|null $updated_at
 	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property string|null $image
 	 * @property string|null $notes
 	 * @property boolean $is_active
 	 * @property string $slug
@@ -1409,6 +1410,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereSlug($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereIsActive($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereNotes($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereImage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereCreatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<ApiReceivedBrand>|ApiReceivedBrand newModelQuery()

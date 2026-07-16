@@ -7,10 +7,12 @@
     'purchase' => null,
     'search' => null,
     'impressions' => null,
+    'impressionGroups' => null,
     'listName' => null,
     'user' => null,
     'login' => null,
     'signUp' => null,
+    'pageExtra' => null,
 ])
 
 @php
@@ -47,10 +49,12 @@
         'purchase' => $purchase,
         'search' => $search,
         'impressions' => $impressions,
+        'impression_groups' => $impressionGroups,
         'list_name' => $listName,
         'user' => $user,
         'login' => $login,
         'sign_up' => $signUp,
+        'page_extra' => $pageExtra,
     ], fn ($v) => $v !== null && $v !== []);
 @endphp
 
@@ -81,11 +85,35 @@
             return payload.event_id;
         }
 
+        function pushImpressions(products, listName) {
+            if (!products || !products.length) return;
+            var names = [], prices = [], types = [], brands = [], ids = [], positions = [];
+            products.forEach(function (p, i) {
+                names.push(p.product_name || p.name || '');
+                prices.push(Number(p.product_price || p.price || 0));
+                types.push(p.product_type || p.category || '');
+                brands.push(p.product_brand || p.brand || '');
+                ids.push(p.product_id || p.slug || '');
+                positions.push(p.product_position || i + 1);
+            });
+            push('ee_productImpression', {
+                product_name: names,
+                product_price: prices,
+                product_type: types,
+                product_brand: brands,
+                product_id: ids,
+                product_sku: ids,
+                google_product_id: ids,
+                product_position: positions,
+                collection_name: listName || 'Product List'
+            });
+        }
+
         if (boot.user) {
             window.dataLayer.push(Object.assign({}, boot.user));
         }
 
-        push('sh_info', { page_type: boot.page_type || 'page' }, boot.event_id);
+        push('sh_info', Object.assign({ page_type: boot.page_type || 'page' }, boot.page_extra || {}), boot.event_id);
 
         if (boot.view_item) {
             push('view_item', boot.view_item, boot.event_id);
@@ -119,27 +147,12 @@
                 search_results: boot.search.results || 0
             }, boot.event_id);
         }
-        if (boot.impressions && boot.impressions.length) {
-            var names = [], prices = [], types = [], brands = [], ids = [], positions = [];
-            boot.impressions.forEach(function (p, i) {
-                names.push(p.product_name || p.name || '');
-                prices.push(Number(p.product_price || p.price || 0));
-                types.push(p.product_type || p.category || '');
-                brands.push(p.product_brand || p.brand || '');
-                ids.push(p.product_id || p.slug || '');
-                positions.push(p.product_position || i + 1);
+        if (boot.impression_groups && boot.impression_groups.length) {
+            boot.impression_groups.forEach(function (group) {
+                pushImpressions(group.products || [], group.list_name || boot.list_name || 'Product List');
             });
-            push('ee_productImpression', {
-                product_name: names,
-                product_price: prices,
-                product_type: types,
-                product_brand: brands,
-                product_id: ids,
-                product_sku: ids,
-                google_product_id: ids,
-                product_position: positions,
-                collection_name: boot.list_name || 'Product List'
-            });
+        } else if (boot.impressions && boot.impressions.length) {
+            pushImpressions(boot.impressions, boot.list_name || 'Product List');
         }
     })(window.__TRACKING__);
 </script>

@@ -102,6 +102,8 @@ class ProductCatalog
             'badge' => $product['badge'] ?? null,
             'badge_variant' => $product['badge_variant'] ?? 'default',
             'rating' => $product['rating'] ?? null,
+            'brand' => $product['brand'] ?? null,
+            'category' => $product['category'] ?? null,
             'href' => route('products.show', $product['slug']),
         ];
     }

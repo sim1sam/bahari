@@ -36,6 +36,40 @@ class ShopController extends Controller
         $activeBrands = $this->shop->activeBrands();
         $categoryRows = $this->categoryRows($productList);
 
+        $trackingImpressionGroups = collect($categoryRows)->map(function (array $row) {
+            $categoryName = $row['category']['name'] ?? 'Collection';
+
+            return [
+                'list_name' => 'Shop — '.$categoryName,
+                'products' => collect($row['products'])->values()->map(fn (array $p, int $i) => [
+                    'product_id' => $p['slug'] ?? '',
+                    'product_name' => $p['name'] ?? '',
+                    'product_price' => $p['price'] ?? 0,
+                    'product_type' => $p['category'] ?? $categoryName,
+                    'product_brand' => $p['brand'] ?? config('app.name'),
+                    'product_position' => $i + 1,
+                ])->all(),
+            ];
+        })->filter(fn (array $group) => count($group['products']) > 0)->values()->all();
+
+        $trackingImpressions = collect($productList)->values()->map(fn (array $p, int $i) => [
+            'product_id' => $p['slug'] ?? '',
+            'product_name' => $p['name'] ?? '',
+            'product_price' => $p['price'] ?? 0,
+            'product_type' => $p['category'] ?? '',
+            'product_brand' => $p['brand'] ?? config('app.name'),
+            'product_position' => $i + 1,
+        ])->all();
+
+        $pageExtra = array_filter([
+            'shop_product_count' => count($productList),
+            'shop_active_brands' => $activeBrands ?: null,
+            'shop_sort' => $sort ?: null,
+            'shop_filter_brands' => $filters['brands'] ?: null,
+            'shop_filter_category' => $filters['category'] ?: null,
+            'shop_filter_sale' => $filters['sale'] ? true : null,
+        ], fn ($v) => $v !== null && $v !== [] && $v !== false);
+
         return view('pages.shop.index', [
             'settings' => $settings,
             'activeBrands' => $activeBrands,
@@ -51,6 +85,9 @@ class ShopController extends Controller
 
                 return ! empty($value);
             })->count(),
+            'trackingImpressions' => $trackingImpressions,
+            'trackingImpressionGroups' => $trackingImpressionGroups,
+            'trackingPageExtra' => $pageExtra,
         ]);
     }
 
