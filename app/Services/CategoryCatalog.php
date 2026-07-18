@@ -169,6 +169,17 @@ class CategoryCatalog
         }
 
         foreach ($this->all() as $category) {
+            $slug = strtolower((string) ($category['slug'] ?? ''));
+            $name = strtolower(trim((string) ($category['name'] ?? '')));
+
+            // Keep only real category names in the navbar (exclude Sale / New).
+            if (($category['filter'] ?? null) === 'sale'
+                || in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
+                || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true)
+            ) {
+                continue;
+            }
+
             $links[] = [
                 'label' => $category['name'],
                 'href' => route('categories.show', $category['slug']),

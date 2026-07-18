@@ -22,8 +22,8 @@ class HomeController extends Controller
             'banners' => $this->homepage->banners(),
             'features' => $this->homepage->features(),
             'categories' => collect($this->categories->all())
-                ->take(6)
                 ->map(fn ($c) => $this->categories->toCard($c))
+                ->values()
                 ->all(),
             'featuredProducts' => $this->productCards(fn () => $this->catalog->featured(), 8),
             'newArrivals' => $this->productCards(fn () => $this->catalog->newArrivals(), 20),
