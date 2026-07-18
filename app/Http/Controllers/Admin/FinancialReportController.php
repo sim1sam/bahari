@@ -90,6 +90,23 @@ class FinancialReportController extends Controller
         ]);
     }
 
+    public function sales(Request $request): View|Response
+    {
+        $filters = $this->resolveFilters($request);
+        $report = $this->reports->salesReport($filters);
+
+        if ($request->query('export') === 'csv') {
+            return $this->exportSalesCsv($report, $filters);
+        }
+
+        return view('admin.reports.sales', [
+            'filters' => $filters,
+            'report' => $report,
+            'paymentBanks' => PaymentBank::query()->orderBy('name')->get(),
+            'accountHeads' => AccountHead::query()->orderBy('name')->get(),
+        ]);
+    }
+
     private function resolveFilters(Request $request): FinancialReportFilters
     {
         $filters = FinancialReportFilters::fromRequest($request);
@@ -148,6 +165,45 @@ class FinancialReportController extends Controller
         return response($this->toCsv($lines), 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="ledger-'.$filters->dateFrom.'-'.$filters->dateTo.'.csv"',
+        ]);
+    }
+
+    /** @param array{rows: \Illuminate\Support\Collection, totals: array<string, float>} $report */
+    private function exportSalesCsv(array $report, FinancialReportFilters $filters): Response
+    {
+        $lines = [
+            ['Sales Report (Order-wise)'],
+            ['Period', $filters->dateFrom.' to '.$filters->dateTo],
+            [],
+            ['Date', 'Order', 'Customer', 'Status', 'Sales Price', 'Procurement Cost', 'Service Charge'],
+        ];
+
+        foreach ($report['rows'] as $row) {
+            $lines[] = [
+                $row['date'],
+                $row['number'],
+                $row['customer_name'],
+                $row['status'],
+                $row['sales_price'],
+                $row['procurement_cost'],
+                $row['service_charge'],
+            ];
+        }
+
+        $lines[] = [];
+        $lines[] = [
+            'Total',
+            '',
+            '',
+            '',
+            $report['totals']['sales_price'],
+            $report['totals']['procurement_cost'],
+            $report['totals']['service_charge'],
+        ];
+
+        return response($this->toCsv($lines), 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="sales-'.$filters->dateFrom.'-'.$filters->dateTo.'.csv"',
         ]);
     }
 

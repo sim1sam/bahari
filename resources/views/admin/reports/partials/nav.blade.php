@@ -24,6 +24,9 @@
     <a href="{{ route('admin.reports.profit-loss', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.profit-loss')) active @endif">
         <i class="fas fa-file-invoice-dollar"></i> Profit &amp; Loss
     </a>
+    <a href="{{ route('admin.reports.sales', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.sales')) active @endif">
+        <i class="fas fa-shopping-bag"></i> Sales
+    </a>
     <a href="{{ route('admin.reports.balance-sheet', $query) }}" class="reports-nav-link @if (request()->routeIs('admin.reports.balance-sheet')) active @endif">
         <i class="fas fa-balance-scale"></i> Balance Sheet
     </a>

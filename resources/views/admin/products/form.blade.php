@@ -23,7 +23,7 @@
 
         @if ($isApiProduct)
             <div class="alert alert-info">
-                This product was published from <strong>API Processed</strong>. Name, slug, images, and descriptions are managed by the API workflow. You can adjust pricing, category, stock, and visibility here.
+                This product was published from <strong>API Processed</strong>. Name, slug, images, and descriptions are managed by the API workflow. You can adjust purchase price, sale price, category, stock, and visibility here.
             </div>
         @endif
 
@@ -142,10 +142,8 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label>Purchase Price</label>
-                            <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ old('purchase_price', $product->purchase_price) }}" {{ $isApiProduct ? 'readonly' : '' }}>
-                            @unless ($isApiProduct)
-                                <small class="form-text text-muted">When stock is added, an expense is auto-recorded: purchase price × quantity.</small>
-                            @endunless
+                            <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ old('purchase_price', $product->purchase_price) }}">
+                            <small class="form-text text-muted">Used for sales reports and procurement cost. When stock is added on manual products, an expense is auto-recorded: purchase price × quantity.</small>
                         </div>
                     </div>
                     <div class="col-md-3">

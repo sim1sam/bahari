@@ -283,6 +283,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'brand' => 'nullable|string|max:120',
+            'purchase_price' => 'nullable|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
             'stock' => 'nullable|integer|min:0',
@@ -295,6 +296,9 @@ class ProductController extends Controller
         $validated['is_new_arrival'] = $request->boolean('is_new_arrival');
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['brand'] = filled($validated['brand'] ?? null) ? trim((string) $validated['brand']) : null;
+        $validated['purchase_price'] = array_key_exists('purchase_price', $validated) && $validated['purchase_price'] !== null
+            ? round((float) $validated['purchase_price'], 2)
+            : null;
 
         return $validated;
     }

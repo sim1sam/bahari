@@ -23,8 +23,9 @@
                 <div class="reports-filter-field">
                     <label>Order Status</label>
                     <select name="status" class="form-control">
-                        <option value="">All (excl. cancelled)</option>
-                        @foreach (['pending', 'processing', 'shipped', 'completed', 'cancelled'] as $status)
+                        <option value="completed" @selected(($filters->status ?? 'completed') === 'completed')>Completed (sales)</option>
+                        <option value="all" @selected($filters->status === null)>All (excl. cancelled)</option>
+                        @foreach (['pending', 'processing', 'shipped', 'cancelled'] as $status)
                             <option value="{{ $status }}" @selected($filters->status === $status)>{{ ucfirst($status) }}</option>
                         @endforeach
                     </select>

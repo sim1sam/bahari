@@ -21,13 +21,21 @@ class FinancialReportFilters
 
     public static function fromRequest(Request $request): self
     {
+        $status = $request->query('status');
+
+        if (! $request->has('status')) {
+            $status = 'completed';
+        } elseif ($status === '' || $status === 'all') {
+            $status = null;
+        }
+
         return new self(
             dateFrom: $request->query('date_from') ?: null,
             dateTo: $request->query('date_to') ?: null,
             basis: in_array($request->query('basis'), ['accrual', 'cash'], true)
                 ? $request->query('basis')
                 : 'accrual',
-            status: $request->query('status') ?: null,
+            status: $status,
             paymentStatus: $request->query('payment_status') ?: null,
             paymentMethod: $request->query('payment_method') ?: null,
             orderType: $request->query('order_type') ?: null,
@@ -44,7 +52,7 @@ class FinancialReportFilters
             'date_from' => $this->dateFrom,
             'date_to' => $this->dateTo,
             'basis' => $this->basis,
-            'status' => $this->status,
+            'status' => $this->status ?? 'all',
             'payment_status' => $this->paymentStatus,
             'payment_method' => $this->paymentMethod,
             'order_type' => $this->orderType,

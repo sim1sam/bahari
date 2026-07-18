@@ -112,6 +112,7 @@ class FinancialReportService
             dateFrom: null,
             dateTo: $asOf,
             basis: 'accrual',
+            status: 'completed',
             excludeCancelled: true,
         );
 
@@ -119,6 +120,7 @@ class FinancialReportService
             dateFrom: null,
             dateTo: $asOf,
             basis: 'accrual',
+            status: 'completed',
             excludeCancelled: true,
         );
 
@@ -214,15 +216,16 @@ class FinancialReportService
         if ($filters->basis === 'accrual') {
             $this->ordersQuery($filters)
                 ->with('items')
-                ->orderBy('created_at')
+                ->orderBy($filters->status === 'completed' ? 'completed_at' : 'created_at')
                 ->chunk(100, function ($orders) use (&$entries) {
                     foreach ($orders as $order) {
-                        $date = $order->created_at->toDateString();
+                        $saleAt = $order->completed_at ?? $order->created_at;
+                        $date = $saleAt->toDateString();
                         $cogs = $this->cogsForOrderIds(collect([$order->id]));
 
                         $entries->push([
                             'date' => $date,
-                            'datetime' => $order->created_at,
+                            'datetime' => $saleAt,
                             'type' => 'sale',
                             'reference' => $order->number,
                             'description' => 'Order sale — '.$order->customer_name,
@@ -234,7 +237,7 @@ class FinancialReportService
                         if ((float) $order->discount > 0) {
                             $entries->push([
                                 'date' => $date,
-                                'datetime' => $order->created_at,
+                                'datetime' => $saleAt,
                                 'type' => 'discount',
                                 'reference' => $order->number,
                                 'description' => 'Coupon / discount'.($order->coupon_code ? ' ('.$order->coupon_code.')' : ''),
@@ -247,7 +250,7 @@ class FinancialReportService
                         if ((float) $order->shipping > 0) {
                             $entries->push([
                                 'date' => $date,
-                                'datetime' => $order->created_at,
+                                'datetime' => $saleAt,
                                 'type' => 'shipping',
                                 'reference' => $order->number,
                                 'description' => 'Shipping income',
@@ -260,7 +263,7 @@ class FinancialReportService
                         if ($cogs > 0) {
                             $entries->push([
                                 'date' => $date,
-                                'datetime' => $order->created_at,
+                                'datetime' => $saleAt,
                                 'type' => 'cogs',
                                 'reference' => $order->number,
                                 'description' => 'Cost of goods sold',
@@ -343,20 +346,22 @@ class FinancialReportService
     {
         $query = Order::query();
 
+        $dateColumn = $filters->status === 'completed' ? 'completed_at' : 'created_at';
+
         if ($filters->dateFrom) {
-            $query->whereDate('created_at', '>=', $filters->dateFrom);
+            $query->whereDate($dateColumn, '>=', $filters->dateFrom);
         }
 
         if ($filters->dateTo) {
-            $query->whereDate('created_at', '<=', $filters->dateTo);
+            $query->whereDate($dateColumn, '<=', $filters->dateTo);
         }
 
-        if ($filters->excludeCancelled && ! $filters->status) {
-            $query->where('status', '!=', 'cancelled');
-        }
-
-        if ($filters->status) {
+        if ($filters->status === 'completed') {
+            $query->where('status', 'completed')->whereNotNull('completed_at');
+        } elseif ($filters->status) {
             $query->where('status', $filters->status);
+        } elseif ($filters->excludeCancelled) {
+            $query->where('status', '!=', 'cancelled');
         }
 
         if ($filters->paymentStatus) {
@@ -489,6 +494,78 @@ class FinancialReportService
             ))->all(),
             'total_balance' => array_sum($this->bankBalances->balances($banks, $asOf)),
         ];
+    }
+
+    /**
+     * Order-wise sales report: sales price, procurement cost, and service charge.
+     *
+     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, order_count: int, items_missing_cost: int}
+     */
+    public function salesReport(FinancialReportFilters $filters): array
+    {
+        $orders = $this->ordersQuery($filters)
+            ->orderByDesc($filters->status === 'completed' ? 'completed_at' : 'created_at')
+            ->orderByDesc('id')
+            ->get(['id', 'number', 'customer_name', 'status', 'payment_status', 'subtotal', 'discount', 'shipping', 'total', 'created_at', 'completed_at']);
+
+        $orderIds = $orders->pluck('id');
+        $procurementByOrder = $this->procurementCostByOrderIds($orderIds);
+
+        $rows = $orders->map(function (Order $order) use ($procurementByOrder) {
+            $salesPrice = (float) $order->subtotal;
+            $procurementCost = (float) ($procurementByOrder[$order->id] ?? 0);
+            $serviceCharge = $salesPrice - $procurementCost;
+            $reportDate = $order->completed_at ?? $order->created_at;
+
+            return [
+                'order_id' => $order->id,
+                'date' => $reportDate?->toDateString(),
+                'number' => $order->number,
+                'customer_name' => $order->customer_name,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status,
+                'sales_price' => $salesPrice,
+                'discount' => (float) $order->discount,
+                'shipping' => (float) $order->shipping,
+                'order_total' => (float) $order->total,
+                'procurement_cost' => $procurementCost,
+                'service_charge' => $serviceCharge,
+            ];
+        });
+
+        return [
+            'rows' => $rows,
+            'totals' => [
+                'sales_price' => (float) $rows->sum('sales_price'),
+                'discount' => (float) $rows->sum('discount'),
+                'shipping' => (float) $rows->sum('shipping'),
+                'order_total' => (float) $rows->sum('order_total'),
+                'procurement_cost' => (float) $rows->sum('procurement_cost'),
+                'service_charge' => (float) $rows->sum('service_charge'),
+            ],
+            'order_count' => $rows->count(),
+            'items_missing_cost' => $this->itemsMissingCostCount($orderIds),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, int>  $orderIds
+     * @return array<int, float>
+     */
+    private function procurementCostByOrderIds(Collection $orderIds): array
+    {
+        if ($orderIds->isEmpty()) {
+            return [];
+        }
+
+        return OrderItem::query()
+            ->whereIn('order_id', $orderIds)
+            ->leftJoin('products', 'products.slug', '=', 'order_items.product_slug')
+            ->groupBy('order_items.order_id')
+            ->selectRaw('order_items.order_id, SUM(order_items.quantity * COALESCE(products.purchase_price, 0)) as procurement_cost')
+            ->pluck('procurement_cost', 'order_id')
+            ->map(fn ($value) => (float) $value)
+            ->all();
     }
 
     private function cashCollectedUpTo(string $asOf): float

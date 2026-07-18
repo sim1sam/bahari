@@ -208,6 +208,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:reports')->group(function () {
             Route::get('reports', [FinancialReportController::class, 'index'])->name('reports.index');
             Route::get('reports/profit-loss', [FinancialReportController::class, 'profitLoss'])->name('reports.profit-loss');
+            Route::get('reports/sales', [FinancialReportController::class, 'sales'])->name('reports.sales');
             Route::get('reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('reports/ledger', [FinancialReportController::class, 'ledger'])->name('reports.ledger');
             Route::get('reports/bank-balances', [FinancialReportController::class, 'bankBalances'])->name('reports.bank-balances');

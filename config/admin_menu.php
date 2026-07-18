@@ -66,7 +66,12 @@ return [
             'label' => 'Reports',
             'icon' => 'fas fa-chart-line',
             'items' => [
-                'reports',
+                'reports_overview',
+                'reports_profit',
+                'reports_sales',
+                'reports_ledger',
+                'reports_balance_sheet',
+                'reports_bank_balance',
             ],
         ],
         'api' => [
