@@ -69,6 +69,12 @@ return [
         'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit|admin.orders.invoice|admin.orders.invoice.download',
         'permission' => 'orders',
     ],
+    'account_heads' => [
+        'label' => 'Account',
+        'icon' => 'fas fa-calculator',
+        'route' => 'admin.account-heads.index',
+        'active' => 'admin.account-heads.*|admin.account-types.*|admin.account-expenses.*|admin.bank-payments.*|admin.bank-inter-transfers.*',
+    ],
     'account_heads_list' => [
         'label' => 'Account Heads',
         'icon' => 'fas fa-list',
