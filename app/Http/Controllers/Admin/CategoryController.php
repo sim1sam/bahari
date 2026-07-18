@@ -95,6 +95,7 @@ class CategoryController extends Controller
             'sort_order' => 'nullable|integer|min:0',
             'is_sale' => 'boolean',
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
             'remove_image' => 'boolean',
             'remove_card_image' => 'boolean',
         ]);
@@ -105,6 +106,7 @@ class CategoryController extends Controller
 
         $data['is_sale'] = $request->boolean('is_sale');
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_featured'] = $request->boolean('is_featured');
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
         $data['image'] = $this->resolveImageField(

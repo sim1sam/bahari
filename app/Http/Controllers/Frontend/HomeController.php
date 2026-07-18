@@ -21,10 +21,7 @@ class HomeController extends Controller
             'heroSlides' => $this->homepage->sliders(),
             'banners' => $this->homepage->banners(),
             'features' => $this->homepage->features(),
-            'categories' => collect($this->categories->all())
-                ->map(fn ($c) => $this->categories->toCard($c))
-                ->values()
-                ->all(),
+            'categories' => $this->categories->featuredForHome(6),
             'featuredProducts' => $this->productCards(fn () => $this->catalog->featured(), 8),
             'newArrivals' => $this->productCards(fn () => $this->catalog->newArrivals(), 20),
         ]);

@@ -17,6 +17,17 @@ class CategoryCatalog
         return array_values($this->categories());
     }
 
+    /** Featured categories for the homepage Shop by Category row (max 6). */
+    public function featuredForHome(int $limit = 6): array
+    {
+        return collect($this->all())
+            ->filter(fn (array $category) => ($category['is_featured'] ?? false) === true)
+            ->take($limit)
+            ->map(fn (array $category) => $this->toCard($category))
+            ->values()
+            ->all();
+    }
+
     public function find(string $slug): ?array
     {
         return $this->categories()[$slug] ?? null;

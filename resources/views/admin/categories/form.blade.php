@@ -62,9 +62,14 @@
                                 <label class="form-check-label" for="sale">Sale Category</label>
                             </div>
                             <div class="form-check">
+                                <input type="checkbox" name="is_featured" value="1" class="form-check-input" id="featured" @checked(old('is_featured', $category->is_featured))>
+                                <label class="form-check-label" for="featured">Featured on homepage</label>
+                            </div>
+                            <div class="form-check">
                                 <input type="checkbox" name="is_active" value="1" class="form-check-input" id="active" @checked(old('is_active', $category->is_active ?? true))>
                                 <label class="form-check-label" for="active">Active</label>
                             </div>
+                            <small class="form-text text-muted d-block mt-1">Featured categories appear in Shop by Category (max 6).</small>
                         </div>
                     </div>
                 </div>

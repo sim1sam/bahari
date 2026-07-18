@@ -85,6 +85,7 @@
                             @if ($canSyncReceived ?? false)
                                 <th>API Received</th>
                             @endif
+                            <th>Featured</th>
                             <th>Status</th>
                             <th class="text-right">Actions</th>
                         </tr>
@@ -114,6 +115,13 @@
                                     </td>
                                 @endif
                                 <td>
+                                    @if ($category->is_featured)
+                                        <span class="badge badge-info">Homepage</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="ecom-status {{ $category->is_active ? 'ecom-status--live' : 'ecom-status--hidden' }}">
                                         {{ $category->is_active ? 'Active' : 'Inactive' }}
                                     </span>
@@ -134,7 +142,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ ($canSyncReceived ?? false) ? 5 : 4 }}" class="ecom-empty">
+                                <td colspan="{{ ($canSyncReceived ?? false) ? 6 : 5 }}" class="ecom-empty">
                                     <i class="fas fa-folder-open"></i>
                                     <strong>No categories yet</strong>
                                     <p>Add categories manually or sync from received API content.</p>

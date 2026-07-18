@@ -10,7 +10,7 @@ class Category extends Model
 {
     protected $fillable = [
         'slug', 'name', 'description', 'color', 'image', 'card_image',
-        'is_sale', 'sort_order', 'is_active',
+        'is_sale', 'sort_order', 'is_active', 'is_featured',
     ];
 
     protected function casts(): array
@@ -18,6 +18,7 @@ class Category extends Model
         return [
             'is_sale' => 'boolean',
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
         ];
     }
 
@@ -67,6 +68,7 @@ class Category extends Model
             'card_image' => $this->cardImageUrl(),
             'filter' => $this->is_sale ? 'sale' : 'category',
             'product_categories' => $this->is_sale ? [] : [$this->name],
+            'is_featured' => (bool) $this->is_featured,
         ];
     }
 }
