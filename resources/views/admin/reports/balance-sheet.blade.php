@@ -8,6 +8,8 @@
 
     @include('admin.reports.partials.filters', [
         'action' => route('admin.reports.balance-sheet'),
+        'exportExcelRoute' => route('admin.reports.balance-sheet', array_merge($filters->toQueryArray(), ['export' => 'excel'])),
+        'exportCsvRoute' => route('admin.reports.balance-sheet', array_merge($filters->toQueryArray(), ['export' => 'csv'])),
         'paymentBanks' => $paymentBanks ?? collect(),
         'accountHeads' => $accountHeads ?? collect(),
     ])

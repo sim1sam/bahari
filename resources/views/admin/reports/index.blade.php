@@ -39,6 +39,8 @@
 
         @include('admin.reports.partials.filters', [
             'action' => route('admin.reports.index'),
+            'exportExcelRoute' => route('admin.reports.index', array_merge($filters->toQueryArray(), ['export' => 'excel'])),
+            'exportCsvRoute' => route('admin.reports.index', array_merge($filters->toQueryArray(), ['export' => 'csv'])),
             'paymentBanks' => $paymentBanks ?? collect(),
             'accountHeads' => $accountHeads ?? collect(),
         ])

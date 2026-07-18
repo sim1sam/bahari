@@ -90,8 +90,13 @@
                     <i class="fas fa-filter mr-1"></i> Apply Filters
                 </button>
                 <a href="{{ $action ?? request()->url() }}" class="btn btn-secondary">Reset</a>
-                @if (! empty($exportRoute))
-                    <a href="{{ $exportRoute }}" class="btn btn-success">
+                @if (! empty($exportExcelRoute))
+                    <a href="{{ $exportExcelRoute }}" class="btn btn-success">
+                        <i class="fas fa-file-excel mr-1"></i> Export Excel
+                    </a>
+                @endif
+                @if (! empty($exportCsvRoute) || ! empty($exportRoute))
+                    <a href="{{ $exportCsvRoute ?? $exportRoute }}" class="btn btn-outline-success">
                         <i class="fas fa-file-csv mr-1"></i> Export CSV
                     </a>
                 @endif

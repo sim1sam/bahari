@@ -6292,6 +6292,7 @@ namespace App\Models {
 	 *
 	 * @property \Illuminate\Support\Carbon|null $updated_at
 	 * @property \Illuminate\Support\Carbon|null $created_at
+	 * @property \Illuminate\Support\Carbon|null $completed_at
 	 * @property string $status
 	 * @property string|null $coupon_code
 	 * @property float $total
@@ -6355,6 +6356,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereTotal($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereCouponCode($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereStatus($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereCompletedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereCreatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order whereUpdatedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Order>|Order newModelQuery()
