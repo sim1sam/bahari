@@ -3,6 +3,7 @@
         ['label' => 'Dashboard', 'route' => 'account.dashboard', 'icon' => 'grid'],
         ['label' => 'My Orders', 'route' => 'account.orders', 'icon' => 'orders'],
         ['label' => 'Custom Order', 'route' => 'account.custom-order', 'icon' => 'custom'],
+        ['label' => 'Wishlist', 'route' => 'account.wishlist', 'icon' => 'wishlist'],
         ['label' => 'Transactions', 'route' => 'account.transactions', 'icon' => 'transaction'],
         ['label' => 'Ledger', 'route' => 'account.ledger', 'icon' => 'ledger'],
         ['label' => 'Addresses', 'route' => 'account.addresses.index', 'icon' => 'address'],
@@ -26,7 +27,7 @@
         @foreach ($links as $link)
             <a
                 href="{{ route($link['route']) }}"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all {{ request()->routeIs($link['route'].'*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20' : 'text-ink-muted hover:bg-surface hover:text-ink' }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all {{ request()->routeIs($link['route'], $link['route'].'.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20' : 'text-ink-muted hover:bg-surface hover:text-ink' }}"
             >
                 @if ($link['icon'] === 'grid')
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
@@ -38,6 +39,8 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 @elseif ($link['icon'] === 'custom')
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                @elseif ($link['icon'] === 'wishlist')
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                 @elseif ($link['icon'] === 'address')
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 9c0 7-7.5 12-7.5 12S4.5 16 4.5 9a7.5 7.5 0 1115 0z"/></svg>
                 @else

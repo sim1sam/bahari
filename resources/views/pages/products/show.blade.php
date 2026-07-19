@@ -31,12 +31,24 @@
             <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
                 {{-- Gallery --}}
                 <div x-data="{ active: 0, images: @js($product['images']) }">
-                    <div class="aspect-[3/4] rounded-2xl overflow-hidden bg-brand-50 border border-border">
+                    <div class="relative aspect-[3/4] rounded-2xl overflow-hidden bg-brand-50 border border-border">
                         <img
                             :src="images[active]"
                             alt="{{ $product['name'] }}"
                             class="w-full h-full object-cover object-top"
                         >
+                        <button
+                            type="button"
+                            class="absolute top-3 right-3 z-20 inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/95 shadow-md ring-1 ring-black/5 text-brand-600 hover:bg-white hover:text-brand-700 hover:scale-105 transition-all"
+                            :class="$store.wishlist.has(@js($product['slug'])) ? 'text-brand-700 bg-brand-50 ring-brand-200' : ''"
+                            @click="$store.wishlist.toggle(@js($product['slug']))"
+                            :aria-label="$store.wishlist.has(@js($product['slug'])) ? 'Remove from wishlist' : 'Add to wishlist'"
+                            :aria-pressed="$store.wishlist.has(@js($product['slug'])) ? 'true' : 'false'"
+                        >
+                            <svg class="w-6 h-6" :fill="$store.wishlist.has(@js($product['slug'])) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                        </button>
                     </div>
                     @if (count($product['images']) > 1)
                         <div class="flex gap-3 mt-4">
@@ -183,6 +195,17 @@
                             </svg>
                             Add to Cart
                         </x-ui.button>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-semibold text-brand-600 hover:border-brand-300 hover:bg-brand-50 transition-colors"
+                            :class="$store.wishlist.has(@js($product['slug'])) ? 'border-brand-300 bg-brand-50' : ''"
+                            @click="$store.wishlist.toggle(@js($product['slug']))"
+                        >
+                            <svg class="w-5 h-5" :fill="$store.wishlist.has(@js($product['slug'])) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <span x-text="$store.wishlist.has(@js($product['slug'])) ? 'Saved' : 'Wishlist'"></span>
+                        </button>
                         <x-ui.button :href="route('cart.index')" variant="secondary" size="lg">View Cart</x-ui.button>
                         </div>
                     </form>

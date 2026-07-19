@@ -22,6 +22,14 @@
 </head>
 <body class="account-app min-h-screen bg-surface text-ink antialiased">
     <x-site.google-tag-manager location="body" />
+    <script>
+        window.__WISHLIST_BOOT__ = {
+            count: {{ (int) ($wishlistCount ?? 0) }},
+            slugs: @json($wishlistSlugs ?? []),
+            toggleUrl: @json(route('wishlist.toggle')),
+            loginUrl: @json(route('login')),
+        };
+    </script>
     <div class="account-shell lg:flex">
         <x-account.sidebar />
 

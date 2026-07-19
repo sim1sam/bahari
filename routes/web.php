@@ -15,6 +15,7 @@ use App\Http\Controllers\Frontend\SearchController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SslCommerzController;
 use App\Http\Controllers\Frontend\PwaController;
+use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Controllers\MetaCapiDebugController;
 use App\Http\Controllers\PublicStorageController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
     Route::delete('/orders/{order}', [AccountController::class, 'destroyOrder'])->name('orders.destroy');
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist');
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
     Route::get('/ledger', [AccountController::class, 'ledger'])->name('ledger');
     Route::get('/custom-order', [CustomOrderController::class, 'create'])->name('custom-order');
@@ -74,8 +76,11 @@ Route::middleware('throttle:60,1')->group(function () {
 });
 
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
 Route::middleware(['auth', 'customer'])->group(function () {
+    Route::delete('/wishlist/{slug}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::get('/wishlist', fn () => redirect()->route('account.wishlist'))->name('wishlist.index');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/shipping-zone', [CartController::class, 'setShippingZone'])->name('cart.shipping-zone');
     Route::patch('/cart/{key}', [CartController::class, 'update'])->name('cart.update');

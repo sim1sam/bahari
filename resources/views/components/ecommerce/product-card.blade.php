@@ -54,9 +54,24 @@
         </a>
 
         @if ($badge)
-            <div class="absolute top-3 left-3 pointer-events-none">
+            <div class="absolute top-3 left-3 pointer-events-none z-10">
                 <x-ui.badge :variant="$badgeVariant">{{ $badge }}</x-ui.badge>
             </div>
+        @endif
+
+        @if ($slug)
+            <button
+                type="button"
+                class="absolute top-2.5 right-2.5 z-20 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/95 shadow-md ring-1 ring-black/5 text-brand-600 hover:bg-white hover:text-brand-700 hover:scale-105 transition-all"
+                :class="$store.wishlist.has(@js($slug)) ? 'text-brand-700 bg-brand-50 ring-brand-200' : ''"
+                @click.stop.prevent="$store.wishlist.toggle(@js($slug))"
+                :aria-label="$store.wishlist.has(@js($slug)) ? 'Remove from wishlist' : 'Add to wishlist'"
+                :aria-pressed="$store.wishlist.has(@js($slug)) ? 'true' : 'false'"
+            >
+                <svg class="w-5 h-5" :fill="$store.wishlist.has(@js($slug)) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+            </button>
         @endif
 
         @if ($slug)

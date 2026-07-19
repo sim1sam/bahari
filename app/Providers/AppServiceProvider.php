@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\CartService;
 use App\Services\SiteSettingsService;
+use App\Services\WishlistService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $settings = app(SiteSettingsService::class);
             $view->with('cartCount', app(CartService::class)->count());
+            $view->with('wishlistCount', app(WishlistService::class)->count());
+            $view->with('wishlistSlugs', app(WishlistService::class)->slugs());
             $view->with('siteSettings', $settings->get());
             $view->with('site', $settings);
             $view->with('currencySymbol', config('currency.symbol', '৳'));
