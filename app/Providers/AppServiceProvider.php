@@ -29,8 +29,16 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $settings = app(SiteSettingsService::class);
             $view->with('cartCount', app(CartService::class)->count());
-            $view->with('wishlistCount', app(WishlistService::class)->count());
-            $view->with('wishlistSlugs', app(WishlistService::class)->slugs());
+
+            try {
+                $wishlist = app(WishlistService::class);
+                $view->with('wishlistCount', $wishlist->count());
+                $view->with('wishlistSlugs', $wishlist->slugs());
+            } catch (\Throwable) {
+                $view->with('wishlistCount', 0);
+                $view->with('wishlistSlugs', []);
+            }
+
             $view->with('siteSettings', $settings->get());
             $view->with('site', $settings);
             $view->with('currencySymbol', config('currency.symbol', '৳'));

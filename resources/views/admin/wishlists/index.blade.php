@@ -160,11 +160,6 @@
                                             <a href="{{ route('products.show', $product->slug) }}" target="_blank" class="btn btn-sm btn-outline-info" title="View product">
                                                 <i class="fas fa-external-link-alt"></i>
                                             </a>
-                                            @if (Route::has('admin.products.edit'))
-                                                <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-secondary" title="Edit product">
-                                                    <i class="fas fa-pen"></i>
-                                                </a>
-                                            @endif
                                         @endif
                                         <form action="{{ route('admin.wishlists.destroy', $wishlist) }}" method="POST" onsubmit="return confirm('Remove this wishlist item?');">
                                             @csrf

@@ -38,8 +38,8 @@ class WishlistController extends Controller
             'search' => $search,
             'stats' => [
                 'total' => Wishlist::query()->count(),
-                'customers' => Wishlist::query()->distinct('user_id')->count('user_id'),
-                'products' => Wishlist::query()->distinct('product_id')->count('product_id'),
+                'customers' => (int) Wishlist::query()->selectRaw('count(distinct user_id) as aggregate')->value('aggregate'),
+                'products' => (int) Wishlist::query()->selectRaw('count(distinct product_id) as aggregate')->value('aggregate'),
                 'today' => Wishlist::query()->whereDate('created_at', today())->count(),
             ],
         ]);
