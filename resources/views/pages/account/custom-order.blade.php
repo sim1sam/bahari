@@ -205,7 +205,7 @@
     {{-- Payment details modal (same as checkout) --}}
     <div x-show="showModal" x-cloak class="fixed inset-0 z-10000 flex items-center justify-center p-3 sm:p-4" @keydown.escape.window="closeModal()">
         <div class="absolute inset-0 bg-black/50" @click="closeModal()"></div>
-        <div class="relative flex h-auto max-h-[92dvh] sm:max-h-[min(760px,calc(100dvh-2rem))] w-full max-w-xl flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden my-auto" @click.stop>
+        <div class="relative flex h-auto max-h-[94dvh] sm:max-h-[min(880px,calc(100dvh-1.5rem))] w-full max-w-xl flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden my-auto" @click.stop>
             <div class="px-4 sm:px-5 py-2.5 sm:py-3.5 border-b border-border flex items-center justify-between shrink-0">
                 <div>
                     <h3 class="text-sm sm:text-base font-semibold text-ink">Bank Payment Details</h3>
