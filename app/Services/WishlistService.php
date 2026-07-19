@@ -2,20 +2,38 @@
 
 namespace App\Services;
 
+use App\Models\Product;
+use App\Models\Wishlist;
+use Illuminate\Support\Facades\Auth;
+
 class WishlistService
 {
     private const SESSION_KEY = 'wishlist';
 
-    public function __construct(
-        private ProductCatalog $catalog,
-    ) {}
+    private bool $syncedSession = false;
 
     /**
      * @return array<string, array<string, mixed>>
      */
     public function items(): array
     {
-        return session(self::SESSION_KEY, []);
+        if (! Auth::check()) {
+            return [];
+        }
+
+        $this->syncSessionToDatabase();
+
+        return Wishlist::query()
+            ->where('user_id', Auth::id())
+            ->with('product.category')
+            ->latest()
+            ->get()
+            ->mapWithKeys(function (Wishlist $wishlist) {
+                $item = $this->toItemArray($wishlist);
+
+                return $item ? [$item['slug'] => $item] : [];
+            })
+            ->all();
     }
 
     /**
@@ -23,17 +41,46 @@ class WishlistService
      */
     public function slugs(): array
     {
-        return array_keys($this->items());
+        if (! Auth::check()) {
+            return [];
+        }
+
+        $this->syncSessionToDatabase();
+
+        return Wishlist::query()
+            ->where('user_id', Auth::id())
+            ->whereHas('product')
+            ->with('product:id,slug')
+            ->get()
+            ->pluck('product.slug')
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function count(): int
     {
-        return count($this->items());
+        if (! Auth::check()) {
+            return 0;
+        }
+
+        $this->syncSessionToDatabase();
+
+        return Wishlist::query()->where('user_id', Auth::id())->count();
     }
 
     public function has(string $slug): bool
     {
-        return array_key_exists($slug, $this->items());
+        if (! Auth::check()) {
+            return false;
+        }
+
+        $this->syncSessionToDatabase();
+
+        return Wishlist::query()
+            ->where('user_id', Auth::id())
+            ->whereHas('product', fn ($query) => $query->where('slug', $slug))
+            ->exists();
     }
 
     public function toggle(string $slug): bool
@@ -49,34 +96,38 @@ class WishlistService
 
     public function add(string $slug): bool
     {
-        $product = $this->catalog->find($slug);
+        if (! Auth::check()) {
+            return false;
+        }
+
+        $product = Product::query()->where('slug', $slug)->first();
 
         if (! $product) {
             return false;
         }
 
-        $items = $this->items();
-        $items[$slug] = [
-            'slug' => $slug,
-            'name' => $product['name'] ?? $slug,
-            'price' => (float) ($product['price'] ?? 0),
-            'original_price' => $product['original_price'] ?? null,
-            'image' => $product['image'] ?? null,
-            'brand' => $product['brand'] ?? null,
-            'category' => $product['category'] ?? null,
-            'added_at' => now()->toIso8601String(),
-        ];
+        Wishlist::query()->firstOrCreate([
+            'user_id' => Auth::id(),
+            'product_id' => $product->id,
+        ]);
 
-        session([self::SESSION_KEY => $items]);
+        $this->forgetSessionSlug($slug);
 
         return true;
     }
 
     public function remove(string $slug): void
     {
-        $items = $this->items();
-        unset($items[$slug]);
-        session([self::SESSION_KEY => $items]);
+        if (! Auth::check()) {
+            return;
+        }
+
+        Wishlist::query()
+            ->where('user_id', Auth::id())
+            ->whereHas('product', fn ($query) => $query->where('slug', $slug))
+            ->delete();
+
+        $this->forgetSessionSlug($slug);
     }
 
     /**
@@ -85,24 +136,78 @@ class WishlistService
     public function products(): array
     {
         return collect($this->items())
-            ->map(function (array $item) {
-                $live = $this->catalog->find($item['slug']);
-
-                if (! $live) {
-                    return $item;
-                }
-
-                return array_merge($item, [
-                    'name' => $live['name'] ?? $item['name'],
-                    'price' => (float) ($live['price'] ?? $item['price']),
-                    'original_price' => $live['original_price'] ?? $item['original_price'] ?? null,
-                    'image' => $live['image'] ?? $item['image'] ?? null,
-                    'brand' => $live['brand'] ?? $item['brand'] ?? null,
-                    'category' => $live['category'] ?? $item['category'] ?? null,
-                ]);
-            })
             ->sortByDesc('added_at')
             ->values()
             ->all();
+    }
+
+    private function syncSessionToDatabase(): void
+    {
+        if ($this->syncedSession || ! Auth::check()) {
+            return;
+        }
+
+        $this->syncedSession = true;
+
+        $sessionItems = session(self::SESSION_KEY, []);
+
+        if ($sessionItems === []) {
+            return;
+        }
+
+        $slugs = array_keys($sessionItems);
+        $products = Product::query()->whereIn('slug', $slugs)->get()->keyBy('slug');
+
+        foreach ($slugs as $slug) {
+            $product = $products->get($slug);
+
+            if (! $product) {
+                continue;
+            }
+
+            Wishlist::query()->firstOrCreate([
+                'user_id' => Auth::id(),
+                'product_id' => $product->id,
+            ]);
+        }
+
+        session()->forget(self::SESSION_KEY);
+    }
+
+    private function forgetSessionSlug(string $slug): void
+    {
+        $items = session(self::SESSION_KEY, []);
+
+        if (! array_key_exists($slug, $items)) {
+            return;
+        }
+
+        unset($items[$slug]);
+        session([self::SESSION_KEY => $items]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function toItemArray(Wishlist $wishlist): ?array
+    {
+        $product = $wishlist->product;
+
+        if (! $product) {
+            return null;
+        }
+
+        $catalog = $product->toCatalogArray();
+
+        return [
+            'slug' => $product->slug,
+            'name' => $catalog['name'] ?? $product->name,
+            'price' => (float) ($catalog['price'] ?? $product->price),
+            'original_price' => $catalog['original_price'] ?? null,
+            'image' => $catalog['image'] ?? null,
+            'brand' => $catalog['brand'] ?? $product->brand,
+            'category' => $catalog['category'] ?? null,
+            'added_at' => $wishlist->created_at?->toIso8601String(),
+        ];
     }
 }

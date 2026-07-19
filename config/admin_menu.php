@@ -12,6 +12,7 @@ return [
             'items' => [
                 'orders_create',
                 'orders_list',
+                'wishlists',
             ],
         ],
         'account' => [

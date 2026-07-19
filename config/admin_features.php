@@ -69,6 +69,13 @@ return [
         'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit|admin.orders.invoice|admin.orders.invoice.download',
         'permission' => 'orders',
     ],
+    'wishlists' => [
+        'label' => 'Wishlist',
+        'icon' => 'fas fa-heart',
+        'route' => 'admin.wishlists.index',
+        'active' => 'admin.wishlists.*',
+        'permission' => 'orders',
+    ],
     'account_heads' => [
         'label' => 'Account',
         'icon' => 'fas fa-calculator',

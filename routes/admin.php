@@ -43,6 +43,7 @@ use App\Http\Controllers\Admin\StorageLinkController;
 use App\Http\Controllers\Admin\TerminalController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WishlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -190,6 +191,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
             Route::post('orders/{order}/payments', [OrderController::class, 'storePayment'])->name('orders.payments.store');
             Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+
+            Route::get('wishlists', [WishlistController::class, 'index'])->name('wishlists.index');
+            Route::delete('wishlists/{wishlist}', [WishlistController::class, 'destroy'])->name('wishlists.destroy');
         });
 
         Route::middleware('admin.feature:coupons')->group(function () {
