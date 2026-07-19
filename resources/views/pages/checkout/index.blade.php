@@ -513,7 +513,7 @@
 
                 <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-10000 flex items-center justify-center p-3 sm:p-4">
                     <div class="absolute inset-0 bg-black/50" @click="closePaymentModal()"></div>
-                    <div class="relative flex h-auto max-h-[90dvh] sm:max-h-[min(640px,calc(100dvh-2rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden my-auto" @click.stop>
+                    <div class="relative flex h-auto max-h-[92dvh] sm:max-h-[min(760px,calc(100dvh-2rem))] w-full max-w-xl flex-col rounded-2xl bg-surface-elevated border border-border shadow-xl overflow-hidden my-auto" @click.stop>
                         <div class="px-4 sm:px-5 py-2.5 sm:py-3.5 border-b border-border flex items-center justify-between shrink-0">
                             <div>
                                 <h3 class="text-sm sm:text-base font-semibold text-ink" x-show="payment === 'bank_transfer'">Bank Payment Details</h3>
@@ -524,7 +524,7 @@
                             </button>
                         </div>
 
-                        <div class="checkout-payment-body flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-contain checkout-bank-scroll">
+                        <div class="checkout-payment-body flex flex-1 min-h-0 flex-col overflow-hidden">
                             <div class="shrink-0 px-4 sm:px-5 pt-3 sm:pt-4">
                                 <div class="grid grid-cols-2 gap-2 sm:gap-3">
                                     <label class="flex items-center justify-center gap-2 rounded-xl border border-border px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold cursor-pointer has-checked:border-brand-600 has-checked:bg-brand-50">
@@ -550,33 +550,30 @@
                                 >
                             </div>
 
-                            <div x-show="payment === 'bank_transfer'" x-cloak class="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 gap-2 sm:gap-3 space-y-2 sm:space-y-3">
-                                <div>
-                                    <label class="block text-xs sm:text-sm font-medium text-ink mb-1.5 sm:mb-2">Select Bank / Wallet</label>
+                            <div x-show="payment === 'bank_transfer'" x-cloak class="flex flex-1 min-h-0 flex-col overflow-hidden">
+                                <div class="min-h-0 shrink px-4 sm:px-5 pt-2.5 sm:pt-3">
+                                    <label class="block text-xs font-medium text-ink mb-1.5">Select Bank / Wallet</label>
                                     <input type="hidden" name="bank_id" :value="selectedBankId">
-                                    <div class="checkout-bank-list checkout-bank-scroll space-y-2.5 sm:space-y-3 overflow-y-auto overscroll-contain pr-1 -mr-1">
+                                    <div class="checkout-bank-list checkout-bank-scroll space-y-1.5 pr-1">
                                         @foreach ($banks as $bank)
                                             <button
                                                 type="button"
-                                                class="checkout-bank-item w-full h-[50px] sm:h-[60px] rounded-lg sm:rounded-xl border p-2 sm:p-2.5 text-left transition-colors overflow-hidden"
+                                                class="checkout-bank-item w-full h-9 rounded-lg border px-2 py-1.5 text-left transition-colors overflow-hidden"
                                                 :class="String(selectedBankId) === '{{ $bank->id }}' ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600/20' : 'border-border bg-surface hover:border-brand-300'"
                                                 @click="selectedBankId = '{{ $bank->id }}'; updateBankPaymentAmount()"
                                             >
-                                                <div class="flex items-center gap-2 sm:gap-2.5">
+                                                <div class="flex items-center gap-2">
                                                     @if ($bank->imageUrl())
-                                                        <img src="{{ $bank->imageUrl() }}" alt="{{ $bank->name }}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain bg-white border border-border shrink-0">
+                                                        <img src="{{ $bank->imageUrl() }}" alt="{{ $bank->name }}" class="w-6 h-6 rounded object-contain bg-white border border-border shrink-0">
                                                     @else
-                                                        <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-brand-50 text-brand-600 border border-brand-100 shrink-0 flex items-center justify-center">
-                                                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 21h18M4 10h16M6 10V7l6-4 6 4v3M7 21v-8m5 8v-8m5 8v-8"/></svg>
+                                                        <span class="w-6 h-6 rounded bg-brand-50 text-brand-600 border border-brand-100 shrink-0 flex items-center justify-center">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 21h18M4 10h16M6 10V7l6-4 6 4v3M7 21v-8m5 8v-8m5 8v-8"/></svg>
                                                         </span>
                                                     @endif
                                                     <div class="min-w-0 flex-1">
-                                                        <p class="text-xs sm:text-sm font-semibold text-ink truncate">{{ $bank->name }}</p>
-                                                        @if ($bank->account_number)
-                                                            <p class="text-[10px] sm:text-[11px] text-ink-muted truncate">{{ $bank->account_number }}</p>
-                                                        @endif
+                                                        <p class="text-xs font-semibold text-ink truncate leading-tight">{{ $bank->name }}</p>
                                                     </div>
-                                                    <span class="checkout-bank-select shrink-0 rounded-full px-1 py-px text-[7px] sm:text-[8px] font-bold uppercase tracking-wide leading-none" :class="String(selectedBankId) === '{{ $bank->id }}' ? 'bg-brand-600 text-white' : 'bg-surface-elevated text-ink-muted border border-border'">Select</span>
+                                                    <span class="checkout-bank-select shrink-0 rounded-full px-1.5 py-px text-[7px] font-bold uppercase tracking-wide leading-none" :class="String(selectedBankId) === '{{ $bank->id }}' ? 'bg-brand-600 text-white' : 'bg-surface-elevated text-ink-muted border border-border'">Select</span>
                                                 </div>
                                             </button>
                                         @endforeach
@@ -584,98 +581,97 @@
                                     @error('bank_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
 
-                                <div x-show="selectedBank" x-cloak class="space-y-1.5 sm:space-y-2">
-                                    <div class="rounded-lg border border-border bg-surface p-2 sm:p-2.5 text-xs">
-                                        <p class="text-[11px] sm:text-xs font-semibold text-ink truncate" x-text="selectedBank?.name"></p>
+                                <div class="shrink-0 px-4 sm:px-5 pt-2 pb-1 space-y-1.5">
+                                    <div class="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs">
+                                        <p class="text-[11px] font-semibold text-ink truncate" x-text="selectedBank?.name || 'Select a bank'"></p>
 
-                                        <template x-if="selectedBankHasDetails">
-                                            <div class="mt-1.5 space-y-1">
+                                        <template x-if="selectedBank && selectedBankHasDetails">
+                                            <div class="mt-1 space-y-1">
                                                 <template x-if="selectedBank?.account_number">
-                                                    <div class="flex items-center justify-between gap-1.5 rounded-md bg-surface-elevated border border-border px-2 py-1">
+                                                    <div class="flex items-center justify-between gap-1.5 rounded-md bg-surface-elevated border border-border px-2 py-0.5">
                                                         <div class="min-w-0">
-                                                            <p class="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-ink-muted">Account No.</p>
-                                                            <p class="text-sm sm:text-base font-bold text-ink break-all leading-tight tracking-wide" x-text="selectedBank.account_number"></p>
+                                                            <p class="text-[8px] font-semibold uppercase tracking-wide text-ink-muted leading-none">Account No.</p>
+                                                            <p class="text-xs font-bold text-ink break-all leading-tight tracking-wide" x-text="selectedBank.account_number"></p>
                                                         </div>
                                                         <button
                                                             type="button"
-                                                            class="checkout-bank-copy shrink-0 rounded border border-border px-1.5 py-px text-[8px] sm:text-[9px] font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50"
+                                                            class="checkout-bank-copy shrink-0 rounded border border-border px-1.5 py-px text-[8px] font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50"
                                                             @click="copyAccountNumber()"
                                                         >
                                                             Copy
                                                         </button>
                                                     </div>
                                                 </template>
-                                                <div class="grid grid-cols-2 gap-1 sm:gap-1.5">
+                                                <div class="grid grid-cols-2 gap-1">
                                                     <template x-if="selectedBank?.account_name">
-                                                        <div class="rounded-md bg-surface-elevated border border-border px-2 py-1">
-                                                            <p class="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-ink-muted">Name</p>
-                                                            <p class="text-[10px] sm:text-[11px] font-semibold text-ink break-words leading-tight" x-text="selectedBank.account_name"></p>
+                                                        <div class="rounded-md bg-surface-elevated border border-border px-2 py-0.5">
+                                                            <p class="text-[8px] font-semibold uppercase tracking-wide text-ink-muted leading-none">Name</p>
+                                                            <p class="text-[10px] font-semibold text-ink break-words leading-tight" x-text="selectedBank.account_name"></p>
                                                         </div>
                                                     </template>
                                                     <template x-if="selectedBank?.branch">
-                                                        <div class="rounded-md bg-surface-elevated border border-border px-2 py-1">
-                                                            <p class="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-ink-muted">Branch</p>
-                                                            <p class="text-[10px] sm:text-[11px] font-semibold text-ink break-words leading-tight" x-text="selectedBank.branch"></p>
+                                                        <div class="rounded-md bg-surface-elevated border border-border px-2 py-0.5">
+                                                            <p class="text-[8px] font-semibold uppercase tracking-wide text-ink-muted leading-none">Branch</p>
+                                                            <p class="text-[10px] font-semibold text-ink break-words leading-tight" x-text="selectedBank.branch"></p>
                                                         </div>
                                                     </template>
                                                 </div>
                                             </div>
                                         </template>
 
-                                        <template x-if="! selectedBankHasDetails">
-                                            <p class="mt-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] sm:text-[10px] text-amber-800 leading-snug">
+                                        <template x-if="selectedBank && ! selectedBankHasDetails">
+                                            <p class="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] text-amber-800 leading-snug">
                                                 Account details not available. Contact store before paying.
                                             </p>
                                         </template>
 
                                         <template x-if="selectedBank?.instructions">
-                                            <p class="mt-1 text-[9px] sm:text-[10px] leading-snug text-brand-700 line-clamp-1 sm:line-clamp-2" x-text="selectedBank.instructions"></p>
+                                            <p class="mt-1 text-[9px] leading-snug text-brand-700 line-clamp-1" x-text="selectedBank.instructions"></p>
                                         </template>
                                     </div>
 
-                                    <div class="rounded-lg sm:rounded-xl border border-brand-200 bg-brand-50 p-2 sm:p-3 text-sm">
+                                    <div class="rounded-lg border border-brand-200 bg-brand-50 p-2 text-sm">
                                         <div class="flex items-center justify-between gap-2">
-                                            <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-brand-700">Payment Breakdown</p>
-                                            <p class="text-[10px] sm:text-[11px] text-ink-muted" x-show="bankChargePercent > 0" x-text="bankChargePercent.toFixed(2) + '% charge'"></p>
+                                            <p class="text-[10px] font-semibold uppercase tracking-wide text-brand-700">Payment Breakdown</p>
+                                            <p class="text-[10px] text-ink-muted" x-show="bankChargePercent > 0" x-text="bankChargePercent.toFixed(2) + '% charge'"></p>
                                         </div>
-                                        <dl class="mt-1.5 sm:mt-2 grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
-                                            <div class="rounded-lg bg-white/70 px-1.5 sm:px-2 py-1 sm:py-1.5">
-                                                <dt class="text-[9px] sm:text-[10px] text-ink-muted">Order</dt>
-                                                <dd class="mt-0.5 text-[11px] sm:text-xs font-semibold text-ink" x-text="formatMoney(cartAmount)"></dd>
+                                        <dl class="mt-1.5 grid grid-cols-3 gap-1.5 text-center">
+                                            <div class="rounded-lg bg-white/70 px-1.5 py-1.5">
+                                                <dt class="text-[9px] text-ink-muted leading-none">Order</dt>
+                                                <dd class="mt-1 text-[11px] font-semibold text-ink leading-none" x-text="formatMoney(cartAmount)"></dd>
                                             </div>
-                                            <div class="rounded-lg bg-white/70 px-1.5 sm:px-2 py-1 sm:py-1.5">
-                                                <dt class="text-[9px] sm:text-[10px] text-ink-muted">Charge</dt>
-                                                <dd class="mt-0.5 text-[11px] sm:text-xs font-semibold text-amber-700" x-text="'+' + formatMoney(bankChargeAmount)"></dd>
+                                            <div class="rounded-lg bg-white/70 px-1.5 py-1.5">
+                                                <dt class="text-[9px] text-ink-muted leading-none">Charge</dt>
+                                                <dd class="mt-1 text-[11px] font-semibold text-amber-700 leading-none" x-text="'+' + formatMoney(bankChargeAmount)"></dd>
                                             </div>
-                                            <div class="rounded-lg bg-brand-600 px-1.5 sm:px-2 py-1 sm:py-1.5 text-white">
-                                                <dt class="text-[9px] sm:text-[10px] text-brand-100">Total Pay</dt>
-                                                <dd class="mt-0.5 text-[11px] sm:text-xs font-bold" x-text="formatMoney(totalPayable)"></dd>
+                                            <div class="rounded-lg bg-brand-600 px-1.5 py-1.5 text-white">
+                                                <dt class="text-[9px] text-brand-100 leading-none">Total Pay</dt>
+                                                <dd class="mt-1 text-[11px] font-bold leading-none" x-text="formatMoney(totalPayable)"></dd>
                                             </div>
                                         </dl>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label for="payment_screenshot" class="block text-xs sm:text-sm font-medium text-ink mb-1">Payment Screenshot</label>
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            type="file"
-                                            name="payment_screenshot"
-                                            id="payment_screenshot"
-                                            accept="image/*"
-                                            @change="onScreenshot($event)"
-                                            class="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 sm:file:px-2.5 file:py-0.5 sm:file:py-1 file:text-[10px] sm:file:text-xs file:font-medium file:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                                        >
-                                        <template x-if="screenshotPreview">
-                                            <img :src="screenshotPreview" alt="Payment screenshot preview" class="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-md object-cover border border-border bg-surface">
-                                        </template>
-                                    </div>
-                                    @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                                </div>
                             </div>
                         </div>
 
-                        <div class="px-4 sm:px-5 py-2.5 sm:py-3 border-t border-border shrink-0 bg-surface-elevated safe-area-pb">
+                        <div class="px-4 sm:px-5 pt-2.5 sm:pt-3 pb-2.5 sm:pb-3 border-t border-border shrink-0 bg-surface-elevated safe-area-pb space-y-2.5 sm:space-y-3">
+                            <div x-show="payment === 'bank_transfer'" x-cloak>
+                                <label for="payment_screenshot" class="block text-xs sm:text-sm font-medium text-ink mb-1">Payment Screenshot</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        name="payment_screenshot"
+                                        id="payment_screenshot"
+                                        accept="image/*"
+                                        @change="onScreenshot($event)"
+                                        class="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 sm:file:px-2.5 file:py-0.5 sm:file:py-1 file:text-[10px] sm:file:text-xs file:font-medium file:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                                    >
+                                    <template x-if="screenshotPreview">
+                                        <img :src="screenshotPreview" alt="Payment screenshot preview" class="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-md object-cover border border-border bg-surface">
+                                    </template>
+                                </div>
+                                @error('payment_screenshot')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
                             <div class="flex items-stretch gap-2 sm:gap-3">
                                 <button
                                     type="button"
@@ -727,12 +723,14 @@
     }
 
     .checkout-bank-list {
-        max-height: calc(50px * 3 + 0.625rem * 2);
+        max-height: calc(2.25rem * 3 + 0.375rem * 2);
+        overflow-y: scroll !important;
+        overscroll-behavior: contain;
     }
 
     @media (min-width: 640px) {
         .checkout-bank-list {
-            max-height: calc(60px * 4 + 0.75rem * 3);
+            max-height: calc(2.25rem * 3 + 0.375rem * 2);
         }
     }
 
@@ -774,25 +772,37 @@
     }
 
     .checkout-bank-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(8, 145, 178, 0.45) transparent;
+        scrollbar-gutter: stable;
+        scrollbar-width: auto;
+        scrollbar-color: #0891b2 #e0f2fe;
     }
 
     .checkout-bank-scroll::-webkit-scrollbar {
-        width: 6px;
+        width: 12px;
+        display: block;
+    }
+
+    .checkout-bank-scroll::-webkit-scrollbar-button {
+        display: none;
+        height: 0;
+        width: 0;
     }
 
     .checkout-bank-scroll::-webkit-scrollbar-track {
-        background: transparent;
+        background: #e0f2fe;
+        border-radius: 8px;
+        margin: 2px 0;
     }
 
     .checkout-bank-scroll::-webkit-scrollbar-thumb {
-        background: rgba(8, 145, 178, 0.35);
-        border-radius: 999px;
+        background: #0891b2;
+        border-radius: 8px;
+        border: 2px solid #e0f2fe;
+        min-height: 32px;
     }
 
     .checkout-bank-scroll::-webkit-scrollbar-thumb:hover {
-        background: rgba(8, 145, 178, 0.55);
+        background: #0e7490;
     }
 </style>
 @endpush
