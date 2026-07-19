@@ -26,10 +26,15 @@ class ShopController extends Controller
         $filters = [
             'brands' => array_filter((array) $request->query('brands', [])),
             'sizes' => array_filter((array) $request->query('sizes', [])),
-            'price' => $request->query('price'),
+            'min_price' => $request->filled('min_price') ? max(0, min(9999, (int) $request->query('min_price'))) : null,
+            'max_price' => $request->filled('max_price') ? max(0, min(9999, (int) $request->query('max_price'))) : null,
             'sale' => $request->boolean('sale'),
             'category' => $request->query('category'),
         ];
+
+        if ($filters['min_price'] !== null && $filters['max_price'] !== null && $filters['min_price'] > $filters['max_price']) {
+            [$filters['min_price'], $filters['max_price']] = [$filters['max_price'], $filters['min_price']];
+        }
 
         $productList = $this->shop->products($sort, $filters);
         $filterOptions = $this->shop->filterOptions();
@@ -81,6 +86,14 @@ class ShopController extends Controller
             'activeFilterCount' => collect($filters)->filter(function ($value, $key) {
                 if ($key === 'sale') {
                     return (bool) $value;
+                }
+
+                if ($key === 'min_price') {
+                    return $value !== null && (int) $value > 0;
+                }
+
+                if ($key === 'max_price') {
+                    return $value !== null && (int) $value < 9999;
                 }
 
                 return ! empty($value);

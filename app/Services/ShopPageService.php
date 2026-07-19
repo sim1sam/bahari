@@ -260,7 +260,21 @@ class ShopPageService
             ));
         }
 
-        if (! empty($filters['price'])) {
+        if (isset($filters['min_price']) || isset($filters['max_price'])) {
+            $minPrice = array_key_exists('min_price', $filters) && $filters['min_price'] !== null
+                ? (float) $filters['min_price']
+                : 0;
+            $maxPrice = array_key_exists('max_price', $filters) && $filters['max_price'] !== null
+                ? (float) $filters['max_price']
+                : 9999;
+
+            if ($minPrice > 0 || $maxPrice < 9999) {
+                $items = array_values(array_filter(
+                    $items,
+                    fn ($p) => ($p['price'] ?? 0) >= $minPrice && ($p['price'] ?? 0) <= $maxPrice,
+                ));
+            }
+        } elseif (! empty($filters['price'])) {
             $items = array_values(array_filter($items, function ($p) use ($filters) {
                 return match ($filters['price']) {
                     'under_1000' => $p['price'] < 1000,
