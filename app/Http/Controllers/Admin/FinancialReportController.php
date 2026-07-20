@@ -273,6 +273,7 @@ class FinancialReportController extends Controller
                 $row['status'],
                 $row['sales_price'],
                 $row['procurement_cost'],
+                $row['shipping'],
                 $row['service_charge'],
             ];
         }
@@ -280,7 +281,7 @@ class FinancialReportController extends Controller
         return [
             'title' => 'Sales Report (Order-wise)',
             'subtitle' => 'Period: '.$filters->dateFrom.' to '.$filters->dateTo,
-            'headers' => ['Date', 'Order', 'Customer', 'Status', 'Sales Price', 'Procurement Cost', 'Service Charge'],
+            'headers' => ['Date', 'Order', 'Customer', 'Status', 'Sales Price', 'Procurement Cost', 'Shipping', 'Service Charge'],
             'rows' => $rows,
             'footer' => [
                 'Total',
@@ -289,6 +290,7 @@ class FinancialReportController extends Controller
                 '',
                 $report['totals']['sales_price'],
                 $report['totals']['procurement_cost'],
+                $report['totals']['shipping'],
                 $report['totals']['service_charge'],
             ],
         ];

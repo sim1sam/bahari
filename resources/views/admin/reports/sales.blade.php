@@ -15,7 +15,7 @@
     ])
 
     <div class="row mb-3">
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3 mb-2">
             <div class="card mb-0">
                 <div class="card-body py-3">
                     <div class="text-muted small">Sales Price</div>
@@ -23,7 +23,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3 mb-2">
             <div class="card mb-0">
                 <div class="card-body py-3">
                     <div class="text-muted small">Procurement Cost</div>
@@ -31,14 +31,22 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3 mb-2">
+            <div class="card mb-0">
+                <div class="card-body py-3">
+                    <div class="text-muted small">Shipping</div>
+                    <div class="h4 mb-0">{{ money($report['totals']['shipping']) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-2">
             <div class="card mb-0">
                 <div class="card-body py-3">
                     <div class="text-muted small">Service Charge</div>
                     <div class="h4 mb-0 {{ $report['totals']['service_charge'] >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ money($report['totals']['service_charge']) }}
                     </div>
-                    <div class="text-muted small mt-1">Sales Price − Procurement Cost</div>
+                    <div class="text-muted small mt-1">Sales Price − (Procurement + Shipping)</div>
                 </div>
             </div>
         </div>
@@ -65,6 +73,7 @@
                         <th>Status</th>
                         <th class="text-right">Sales Price</th>
                         <th class="text-right">Procurement Cost</th>
+                        <th class="text-right">Shipping</th>
                         <th class="text-right">Service Charge</th>
                     </tr>
                 </thead>
@@ -81,13 +90,14 @@
                             </td>
                             <td class="text-right">{{ money($row['sales_price']) }}</td>
                             <td class="text-right">{{ money($row['procurement_cost']) }}</td>
+                            <td class="text-right">{{ money($row['shipping']) }}</td>
                             <td class="text-right font-weight-bold {{ $row['service_charge'] >= 0 ? 'text-success' : 'text-danger' }}">
                                 {{ money($row['service_charge']) }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No orders for this period.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No orders for this period.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -97,6 +107,7 @@
                             <th colspan="4">Total</th>
                             <th class="text-right">{{ money($report['totals']['sales_price']) }}</th>
                             <th class="text-right">{{ money($report['totals']['procurement_cost']) }}</th>
+                            <th class="text-right">{{ money($report['totals']['shipping']) }}</th>
                             <th class="text-right">{{ money($report['totals']['service_charge']) }}</th>
                         </tr>
                     </tfoot>

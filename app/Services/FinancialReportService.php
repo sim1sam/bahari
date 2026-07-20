@@ -497,7 +497,8 @@ class FinancialReportService
     }
 
     /**
-     * Order-wise sales report: sales price, procurement cost, and service charge.
+     * Order-wise sales report: sales price, procurement cost, shipping, and service charge.
+     * Service charge = sales price − (procurement cost + shipping).
      *
      * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, order_count: int, items_missing_cost: int}
      */
@@ -514,7 +515,8 @@ class FinancialReportService
         $rows = $orders->map(function (Order $order) use ($procurementByOrder) {
             $salesPrice = (float) $order->subtotal;
             $procurementCost = (float) ($procurementByOrder[$order->id] ?? 0);
-            $serviceCharge = $salesPrice - $procurementCost;
+            $shipping = (float) $order->shipping;
+            $serviceCharge = $salesPrice - ($procurementCost + $shipping);
             $reportDate = $order->completed_at ?? $order->created_at;
 
             return [
@@ -526,7 +528,7 @@ class FinancialReportService
                 'payment_status' => $order->payment_status,
                 'sales_price' => $salesPrice,
                 'discount' => (float) $order->discount,
-                'shipping' => (float) $order->shipping,
+                'shipping' => $shipping,
                 'order_total' => (float) $order->total,
                 'procurement_cost' => $procurementCost,
                 'service_charge' => $serviceCharge,
