@@ -68,19 +68,35 @@
 
                 {{-- Details --}}
                 <div class="flex flex-col" x-data="{}">
-                    <div class="flex items-start gap-3">
-                        @if ($product['badge'] ?? null)
-                            <x-ui.badge :variant="$product['badge_variant'] ?? 'default'">{{ $product['badge'] }}</x-ui.badge>
-                        @endif
-                        <div>
-                            @if ($product['brand'] ?? null)
-                                <p class="text-sm font-medium text-brand-600">{{ $product['brand'] }}</p>
+                    @if (($product['category'] ?? null) || ($product['brand'] ?? null))
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($product['category'] ?? null)
+                                @if ($categorySlug ?? null)
+                                    <a
+                                        href="{{ route('categories.show', $categorySlug) }}"
+                                        class="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-700 hover:border-brand-300 hover:bg-brand-100 transition-colors"
+                                    >
+                                        {{ $product['category'] }}
+                                    </a>
+                                @else
+                                    <span class="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-700">
+                                        {{ $product['category'] }}
+                                    </span>
+                                @endif
                             @endif
-                            <span class="text-sm text-ink-muted">{{ $product['category'] }}</span>
-                        </div>
-                    </div>
 
-                    <h1 class="mt-3 text-3xl lg:text-4xl font-bold tracking-tight text-ink">{{ $product['name'] }}</h1>
+                            @if ($product['brand'] ?? null)
+                                <span class="inline-flex items-center gap-2 text-sm text-ink-muted">
+                                    @if ($product['category'] ?? null)
+                                        <span class="text-border" aria-hidden="true">·</span>
+                                    @endif
+                                    <span class="font-medium text-ink">{{ $product['brand'] }}</span>
+                                </span>
+                            @endif
+                        </div>
+                    @endif
+
+                    <h1 class="mt-4 text-3xl lg:text-4xl font-bold tracking-tight text-ink">{{ $product['name'] }}</h1>
 
                     @if ($product['short_description'] ?? null)
                         <p class="mt-3 text-ink-muted leading-relaxed">{{ $product['short_description'] }}</p>
