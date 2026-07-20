@@ -33,7 +33,6 @@ class CategoryController extends Controller
         $sort = $request->query('sort');
         $filters = [
             'sizes' => array_filter((array) $request->query('sizes', [])),
-            'colors' => array_filter((array) $request->query('colors', [])),
             'price' => $request->query('price'),
             'sale' => $request->boolean('sale'),
         ];

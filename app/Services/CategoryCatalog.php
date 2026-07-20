@@ -52,11 +52,9 @@ class CategoryCatalog
         $items = $this->baseProducts($this->find($slug) ?? []);
 
         $sizes = collect($items)->pluck('sizes')->flatten()->unique()->sort()->values()->all();
-        $colors = collect($items)->pluck('colors')->flatten()->unique()->sort()->values()->all();
 
         return [
             'sizes' => $sizes,
-            'colors' => $colors,
             'has_sale' => collect($items)->contains(fn ($p) => ($p['badge'] ?? null) === 'Sale' || ($p['original_price'] ?? null) !== null),
         ];
     }
@@ -93,14 +91,6 @@ class CategoryCatalog
             $items = array_values(array_filter(
                 $items,
                 fn ($p) => ! empty(array_intersect($p['sizes'] ?? [], $sizes)),
-            ));
-        }
-
-        if (! empty($filters['colors'])) {
-            $colors = $filters['colors'];
-            $items = array_values(array_filter(
-                $items,
-                fn ($p) => ! empty(array_intersect($p['colors'] ?? [], $colors)),
             ));
         }
 
@@ -204,7 +194,7 @@ class CategoryCatalog
     private function categories(): array
     {
         if ($this->usesDatabase()) {
-            return Category::where('is_active', true)->orderBy('sort_order')->get()
+            return Category::where('is_active', '=', true, 'and')->orderBy('sort_order')->get()
                 ->mapWithKeys(function (Category $cat) {
                     $data = $cat->toCatalogArray();
                     $count = $this->countFor($data);
@@ -310,7 +300,7 @@ class CategoryCatalog
     private function usesDatabase(): bool
     {
         try {
-            return Category::count() > 0;
+            return Category::count('*') > 0;
         } catch (\Throwable) {
             return false;
         }

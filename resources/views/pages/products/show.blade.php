@@ -108,7 +108,6 @@
                     </div>
 
                     @php
-                        $productColors = array_values(array_filter($product['colors'] ?? [], fn ($value) => trim((string) $value) !== ''));
                         $maxQty = ($product['is_manual'] ?? false)
                             ? max(1, min(10, (int) ($product['stock'] ?? 0) ?: 1))
                             : 10;
@@ -169,21 +168,6 @@
                                         @disabled($outOfStock)
                                         class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                                     >
-                                </div>
-                            @endif
-                            @if ($productColors !== [])
-                                <div class="flex-1 min-w-[200px]">
-                                    <label for="product-color" class="block text-sm font-medium text-ink-muted mb-1.5">Color</label>
-                                    <select
-                                        id="product-color"
-                                        name="color"
-                                        @disabled($outOfStock)
-                                        class="w-full rounded-lg border border-border bg-surface-elevated py-2.5 px-3 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                                    >
-                                        @foreach ($productColors as $color)
-                                            <option value="{{ $color }}">{{ $color }}</option>
-                                        @endforeach
-                                    </select>
                                 </div>
                             @endif
                         </div>
