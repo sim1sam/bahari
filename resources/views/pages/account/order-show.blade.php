@@ -33,7 +33,7 @@
             @include('pages.account.partials.order-items', ['order' => $order])
             @include('pages.account.partials.order-summary', ['order' => $order])
             @include('pages.account.partials.order-payment', ['order' => $order])
-            @if (! $order->isCustom())
+            @if ($order->address)
                 @include('pages.account.partials.order-delivery', ['order' => $order])
             @endif
             <div class="flex gap-2 pt-2">
@@ -84,6 +84,9 @@
                                     @endif
                                     <div class="flex-1 min-w-0">
                                         <p class="font-medium text-ink">{{ $item->product_name }}</p>
+                                        @if (filled($item->brand))
+                                            <p class="text-sm text-ink-muted mt-0.5">Brand: {{ $item->brand }}</p>
+                                        @endif
                                         <p class="text-sm text-ink-muted mt-1">
                                             @if ($item->size || $item->color)
                                                 Size: {{ $item->size ?: '—' }} · Color: {{ $item->color ?: '—' }} ·
@@ -108,14 +111,19 @@
                         </div>
                     </div>
                     @include('pages.account.partials.order-payment', ['order' => $order])
-                    @if (! $order->isCustom() && $order->address)
+                    @if ($order->address)
                         <div class="account-panel">
-                            <div class="account-panel-header"><h2 class="font-semibold">Delivery Address</h2></div>
+                            <div class="account-panel-header"><h2 class="font-semibold">Shipping Address</h2></div>
                             <div class="account-panel-body text-sm text-ink-muted space-y-1">
                                 <p class="font-medium text-ink">{{ $order->customer_name }}</p>
                                 <p>{{ $order->address }}</p>
-                                <p>{{ $order->city }}, {{ $order->zip }}</p>
+                                @if ($order->city || $order->zip)
+                                    <p>{{ collect([$order->city, $order->zip])->filter()->implode(', ') }}</p>
+                                @endif
                                 <p>{{ $order->customer_phone }}</p>
+                                @if ($order->shipping_zone)
+                                    <p class="pt-2 text-ink">{{ \App\Support\ShippingZone::label($order->shipping_zone) }} · {{ money_or_free($order->shipping) }}</p>
+                                @endif
                             </div>
                         </div>
                     @endif

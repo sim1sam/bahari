@@ -72,6 +72,16 @@
                                 >
                             </div>
                             <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Brand</label>
+                                <input
+                                    type="text"
+                                    :name="'items[' + index + '][brand]'"
+                                    x-model="item.brand"
+                                    placeholder="e.g. Lunablu"
+                                    class="account-input"
+                                >
+                            </div>
+                            <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium mb-1">Product Link</label>
                                 <input
                                     type="url"
@@ -142,7 +152,151 @@
                 @endif
             </div>
             <div class="account-panel-footer flex items-center justify-between">
-                <span class="text-sm text-ink-muted">Calculated total</span>
+                <span class="text-sm text-ink-muted">Items subtotal</span>
+                <span class="text-lg font-bold text-brand-700" x-text="formatMoney(itemsTotal())"></span>
+            </div>
+        </div>
+
+        {{-- Shipping address --}}
+        <div class="account-panel mb-5">
+            <div class="account-panel-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 class="font-semibold text-ink">Shipping Address</h2>
+                    <p class="text-xs text-ink-muted mt-0.5">Choose a saved address or add another one</p>
+                </div>
+                <a href="{{ route('account.addresses.index') }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">Manage addresses</a>
+            </div>
+            <div class="account-panel-body space-y-4">
+                <input type="hidden" name="address_mode" :value="addressMode">
+                <input type="hidden" name="address_id" :value="addressMode === 'existing' ? selectedAddressId : ''">
+                <input type="hidden" name="shipping_zone" :value="shippingZone">
+
+                @if ($addresses->isNotEmpty())
+                    <div class="grid sm:grid-cols-2 gap-3" x-show="addressMode === 'existing'">
+                        @foreach ($addresses as $address)
+                            <label class="relative block rounded-xl border border-border p-4 cursor-pointer transition-colors hover:border-brand-300 has-checked:border-brand-600 has-checked:bg-brand-50">
+                                <input
+                                    type="radio"
+                                    value="{{ $address->id }}"
+                                    x-model="selectedAddressId"
+                                    @change="useSavedAddress({{ $address->id }})"
+                                    class="absolute right-4 top-4 text-brand-600 focus:ring-brand-500"
+                                >
+                                <span class="inline-flex items-center gap-2 pr-8 text-sm font-semibold text-ink">
+                                    {{ $address->label ?: $address->typeLabel() }}
+                                    <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">{{ $address->typeLabel() }}</span>
+                                </span>
+                                @if ($address->is_default)
+                                    <span class="mt-2 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">Default</span>
+                                @endif
+                                <p class="mt-3 text-sm text-ink-muted">{{ $address->recipient_name }} · {{ $address->phone }}</p>
+                                <p class="mt-1 text-sm text-ink">{{ $address->address_line }}</p>
+                            </label>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Keep values for submit when using a saved address --}}
+                <template x-if="addressMode === 'existing'">
+                    <div>
+                        <input type="hidden" name="name" :value="details.name">
+                        <input type="hidden" name="phone" :value="details.phone">
+                        <input type="hidden" name="address" :value="details.address">
+                    </div>
+                </template>
+
+                @if ($addresses->isNotEmpty())
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            x-show="addressMode === 'existing'"
+                            class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink hover:border-brand-300 hover:text-brand-700 transition-colors"
+                            @click="addNewAddress()"
+                        >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 6v12m6-6H6"/></svg>
+                            Add another address
+                        </button>
+                        <button
+                            type="button"
+                            x-show="addressMode === 'new'"
+                            x-cloak
+                            class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink-muted hover:text-ink transition-colors"
+                            @click="cancelNewAddress()"
+                        >
+                            Use saved address
+                        </button>
+                    </div>
+                @endif
+
+                <template x-if="addressMode === 'new'">
+                    <div class="space-y-4">
+                        <div class="grid sm:grid-cols-2 gap-3 rounded-xl bg-brand-50/50 border border-brand-100 p-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Address type</label>
+                                <select name="address_type" class="account-input">
+                                    @foreach ($addressTypes as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('address_type', 'home') === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Label <span class="text-ink-muted">(optional)</span></label>
+                                <input type="text" name="address_label" value="{{ old('address_label') }}" placeholder="Apartment, Branch, etc." class="account-input">
+                            </div>
+                            <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
+                                <input type="checkbox" name="save_address" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('save_address', true))>
+                                Save this address for next order
+                            </label>
+                            <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
+                                <input type="checkbox" name="make_default" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('make_default'))>
+                                Make it my default shipping address
+                            </label>
+                        </div>
+
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Recipient name</label>
+                                <input type="text" name="name" x-model="details.name" required class="account-input" placeholder="Full name">
+                                @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Phone</label>
+                                <input type="tel" name="phone" x-model="details.phone" required class="account-input" placeholder="01XXXXXXXXX">
+                                @error('phone')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Address</label>
+                                <textarea name="address" x-model="details.address" required rows="3" class="account-input resize-none" placeholder="Full delivery address"></textarea>
+                                @error('address')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div>
+                    <p class="text-sm font-medium text-ink mb-2">Delivery area</p>
+                    <div class="space-y-2">
+                        @foreach ($shippingZones as $value => $label)
+                            <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    value="{{ $value }}"
+                                    x-model="shippingZone"
+                                    class="text-brand-600 focus:ring-brand-500"
+                                >
+                                <span>{{ $label }}</span>
+                                <span class="text-ink-muted">({{ money($value === 'outside_dhaka' ? $shippingFeeOutside : $shippingFeeInside) }})</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('shipping_zone')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <div class="account-panel-footer flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <span class="text-sm text-ink-muted">
+                    Items <span class="font-medium text-ink" x-text="formatMoney(itemsTotal())"></span>
+                    · Shipping <span class="font-medium text-ink" x-text="shippingAmount === 0 ? 'Free' : formatMoney(shippingAmount)"></span>
+                </span>
                 <span class="text-xl font-bold text-brand-700" x-text="formatMoney(grandTotal())"></span>
             </div>
         </div>
@@ -190,15 +344,20 @@
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pb-2">
+            <a
+                href="{{ route('account.menu') }}"
+                class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-center text-ink-muted hover:text-ink hover:border-brand-200 transition-colors"
+            >
+                Cancel
+            </a>
             <button
                 type="submit"
-                class="flex-1 px-6 py-3 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
                 :disabled="paymentMode === 'manual' && !manualReady"
             >
                 Place Custom Order
             </button>
-            <a href="{{ route('account.menu') }}" class="px-6 py-3 rounded-xl border border-border text-sm font-medium text-center text-ink-muted hover:text-ink">Cancel</a>
         </div>
     </form>
 
@@ -459,7 +618,7 @@
 function customOrderForm() {
     return {
         currencySymbol: @json($currencySymbol),
-        items: [{ id: 1, name: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 }],
+        items: [{ id: 1, name: '', brand: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 }],
         nextId: 2,
         paymentMode: @json(old('payment_mode', 'cod')),
         showModal: false,
@@ -468,7 +627,21 @@ function customOrderForm() {
         banks: @json($bankPayload),
         screenshotPreview: null,
         manualReady: false,
+        addressMode: @json(old('address_mode', $selectedAddress ? 'existing' : 'new')),
+        selectedAddressId: @json((string) old('address_id', $selectedAddress?->id ?? '')),
+        addresses: @json($addressPayload),
+        details: {
+            name: @json(old('name', $selectedAddress?->recipient_name ?? auth()->user()->name)),
+            phone: @json(old('phone', $selectedAddress?->phone ?? auth()->user()->phone)),
+            address: @json(old('address', $selectedAddress?->address_line ?? '')),
+        },
+        shippingZone: @json(old('shipping_zone', 'inside_dhaka')),
+        shippingFeeInside: {{ (float) $shippingFeeInside }},
+        shippingFeeOutside: {{ (float) $shippingFeeOutside }},
 
+        get shippingAmount() {
+            return this.shippingZone === 'outside_dhaka' ? this.shippingFeeOutside : this.shippingFeeInside;
+        },
         get selectedBank() {
             return this.banks.find((bank) => String(bank.id) === String(this.selectedBankId)) || null;
         },
@@ -515,14 +688,53 @@ function customOrderForm() {
                 }
             }, { deep: true });
 
+            this.$watch('shippingZone', () => {
+                if (this.paymentMode === 'manual') {
+                    this.updateBankPaymentAmount();
+                }
+            });
+
             if (this.paymentMode === 'manual') {
                 this.ensureBankSelected();
                 this.updateBankPaymentAmount();
             }
+
+            if (this.addressMode === 'existing' && this.selectedAddressId) {
+                this.useSavedAddress(this.selectedAddressId);
+            }
+        },
+
+        useSavedAddress(id) {
+            this.addressMode = 'existing';
+            this.selectedAddressId = String(id);
+            const address = this.addresses.find((item) => String(item.id) === String(id));
+            if (! address) {
+                return;
+            }
+            this.details.name = address.name;
+            this.details.phone = address.phone;
+            this.details.address = address.address;
+        },
+
+        addNewAddress() {
+            this.addressMode = 'new';
+            this.selectedAddressId = '';
+            this.details.name = @json(auth()->user()->name);
+            this.details.phone = @json(auth()->user()->phone ?? '');
+            this.details.address = '';
+        },
+
+        cancelNewAddress() {
+            if (! this.addresses.length) {
+                return;
+            }
+
+            const fallbackId = this.addresses[0]?.id;
+            this.useSavedAddress(fallbackId);
         },
 
         addItem() {
-            this.items.push({ id: this.nextId++, name: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 });
+            this.items.push({ id: this.nextId++, name: '', brand: '', product_link: '', size: '', imagePreview: null, quantity: 1, unit_price: 0 });
         },
 
         onItemImage(event, index) {
@@ -549,8 +761,12 @@ function customOrderForm() {
             return (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
         },
 
-        grandTotal() {
+        itemsTotal() {
             return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
+        },
+
+        grandTotal() {
+            return this.itemsTotal() + Number(this.shippingAmount || 0);
         },
 
         ensureBankSelected() {

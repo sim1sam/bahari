@@ -8,6 +8,9 @@
                 @endif
                 <div class="flex-1 min-w-0">
                     <p class="font-medium text-sm">{{ $item->product_name }}</p>
+                    @if (filled($item->brand))
+                        <p class="text-xs text-ink-muted mt-0.5">Brand: {{ $item->brand }}</p>
+                    @endif
                     <p class="text-xs text-ink-muted mt-1">
                         @if ($item->size || $item->color)
                             {{ $item->size }} · {{ $item->color }} ·

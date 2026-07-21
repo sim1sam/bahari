@@ -48,8 +48,12 @@ class AccountController extends Controller
 
         $order->load(['items', 'payments', 'paymentTransactions']);
 
+        foreach ($order->items as $item) {
+            $item->ensureBrandSaved();
+        }
+
         return view('pages.account.order-show', [
-            'order' => $order,
+            'order' => $order->fresh(['items', 'payments', 'paymentTransactions']),
             'banks' => PaymentBank::activeForCheckout(),
             'sslCommerzEnabled' => app(\App\Services\SiteSettingsService::class)->sslCommerzConfigured(),
         ]);

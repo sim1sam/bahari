@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentBank;
@@ -10,6 +11,7 @@ use App\Models\PaymentTransaction;
 use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
 use App\Services\SiteSettingsService;
+use App\Support\ShippingZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +28,27 @@ class CustomOrderController extends Controller
 
     public function create(): View
     {
+        $user = auth()->user();
+        $addresses = $user->addresses()
+            ->orderByDesc('is_default')
+            ->orderBy('id')
+            ->get();
+        $selectedAddress = $addresses->firstWhere('is_default') ?? $addresses->first();
+
         return view('pages.account.custom-order', [
             'banks' => PaymentBank::activeForCheckout(),
+            'addresses' => $addresses,
+            'addressPayload' => $addresses->map(fn ($address) => [
+                'id' => $address->id,
+                'name' => $address->recipient_name,
+                'phone' => $address->phone,
+                'address' => $address->address_line,
+            ])->values(),
+            'selectedAddress' => $selectedAddress,
+            'addressTypes' => CustomerAddress::types(),
+            'shippingZones' => ShippingZone::labels(),
+            'shippingFeeInside' => $this->siteSettings->shippingFeeInsideDhaka(),
+            'shippingFeeOutside' => $this->siteSettings->shippingFeeOutsideDhaka(),
         ]);
     }
 
@@ -46,11 +67,22 @@ class CustomOrderController extends Controller
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.name' => 'required|string|max:200',
+            'items.*.brand' => 'nullable|string|max:150',
             'items.*.product_link' => 'nullable|string|max:500',
             'items.*.size' => 'nullable|string|max:50',
             'items.*.image_file' => 'nullable|image|max:5120',
             'items.*.quantity' => 'required|integer|min:1|max:9999',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'name' => 'required|string|max:200',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:500',
+            'address_mode' => 'nullable|in:existing,new',
+            'address_id' => 'nullable|integer',
+            'address_type' => 'nullable|in:home,office,other',
+            'address_label' => 'nullable|string|max:100',
+            'save_address' => 'nullable|boolean',
+            'make_default' => 'nullable|boolean',
+            'shipping_zone' => 'required|in:inside_dhaka,outside_dhaka',
             'payment_mode' => 'required|in:cod,manual',
             'bank_id' => 'required_if:payment_mode,manual|nullable|integer|exists:payment_banks,id',
             'payment_amount' => 'required_if:payment_mode,manual|nullable|numeric|min:0',
@@ -72,6 +104,7 @@ class CustomOrderController extends Controller
 
             return [
                 'name' => $item['name'] ?? '',
+                'brand' => filled($item['brand'] ?? null) ? trim((string) $item['brand']) : null,
                 'product_link' => $item['product_link'] ?? null,
                 'size' => $item['size'] ?? null,
                 'image' => $imagePath,
@@ -84,9 +117,36 @@ class CustomOrderController extends Controller
             return back()->withInput()->withErrors(['items' => 'Add at least one product.']);
         }
 
+        $user = auth()->user();
+        $selectedAddress = ! empty($validated['address_id'])
+            ? $user->addresses()->whereKey($validated['address_id'])->first()
+            : null;
+        $isNewAddress = ($validated['address_mode'] ?? 'existing') === 'new' || ! $selectedAddress;
+
+        if ($isNewAddress && ($request->boolean('save_address') || ! $user->addresses()->exists())) {
+            $makeDefault = $request->boolean('make_default') || ! $user->addresses()->exists();
+
+            if ($makeDefault) {
+                $user->addresses()->update(['is_default' => false]);
+            }
+
+            $user->addresses()->create([
+                'type' => $validated['address_type'] ?? CustomerAddress::TYPE_HOME,
+                'label' => $validated['address_label'] ?? null,
+                'recipient_name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'address_line' => $validated['address'],
+                'city' => '',
+                'zip' => '',
+                'is_default' => $makeDefault,
+            ]);
+        }
+
         $subtotal = $items->sum(fn ($item) => $item['quantity'] * $item['unit_price']);
+        $shippingZone = $validated['shipping_zone'];
+        $shipping = $this->siteSettings->shippingFeeForZone($shippingZone);
         $isManual = $validated['payment_mode'] === 'manual';
-        $total = round($subtotal, 2);
+        $total = round($subtotal + $shipping, 2);
 
         $bank = null;
         $screenshotPath = null;
@@ -105,7 +165,6 @@ class CustomOrderController extends Controller
             }
         }
 
-        $user = auth()->user();
         $orderNumber = $this->siteSettings->generateOrderNumber(custom: true);
         $paymentAmount = $isManual
             ? round((float) $validated['payment_amount'], 2)
@@ -115,6 +174,8 @@ class CustomOrderController extends Controller
             $validated,
             $items,
             $subtotal,
+            $shipping,
+            $shippingZone,
             $total,
             $bank,
             $screenshotPath,
@@ -136,16 +197,20 @@ class CustomOrderController extends Controller
                 'user_id' => $user->id,
                 'number' => $orderNumber,
                 'order_type' => 'custom',
-                'customer_name' => $user->name,
+                'customer_name' => $validated['name'],
                 'customer_email' => $user->email,
-                'customer_phone' => $user->phone ?? null,
+                'customer_phone' => $validated['phone'],
+                'address' => $validated['address'],
+                'city' => null,
+                'zip' => null,
                 'payment_method' => $isManual ? 'bank_transfer' : 'cod',
                 'bank_name' => $bank?->displayName(),
                 'payment_screenshot' => $screenshotPath,
                 'notes' => $validated['notes'] ?? null,
                 'subtotal' => $subtotal,
                 'discount' => 0,
-                'shipping' => 0,
+                'shipping' => $shipping,
+                'shipping_zone' => $shippingZone,
                 'total' => $total,
                 'status' => 'pending',
                 'payment_status' => $isManual ? 'pending' : 'due',
@@ -157,6 +222,7 @@ class CustomOrderController extends Controller
                     'order_id' => $order->id,
                     'product_slug' => 'custom-'.Str::slug($item['name']).'-'.$index,
                     'product_name' => $item['name'],
+                    'brand' => $item['brand'],
                     'product_link' => $item['product_link'],
                     'image' => $item['image'],
                     'size' => $item['size'] ?: null,

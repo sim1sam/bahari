@@ -78,15 +78,18 @@ class CustomerAddressController extends Controller
     /** @return array<string, mixed> */
     private function validateAddress(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'type' => 'required|in:home,office,other',
             'label' => 'nullable|string|max:100',
             'recipient_name' => 'required|string|max:200',
             'phone' => 'required|string|max:30',
-            'address_line' => 'required|string|max:255',
-            'city' => 'required|string|max:100',
-            'zip' => 'required|string|max:30',
+            'address_line' => 'required|string|max:500',
         ]);
+
+        $validated['city'] = '';
+        $validated['zip'] = '';
+
+        return $validated;
     }
 
     private function authorizeAddress(CustomerAddress $address): void

@@ -50,22 +50,9 @@
                         </div>
 
                         <div>
-                            <label for="address_line" class="block text-sm font-medium mb-1.5">Street address</label>
-                            <input type="text" name="address_line" id="address_line" value="{{ old('address_line') }}" required class="account-input @error('address_line') border-red-400 @enderror">
+                            <label for="address_line" class="block text-sm font-medium mb-1.5">Address</label>
+                            <textarea name="address_line" id="address_line" rows="3" required class="account-input resize-none @error('address_line') border-red-400 @enderror" placeholder="Full delivery address">{{ old('address_line') }}</textarea>
                             @error('address_line')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label for="city" class="block text-sm font-medium mb-1.5">City</label>
-                                <input type="text" name="city" id="city" value="{{ old('city') }}" required class="account-input @error('city') border-red-400 @enderror">
-                                @error('city')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label for="zip" class="block text-sm font-medium mb-1.5">ZIP</label>
-                                <input type="text" name="zip" id="zip" value="{{ old('zip') }}" required class="account-input @error('zip') border-red-400 @enderror">
-                                @error('zip')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                            </div>
                         </div>
 
                         <label class="flex items-center gap-2 text-sm text-ink-muted">
@@ -92,7 +79,7 @@
                                         <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">Default</span>
                                     @endif
                                 </div>
-                                <p class="mt-1 text-sm text-ink-muted truncate">{{ $address->address_line }}, {{ $address->city }} {{ $address->zip }}</p>
+                                <p class="mt-1 text-sm text-ink-muted truncate">{{ $address->address_line }}</p>
                             </div>
                         </div>
 
@@ -127,19 +114,8 @@
                             </div>
 
                             <div>
-                                <label for="address-line-{{ $address->id }}" class="block text-sm font-medium mb-1.5">Street address</label>
-                                <input type="text" name="address_line" id="address-line-{{ $address->id }}" value="{{ old('address_line', $address->address_line) }}" required class="account-input">
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label for="city-{{ $address->id }}" class="block text-sm font-medium mb-1.5">City</label>
-                                    <input type="text" name="city" id="city-{{ $address->id }}" value="{{ old('city', $address->city) }}" required class="account-input">
-                                </div>
-                                <div>
-                                    <label for="zip-{{ $address->id }}" class="block text-sm font-medium mb-1.5">ZIP</label>
-                                    <input type="text" name="zip" id="zip-{{ $address->id }}" value="{{ old('zip', $address->zip) }}" required class="account-input">
-                                </div>
+                                <label for="address-line-{{ $address->id }}" class="block text-sm font-medium mb-1.5">Address</label>
+                                <textarea name="address_line" id="address-line-{{ $address->id }}" rows="3" required class="account-input resize-none">{{ old('address_line', $address->address_line) }}</textarea>
                             </div>
 
                             <label class="flex items-center gap-2 text-sm text-ink-muted">
