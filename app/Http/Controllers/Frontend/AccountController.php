@@ -66,6 +66,27 @@ class AccountController extends Controller
             ->with('success', 'Order deleted successfully.');
     }
 
+    public function payOrder(Order $order): RedirectResponse
+    {
+        if (! $this->ownsOrder($order)) {
+            abort(403);
+        }
+
+        $order->load('paymentTransactions');
+
+        if ($order->amountDue() <= 0) {
+            return back()->with('error', 'No balance due for this order.');
+        }
+
+        $ssl = app(\App\Services\SslCommerzService::class);
+
+        if (! $ssl->isConfigured() || ! $order->canPayOnline()) {
+            return back()->with('error', 'Online payment is not available for this order.');
+        }
+
+        return redirect()->away($ssl->initiatePayment($order));
+    }
+
     public function transactions(): View
     {
         $orderIds = $this->userOrders()->pluck('id');

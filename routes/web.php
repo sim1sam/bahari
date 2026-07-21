@@ -48,6 +48,7 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [AccountController::class, 'orderShow'])->name('orders.show');
     Route::delete('/orders/{order}', [AccountController::class, 'destroyOrder'])->name('orders.destroy');
+    Route::post('/orders/{order}/pay', [AccountController::class, 'payOrder'])->name('orders.pay');
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist');
     Route::get('/transactions', [AccountController::class, 'transactions'])->name('transactions');
     Route::get('/ledger', [AccountController::class, 'ledger'])->name('ledger');

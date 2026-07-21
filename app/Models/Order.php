@@ -72,6 +72,28 @@ class Order extends Model
         return max(0, (float) $this->total - (float) $this->amount_paid);
     }
 
+    public function canAcceptPayment(): bool
+    {
+        if ($this->amountDue() <= 0 || $this->isCancelled()) {
+            return false;
+        }
+
+        $transaction = $this->relationLoaded('paymentTransactions')
+            ? $this->paymentTransactions->first()
+            : $this->latestPaymentTransaction();
+
+        return ! $transaction?->isPending();
+    }
+
+    public function canPayOnline(): bool
+    {
+        if (! $this->canAcceptPayment()) {
+            return false;
+        }
+
+        return app(\App\Services\SiteSettingsService::class)->sslCommerzConfigured();
+    }
+
     public function recalculatePaymentStatus(): void
     {
         $paid = (float) $this->amount_paid;

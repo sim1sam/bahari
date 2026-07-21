@@ -17,8 +17,14 @@ class SslCommerzService
 
     public function initiatePayment(Order $order): string
     {
+        $amountDue = $order->amountDue();
+
+        if ($amountDue <= 0) {
+            throw new RuntimeException('This order has no balance due.');
+        }
+
         $response = Http::asForm()
-            ->post($this->settings->sslCommerzApiUrl(), $this->payload($order))
+            ->post($this->settings->sslCommerzApiUrl(), $this->payload($order, $amountDue))
             ->throw()
             ->json();
 
@@ -48,19 +54,21 @@ class SslCommerzService
 
     public function markOrderPaid(Order $order, array $gatewayData): void
     {
-        $paidAmount = round((float) ($gatewayData['amount'] ?? $order->total), 2);
+        $paidAmount = round((float) ($gatewayData['amount'] ?? $order->amountDue()), 2);
+        $newAmountPaid = min(round((float) $order->amount_paid + $paidAmount, 2), (float) $order->total);
 
-        $order->update([
-            'payment_method' => 'sslcommerz',
+        $order->fill([
+            'payment_method' => in_array($order->payment_method, [null, '', 'cod'], true) ? 'sslcommerz' : $order->payment_method,
             'reference_code' => $gatewayData['bank_tran_id'] ?? $gatewayData['tran_id'] ?? $order->reference_code,
-            'payment_status' => 'paid',
-            'amount_paid' => min($paidAmount, (float) $order->total),
+            'amount_paid' => $newAmountPaid,
             'notes' => trim(($order->notes ? $order->notes.' ' : '').'SSLCommerz: '.($gatewayData['card_type'] ?? 'Online payment')),
         ]);
+        $order->recalculatePaymentStatus();
+        $order->save();
     }
 
     /** @return array<string, mixed> */
-    private function payload(Order $order): array
+    private function payload(Order $order, float $amountDue): array
     {
         $items = $order->items()->get();
         $productNames = $items->pluck('product_name')->filter()->take(3)->implode(', ');
@@ -68,7 +76,7 @@ class SslCommerzService
         return [
             'store_id' => $this->settings->sslCommerzStoreId(),
             'store_passwd' => $this->settings->sslCommerzStorePassword(),
-            'total_amount' => number_format((float) $order->total, 2, '.', ''),
+            'total_amount' => number_format($amountDue, 2, '.', ''),
             'currency' => config('currency.code', 'BDT'),
             'tran_id' => $order->number,
             'success_url' => route('sslcommerz.success'),
