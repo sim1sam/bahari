@@ -694,10 +694,28 @@ class OrderController extends Controller
 
         $slug = $this->resolveProductSlug($itemData);
 
-        $productBrand = Product::query()->where('slug', $slug)->value('brand');
-        $productBrand = trim((string) $productBrand);
+        $product = Product::query()->where('slug', $slug)->first(['id', 'brand']);
+        $productBrand = trim((string) ($product?->brand ?? ''));
 
-        return $productBrand !== '' ? $productBrand : null;
+        if ($productBrand !== '') {
+            return $productBrand;
+        }
+
+        if ($product) {
+            $apiBrand = \App\Models\ApiReceivedItem::query()
+                ->where('product_id', $product->id)
+                ->whereNotNull('brand')
+                ->where('brand', '!=', '')
+                ->value('brand');
+
+            $apiBrand = trim((string) $apiBrand);
+
+            if ($apiBrand !== '') {
+                return $apiBrand;
+            }
+        }
+
+        return null;
     }
 
     private function resolveItemImage(

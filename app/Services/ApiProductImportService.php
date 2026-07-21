@@ -30,6 +30,7 @@ class ApiProductImportService
             'category_id' => $this->resolveCategoryId($categoryId, $item->category_name),
             'slug' => $slug,
             'name' => $item->title,
+            'brand' => filled($item->brand) ? trim((string) $item->brand) : null,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
             'purchase_price' => $pricing['purchase_price'],
@@ -66,6 +67,7 @@ class ApiProductImportService
 
         $product->update([
             'name' => $item->title,
+            'brand' => filled($item->brand) ? trim((string) $item->brand) : $product->brand,
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
             'purchase_price' => $pricing['purchase_price'] ?? $product->purchase_price,

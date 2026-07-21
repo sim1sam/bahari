@@ -162,13 +162,31 @@ class OrderTransferService
             return null;
         }
 
-        $productBrand = \App\Models\Product::query()
+        $product = \App\Models\Product::query()
             ->where('slug', $slug)
-            ->value('brand');
+            ->first(['id', 'brand']);
 
-        $productBrand = trim((string) $productBrand);
+        $productBrand = trim((string) ($product?->brand ?? ''));
 
-        return $productBrand !== '' ? $productBrand : null;
+        if ($productBrand !== '') {
+            return $productBrand;
+        }
+
+        if ($product) {
+            $apiBrand = \App\Models\ApiReceivedItem::query()
+                ->where('product_id', $product->id)
+                ->whereNotNull('brand')
+                ->where('brand', '!=', '')
+                ->value('brand');
+
+            $apiBrand = trim((string) $apiBrand);
+
+            if ($apiBrand !== '') {
+                return $apiBrand;
+            }
+        }
+
+        return null;
     }
 
     /**
