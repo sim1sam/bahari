@@ -323,6 +323,10 @@
                 <input type="text" name="items[__INDEX__][product_name]" class="form-control item-name" placeholder="Product name" required>
             </div>
             <div class="form-group">
+                <label>Brand</label>
+                <input type="text" name="items[__INDEX__][brand]" class="form-control" placeholder="Brand name">
+            </div>
+            <div class="form-group">
                 <label>Product URL</label>
                 <input type="text" name="items[__INDEX__][product_link]" class="form-control" placeholder="https://...">
             </div>

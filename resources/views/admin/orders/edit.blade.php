@@ -183,6 +183,10 @@
                                         <input type="text" name="items[{{ $item->id }}][product_name]" class="form-control item-name" value="{{ old('items.'.$item->id.'.product_name', $item->product_name) }}" required>
                                     </div>
                                     <div class="form-group">
+                                        <label>Brand</label>
+                                        <input type="text" name="items[{{ $item->id }}][brand]" class="form-control" value="{{ old('items.'.$item->id.'.brand', $item->brand) }}" placeholder="Brand name">
+                                    </div>
+                                    <div class="form-group">
                                         <label>Product URL</label>
                                         <input type="text" name="items[{{ $item->id }}][product_link]" class="form-control" value="{{ old('items.'.$item->id.'.product_link', $item->product_link) }}" placeholder="https://...">
                                     </div>
@@ -472,6 +476,10 @@
             <div class="form-group">
                 <label>Product Name <span class="text-danger">*</span></label>
                 <input type="text" name="new_items[__INDEX__][product_name]" class="form-control item-name" placeholder="Product name" required>
+            </div>
+            <div class="form-group">
+                <label>Brand</label>
+                <input type="text" name="new_items[__INDEX__][brand]" class="form-control" placeholder="Brand name">
             </div>
             <div class="form-group">
                 <label>Product URL</label>

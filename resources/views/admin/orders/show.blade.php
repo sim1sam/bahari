@@ -26,6 +26,7 @@
                         <thead>
                             <tr>
                                 <th>Product</th>
+                                <th>Brand</th>
                                 <th>Image</th>
                                 <th>Link</th>
                                 <th>Qty</th>
@@ -34,8 +35,15 @@
                         </thead>
                         <tbody>
                             @foreach ($order->items as $item)
+                                @php
+                                    $itemBrand = trim((string) ($item->brand ?? ''));
+                                    if ($itemBrand === '' && $item->product_slug) {
+                                        $itemBrand = trim((string) (\App\Models\Product::query()->where('slug', $item->product_slug)->value('brand') ?? ''));
+                                    }
+                                @endphp
                                 <tr>
                                     <td>{{ $item->product_name }}</td>
+                                    <td>{{ $itemBrand !== '' ? $itemBrand : '—' }}</td>
                                     <td>
                                         @if ($item->imageUrl())
                                             <a href="{{ $item->imageUrl() }}" target="_blank" rel="noopener">
