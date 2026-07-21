@@ -137,6 +137,12 @@
                     @if ($order->external_transferred_at)
                         <p class="small text-muted">Transferred: {{ $order->external_transferred_at->format('M d, Y H:i') }}</p>
                     @endif
+                    <form action="{{ route('admin.orders.retransfer', $order) }}" method="POST" class="mt-2">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-sync-alt"></i> Re-transfer to API
+                        </button>
+                    </form>
                     @if ($order->isCustom())
                         <p><span class="badge badge-info">Custom Order</span></p>
                         @if ($order->bank_name)

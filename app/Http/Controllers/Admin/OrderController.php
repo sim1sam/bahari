@@ -565,6 +565,18 @@ class OrderController extends Controller
         return back()->with('success', $message);
     }
 
+    public function retransfer(Order $order, OrderTransferService $transfer): RedirectResponse
+    {
+        $ok = $transfer->transfer($order->fresh(['items', 'payments']), force: true);
+
+        return back()->with(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'Order re-transferred to API site with product images.'
+                : 'Re-transfer failed. Check transfer status/message.'
+        );
+    }
+
     public function storePayment(Request $request, Order $order, MediaStorageService $media, OrderTransferService $transfer): RedirectResponse
     {
         $banks = array_keys(config('payment.banks', []));

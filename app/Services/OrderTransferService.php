@@ -9,7 +9,7 @@ use Throwable;
 
 class OrderTransferService
 {
-    public function transfer(Order $order): bool
+    public function transfer(Order $order, bool $force = false): bool
     {
         $setting = OrderTransferSetting::current();
 
@@ -22,7 +22,7 @@ class OrderTransferService
             return false;
         }
 
-        if ($order->external_transfer_status === 'sent') {
+        if (! $force && $order->external_transfer_status === 'sent') {
             return true;
         }
 
@@ -98,16 +98,23 @@ class OrderTransferService
                 'amount_paid' => (float) $order->amount_paid,
                 'created_at' => $order->created_at?->toIso8601String(),
             ],
-            'items' => $order->items->map(fn ($item) => [
-                'product_slug' => $item->product_slug,
-                'product_name' => $item->product_name,
-                'product_link' => $item->product_link,
-                'image' => $this->absoluteImageUrl($item->imageUrl()),
-                'size' => $item->size,
-                'color' => $item->color,
-                'quantity' => (int) $item->quantity,
-                'price' => (float) $item->price,
-            ])->values()->all(),
+            'items' => $order->items->map(function ($item) {
+                $imageUrl = $this->resolveItemImageUrl($item);
+
+                return [
+                    'product_slug' => $item->product_slug,
+                    'product_name' => $item->product_name,
+                    'product_link' => $item->product_link,
+                    // Multiple keys — receiver sites look for different field names
+                    'image' => $imageUrl,
+                    'image_url' => $imageUrl,
+                    'product_image' => $imageUrl,
+                    'size' => $item->size,
+                    'color' => $item->color,
+                    'quantity' => (int) $item->quantity,
+                    'price' => (float) $item->price,
+                ];
+            })->values()->all(),
             'payments' => $order->payments->map(fn ($payment) => [
                 'amount' => (float) $payment->amount,
                 'payment_method' => $payment->payment_method,
@@ -134,16 +141,59 @@ class OrderTransferService
         };
     }
 
-    private function absoluteImageUrl(?string $imageUrl): ?string
+    /**
+     * Build a publicly downloadable absolute image URL for the receiver site.
+     */
+    private function resolveItemImageUrl($item): ?string
     {
-        if (! $imageUrl) {
+        $raw = trim((string) ($item->image ?? ''));
+
+        if ($raw === '') {
             return null;
         }
 
-        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
-            return $imageUrl;
+        $media = app(MediaStorageService::class);
+
+        // Already an absolute external URL
+        if ($media->isExternal($raw)) {
+            return $raw;
         }
 
-        return url($imageUrl);
+        // Prefer MediaStorageService resolved URL when the file exists
+        $resolved = $media->url($raw);
+
+        if ($resolved) {
+            return $this->toAbsoluteUrl($resolved);
+        }
+
+        // Local storage path — use /media/{path} so it works even without storage symlink
+        $path = ltrim(str_replace('\\', '/', $raw), '/');
+        $path = str_starts_with($path, 'storage/') ? substr($path, 8) : $path;
+
+        if ($path !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return route('storage.file', ['path' => $path], absolute: true);
+        }
+
+        // Last resort: turn relative path into absolute site URL
+        return $this->toAbsoluteUrl($raw);
+    }
+
+    private function toAbsoluteUrl(string $url): string
+    {
+        $url = trim($url);
+
+        if (str_starts_with($url, '//')) {
+            return 'https:'.$url;
+        }
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        if (! str_starts_with($url, '/')) {
+            $url = '/'.ltrim($url, '/');
+        }
+
+        return url($url);
     }
 }
