@@ -137,6 +137,10 @@ class CartService
 
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] += $quantity;
+            $cart[$key]['brand'] = $product['brand'] ?? ($cart[$key]['brand'] ?? null);
+            $cart[$key]['name'] = $product['name'] ?? $cart[$key]['name'];
+            $cart[$key]['price'] = $product['price'] ?? $cart[$key]['price'];
+            $cart[$key]['image'] = $product['image'] ?? $cart[$key]['image'];
         } else {
             $cart[$key] = [
                 'key' => $key,

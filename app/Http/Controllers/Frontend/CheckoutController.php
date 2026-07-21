@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentBank;
 use App\Models\PaymentTransaction;
-use App\Models\Product;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\FinancialTransactionService;
@@ -277,26 +276,12 @@ class CheckoutController extends Controller
             $order = Order::create($orderData);
 
             foreach ($items as $item) {
-                $brand = $item['brand'] ?? null;
-
-                if (! $brand && ! empty($item['slug'])) {
-                    $product = Product::query()->where('slug', $item['slug'])->first(['id', 'brand']);
-                    $brand = $product?->brand;
-
-                    if (! $brand && $product) {
-                        $brand = \App\Models\ApiReceivedItem::query()
-                            ->where('product_id', $product->id)
-                            ->whereNotNull('brand')
-                            ->where('brand', '!=', '')
-                            ->value('brand');
-                    }
-                }
-
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_slug' => $item['slug'],
                     'product_name' => $item['name'],
-                    'brand' => filled($brand) ? trim((string) $brand) : null,
+                    // Auto-copied from product.brand when cart brand is empty (OrderItem::saving).
+                    'brand' => OrderItem::resolveBrandForSlug($item['slug'] ?? null, $item['brand'] ?? null),
                     'image' => $item['image'],
                     'size' => $item['size'],
                     'color' => $item['color'],

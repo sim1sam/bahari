@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
-use App\Models\Product;
 use App\Models\User;
 use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
@@ -217,8 +216,14 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
+        $order->load(['items', 'payments.recorder', 'paymentTransactions']);
+
+        foreach ($order->items as $item) {
+            $item->ensureBrandSaved();
+        }
+
         return view('admin.orders.show', [
-            'order' => $order->load(['items', 'payments.recorder', 'paymentTransactions']),
+            'order' => $order->fresh(['items', 'payments.recorder', 'paymentTransactions']),
             'banks' => config('payment.banks', []),
         ]);
     }
@@ -689,36 +694,10 @@ class OrderController extends Controller
 
     private function resolveItemBrand(array $itemData): ?string
     {
-        $brand = trim((string) ($itemData['brand'] ?? ''));
-
-        if ($brand !== '') {
-            return $brand;
-        }
-
-        $slug = $this->resolveProductSlug($itemData);
-
-        $product = Product::query()->where('slug', $slug)->first(['id', 'brand']);
-        $productBrand = trim((string) ($product?->brand ?? ''));
-
-        if ($productBrand !== '') {
-            return $productBrand;
-        }
-
-        if ($product) {
-            $apiBrand = \App\Models\ApiReceivedItem::query()
-                ->where('product_id', $product->id)
-                ->whereNotNull('brand')
-                ->where('brand', '!=', '')
-                ->value('brand');
-
-            $apiBrand = trim((string) $apiBrand);
-
-            if ($apiBrand !== '') {
-                return $apiBrand;
-            }
-        }
-
-        return null;
+        return OrderItem::resolveBrandForSlug(
+            $this->resolveProductSlug($itemData),
+            $itemData['brand'] ?? null
+        );
     }
 
     private function resolveItemImage(

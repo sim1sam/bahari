@@ -100,7 +100,8 @@ class OrderTransferService
             ],
             'items' => $order->items->map(function ($item) {
                 $imageUrl = $this->resolveItemImageUrl($item);
-                $brand = $this->resolveItemBrand($item);
+                $item->ensureBrandSaved();
+                $brand = \App\Models\OrderItem::resolveBrandForSlug($item->product_slug, $item->brand);
 
                 return [
                     'product_slug' => $item->product_slug,
@@ -143,50 +144,6 @@ class OrderTransferService
             'pending' => 'pending',
             default => 'pending',
         };
-    }
-
-    /**
-     * Build a publicly downloadable absolute image URL for the receiver site.
-     */
-    private function resolveItemBrand($item): ?string
-    {
-        $brand = trim((string) ($item->brand ?? ''));
-
-        if ($brand !== '') {
-            return $brand;
-        }
-
-        $slug = trim((string) ($item->product_slug ?? ''));
-
-        if ($slug === '') {
-            return null;
-        }
-
-        $product = \App\Models\Product::query()
-            ->where('slug', $slug)
-            ->first(['id', 'brand']);
-
-        $productBrand = trim((string) ($product?->brand ?? ''));
-
-        if ($productBrand !== '') {
-            return $productBrand;
-        }
-
-        if ($product) {
-            $apiBrand = \App\Models\ApiReceivedItem::query()
-                ->where('product_id', $product->id)
-                ->whereNotNull('brand')
-                ->where('brand', '!=', '')
-                ->value('brand');
-
-            $apiBrand = trim((string) $apiBrand);
-
-            if ($apiBrand !== '') {
-                return $apiBrand;
-            }
-        }
-
-        return null;
     }
 
     /**

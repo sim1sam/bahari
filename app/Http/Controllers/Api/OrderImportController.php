@@ -117,7 +117,10 @@ class OrderImportController extends Controller
                         'order_id' => $order->id,
                         'product_slug' => $item['product_slug'] ?? 'imported-item',
                         'product_name' => $item['product_name'] ?? 'Imported item',
-                        'brand' => $item['brand'] ?? $item['brand_name'] ?? $item['product_brand'] ?? null,
+                        'brand' => OrderItem::resolveBrandForSlug(
+                            $item['product_slug'] ?? null,
+                            $item['brand'] ?? $item['brand_name'] ?? $item['product_brand'] ?? null
+                        ),
                         'product_link' => $item['product_link'] ?? null,
                         'image' => $this->storeItemImage(
                             $item['image'] ?? $item['image_url'] ?? $item['product_image'] ?? null
