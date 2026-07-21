@@ -86,7 +86,7 @@ class OrderTransferService
                 'city' => $order->city,
                 'zip' => $order->zip,
                 'payment_method' => $order->payment_method,
-                'payment_status' => $order->payment_status,
+                'payment_status' => $this->mapPaymentStatusForReceiver($order->payment_status),
                 'reference_code' => $order->reference_code,
                 'bank_name' => $order->bank_name,
                 'notes' => $order->notes,
@@ -116,6 +116,22 @@ class OrderTransferService
                 'created_at' => $payment->created_at?->toIso8601String(),
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * Receiver sites (e.g. fb_orders) often use a fixed ENUM that does not include "due".
+     * Map local payment statuses to compatible receiver values.
+     */
+    private function mapPaymentStatusForReceiver(?string $status): string
+    {
+        return match ($status) {
+            'paid' => 'paid',
+            'partial' => 'partial',
+            // COD / unpaid balance — receiver ENUM commonly uses unpaid|pending, not due
+            'due' => 'unpaid',
+            'pending' => 'pending',
+            default => 'pending',
+        };
     }
 
     private function absoluteImageUrl(?string $imageUrl): ?string
