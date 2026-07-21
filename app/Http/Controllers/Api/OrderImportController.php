@@ -45,8 +45,21 @@ class OrderImportController extends Controller
             'order.address' => 'nullable|string|max:255',
             'order.city' => 'nullable|string|max:100',
             'order.zip' => 'nullable|string|max:50',
+            'order.shipping_address' => 'nullable|string|max:255',
+            'order.shipping_city' => 'nullable|string|max:100',
+            'order.shipping_zip' => 'nullable|string|max:50',
+            'order.shipping_phone' => 'nullable|string|max:50',
+            'order.shipping_name' => 'nullable|string|max:200',
+            'order.delivery_address' => 'nullable|string|max:255',
+            'order.delivery_city' => 'nullable|string|max:100',
+            'order.delivery_zip' => 'nullable|string|max:50',
+            'order.delivery_phone' => 'nullable|string|max:50',
+            'order.delivery_name' => 'nullable|string|max:200',
+            'order.postal_code' => 'nullable|string|max:50',
+            'order.shipping_zone' => 'nullable|string|max:50',
+            'order.shipping_zone_label' => 'nullable|string|max:100',
             'order.payment_method' => 'nullable|string|max:50',
-            'order.payment_status' => ['nullable', Rule::in(['pending', 'paid', 'partial', 'due'])],
+            'order.payment_status' => ['nullable', Rule::in(['pending', 'paid', 'partial', 'due', 'unpaid'])],
             'order.reference_code' => 'nullable|string|max:100',
             'order.bank_name' => 'nullable|string|max:100',
             'order.notes' => 'nullable|string|max:2000',
@@ -54,9 +67,25 @@ class OrderImportController extends Controller
             'order.subtotal' => 'nullable|numeric|min:0',
             'order.discount' => 'nullable|numeric|min:0',
             'order.shipping' => 'nullable|numeric|min:0',
+            'order.shipping_fee' => 'nullable|numeric|min:0',
+            'order.shipping_cost' => 'nullable|numeric|min:0',
+            'order.shipping_amount' => 'nullable|numeric|min:0',
             'order.total' => 'nullable|numeric|min:0',
             'order.amount_paid' => 'nullable|numeric|min:0',
             'order.created_at' => 'nullable|string',
+            'shipping' => 'nullable|array',
+            'shipping.name' => 'nullable|string|max:200',
+            'shipping.phone' => 'nullable|string|max:50',
+            'shipping.email' => 'nullable|email|max:150',
+            'shipping.address' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:100',
+            'shipping.zip' => 'nullable|string|max:50',
+            'shipping.postal_code' => 'nullable|string|max:50',
+            'shipping.zone' => 'nullable|string|max:50',
+            'shipping.zone_label' => 'nullable|string|max:100',
+            'shipping.fee' => 'nullable|numeric|min:0',
+            'shipping.cost' => 'nullable|numeric|min:0',
+            'shipping.amount' => 'nullable|numeric|min:0',
             'items' => 'nullable|array',
             'items.*.product_slug' => 'nullable|string|max:255',
             'items.*.product_name' => 'nullable|string|max:255',
@@ -82,26 +111,77 @@ class OrderImportController extends Controller
         try {
             $order = DB::transaction(function () use ($validated) {
                 $data = $validated['order'];
+                $shipping = $validated['shipping'] ?? [];
+
+                $address = $data['address']
+                    ?? $data['shipping_address']
+                    ?? $data['delivery_address']
+                    ?? ($shipping['address'] ?? null);
+
+                $city = $data['city']
+                    ?? $data['shipping_city']
+                    ?? $data['delivery_city']
+                    ?? ($shipping['city'] ?? null);
+
+                $zip = $data['zip']
+                    ?? $data['shipping_zip']
+                    ?? $data['delivery_zip']
+                    ?? $data['postal_code']
+                    ?? ($shipping['zip'] ?? null)
+                    ?? ($shipping['postal_code'] ?? null);
+
+                $phone = $data['customer_phone']
+                    ?? $data['shipping_phone']
+                    ?? $data['delivery_phone']
+                    ?? ($shipping['phone'] ?? null);
+
+                $name = $data['customer_name']
+                    ?? $data['shipping_name']
+                    ?? $data['delivery_name']
+                    ?? ($shipping['name'] ?? null)
+                    ?? 'Unknown';
+
+                $email = $data['customer_email']
+                    ?? ($shipping['email'] ?? null)
+                    ?? '';
+
+                $shippingFee = $data['shipping']
+                    ?? $data['shipping_fee']
+                    ?? $data['shipping_cost']
+                    ?? $data['shipping_amount']
+                    ?? ($shipping['fee'] ?? null)
+                    ?? ($shipping['cost'] ?? null)
+                    ?? ($shipping['amount'] ?? null)
+                    ?? 0;
+
+                $shippingZone = $data['shipping_zone']
+                    ?? ($shipping['zone'] ?? null);
+
+                $paymentStatus = $data['payment_status'] ?? 'pending';
+                if ($paymentStatus === 'unpaid') {
+                    $paymentStatus = 'due';
+                }
 
                 $order = Order::query()->updateOrCreate(
                     ['number' => $data['number']],
                     [
                         'order_type' => $data['type'] ?? 'standard',
-                        'customer_name' => $data['customer_name'] ?? 'Unknown',
-                        'customer_email' => $data['customer_email'] ?? '',
-                        'customer_phone' => $data['customer_phone'] ?? null,
-                        'address' => $data['address'] ?? null,
-                        'city' => $data['city'] ?? null,
-                        'zip' => $data['zip'] ?? null,
+                        'customer_name' => $name,
+                        'customer_email' => $email,
+                        'customer_phone' => $phone,
+                        'address' => $address,
+                        'city' => $city,
+                        'zip' => $zip,
                         'payment_method' => $data['payment_method'] ?? 'card',
-                        'payment_status' => $data['payment_status'] ?? 'pending',
+                        'payment_status' => $paymentStatus,
                         'reference_code' => $data['reference_code'] ?? null,
                         'bank_name' => $data['bank_name'] ?? null,
                         'notes' => $data['notes'] ?? null,
                         'coupon_code' => $data['coupon_code'] ?? null,
                         'subtotal' => round((float) ($data['subtotal'] ?? 0), 2),
                         'discount' => round((float) ($data['discount'] ?? 0), 2),
-                        'shipping' => round((float) ($data['shipping'] ?? 0), 2),
+                        'shipping' => round((float) $shippingFee, 2),
+                        'shipping_zone' => $shippingZone,
                         'total' => round((float) ($data['total'] ?? 0), 2),
                         'amount_paid' => round((float) ($data['amount_paid'] ?? 0), 2),
                         'status' => $data['status'] ?? 'processing',

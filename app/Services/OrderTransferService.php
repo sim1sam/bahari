@@ -74,6 +74,12 @@ class OrderTransferService
     {
         $order->loadMissing(['items', 'payments', 'user']);
 
+        $shippingZone = $order->shipping_zone;
+        $shippingFee = (float) $order->shipping;
+        $shippingZoneLabel = $shippingZone
+            ? \App\Support\ShippingZone::label($shippingZone)
+            : null;
+
         return [
             'order' => [
                 'number' => $order->number,
@@ -82,9 +88,28 @@ class OrderTransferService
                 'customer_name' => $order->customer_name,
                 'customer_email' => $order->customer_email,
                 'customer_phone' => $order->customer_phone,
+                // Delivery / shipping address
                 'address' => $order->address,
                 'city' => $order->city,
                 'zip' => $order->zip,
+                'shipping_address' => $order->address,
+                'shipping_city' => $order->city,
+                'shipping_zip' => $order->zip,
+                'shipping_phone' => $order->customer_phone,
+                'shipping_name' => $order->customer_name,
+                'delivery_address' => $order->address,
+                'delivery_city' => $order->city,
+                'delivery_zip' => $order->zip,
+                'delivery_phone' => $order->customer_phone,
+                'delivery_name' => $order->customer_name,
+                'postal_code' => $order->zip,
+                // Shipping zone + fee
+                'shipping_zone' => $shippingZone,
+                'shipping_zone_label' => $shippingZoneLabel,
+                'shipping' => $shippingFee,
+                'shipping_fee' => $shippingFee,
+                'shipping_cost' => $shippingFee,
+                'shipping_amount' => $shippingFee,
                 'payment_method' => $order->payment_method,
                 'payment_status' => $this->mapPaymentStatusForReceiver($order->payment_status),
                 'reference_code' => $order->reference_code,
@@ -93,10 +118,23 @@ class OrderTransferService
                 'coupon_code' => $order->coupon_code,
                 'subtotal' => (float) $order->subtotal,
                 'discount' => (float) $order->discount,
-                'shipping' => (float) $order->shipping,
                 'total' => (float) $order->total,
                 'amount_paid' => (float) $order->amount_paid,
                 'created_at' => $order->created_at?->toIso8601String(),
+            ],
+            'shipping' => [
+                'name' => $order->customer_name,
+                'phone' => $order->customer_phone,
+                'email' => $order->customer_email,
+                'address' => $order->address,
+                'city' => $order->city,
+                'zip' => $order->zip,
+                'postal_code' => $order->zip,
+                'zone' => $shippingZone,
+                'zone_label' => $shippingZoneLabel,
+                'fee' => $shippingFee,
+                'cost' => $shippingFee,
+                'amount' => $shippingFee,
             ],
             'items' => $order->items->map(function ($item) {
                 $imageUrl = $this->resolveItemImageUrl($item);
