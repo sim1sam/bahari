@@ -25,15 +25,11 @@
                 </div>
                 <div class="flex gap-2 mt-3">
                     <a href="{{ route('account.orders.show', $order) }}" class="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-center text-brand-600 hover:bg-brand-50">View</a>
-                    @if ($order->canPayOnline())
-                        <form
-                            action="{{ route('account.orders.pay', $order) }}"
-                            method="POST"
-                            class="flex-1"
-                        >
-                            @csrf
-                            <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700">Pay</button>
-                        </form>
+                    @if ($order->canAcceptPayment())
+                        @include('pages.account.partials.order-pay-button', [
+                            'order' => $order,
+                            'class' => 'flex-1 py-2.5',
+                        ])
                     @endif
                     @if ($order->canBeDeleted())
                         <form

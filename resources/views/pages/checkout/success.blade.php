@@ -6,6 +6,18 @@
     @php
         $customer = $order['customer'] ?? [];
         $items = $order['items'] ?? [];
+        $paymentMethod = $order['payment_method'] ?? 'cod';
+        $paymentStatus = $order['payment_status'] ?? 'due';
+        $amountPaid = (float) ($order['amount_paid'] ?? 0);
+        $orderTotal = (float) ($order['total'] ?? 0);
+        $amountDue = max(0, $orderTotal - $amountPaid);
+        $isPaid = $paymentStatus === 'paid' || $amountDue <= 0;
+        $paymentMethodLabel = match ($paymentMethod) {
+            'cod' => 'Cash on Delivery',
+            'bank_transfer' => 'Bank Transfer',
+            'sslcommerz' => 'Online Payment',
+            default => ucfirst(str_replace('_', ' ', $paymentMethod)),
+        };
     @endphp
 
     <section class="py-16 lg:py-24">
@@ -87,9 +99,31 @@
                         <dd>{{ money_or_free($order['shipping']) }}</dd>
                     </div>
                     <div class="flex justify-between pt-2 text-base font-bold text-ink">
-                        <dt>Total Paid</dt>
-                        <dd>{{ money($order['total']) }}</dd>
+                        <dt>Order Total</dt>
+                        <dd>{{ money($orderTotal) }}</dd>
                     </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <dt class="text-ink-muted">Payment Method</dt>
+                        <dd class="font-medium">{{ $paymentMethodLabel }}</dd>
+                    </div>
+                    @if ($isPaid)
+                        <div class="flex justify-between items-center text-sm">
+                            <dt class="text-ink-muted">Amount Paid</dt>
+                            <dd class="font-semibold text-green-700">{{ money($amountPaid) }}</dd>
+                        </div>
+                    @elseif ($paymentStatus === 'pending')
+                        <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                            Payment is pending verification. We will confirm your order once payment is approved.
+                        </div>
+                    @else
+                        <div class="flex justify-between items-center text-sm">
+                            <dt class="text-ink-muted">Amount Due</dt>
+                            <dd class="font-semibold text-red-600">{{ money($amountDue) }}</dd>
+                        </div>
+                        @if ($paymentMethod === 'cod')
+                            <p class="text-xs text-ink-muted">Pay when your order is delivered.</p>
+                        @endif
+                    @endif
                 </dl>
             </div>
 

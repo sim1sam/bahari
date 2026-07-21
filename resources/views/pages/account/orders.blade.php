@@ -12,72 +12,79 @@
 @endsection
 
 @section('content')
-    {{-- Mobile --}}
-    <div class="lg:hidden px-4 pt-4">
-        @include('pages.account.partials.orders-list-mobile', ['orders' => $orders])
-        <div class="mt-6">{{ $orders->links() }}</div>
-    </div>
+    <x-account.order-pay-context :banks="$banks" :ssl-commerz-enabled="$sslCommerzEnabled">
+        {{-- Mobile --}}
+        <div class="lg:hidden px-4 pt-4">
+            @include('pages.account.partials.orders-list-mobile', ['orders' => $orders])
+            <div class="mt-6">{{ $orders->links() }}</div>
+        </div>
 
-    {{-- Desktop --}}
-    <div class="hidden lg:block px-8 pt-8">
-        @if ($orders->isEmpty())
-            <div class="account-panel">
-                <div class="account-panel-body text-center py-16">
-                    <p class="text-lg font-medium text-ink">No orders found</p>
-                    <p class="text-ink-muted mt-1">Your order history will appear here</p>
-                    <a href="{{ route('account.custom-order') }}" class="inline-block mt-5 px-6 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium">Place Custom Order</a>
+        {{-- Desktop --}}
+        <div class="hidden lg:block px-8 pt-8">
+            @if ($orders->isEmpty())
+                <div class="account-panel">
+                    <div class="account-panel-body text-center py-16">
+                        <p class="text-lg font-medium text-ink">No orders found</p>
+                        <p class="text-ink-muted mt-1">Your order history will appear here</p>
+                        <a href="{{ route('account.custom-order') }}" class="inline-block mt-5 px-6 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium">Place Custom Order</a>
+                    </div>
                 </div>
-            </div>
-        @else
-            <div class="account-panel">
-                <div class="account-panel-header">
-                    <h2 class="font-semibold text-ink">All Orders</h2>
-                    <span class="text-sm text-ink-muted">{{ $orders->count() }} shown</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="account-table w-full">
-                        <thead>
-                            <tr>
-                                <th>Order #</th>
-                                <th>Date</th>
-                                <th>Products</th>
-                                <th>Status</th>
-                                <th class="text-right">Total</th>
-                                <th class="text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($orders as $order)
+            @else
+                <div class="account-panel">
+                    <div class="account-panel-header">
+                        <h2 class="font-semibold text-ink">All Orders</h2>
+                        <span class="text-sm text-ink-muted">{{ $orders->count() }} shown</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="account-table w-full">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <p class="font-medium text-ink">{{ $order->number }}</p>
-                                        <p class="text-xs text-ink-muted">{{ $order->customer_email }}</p>
-                                    </td>
-                                    <td class="text-ink-muted whitespace-nowrap">{{ $order->created_at->format('M d, Y g:i A') }}</td>
-                                    <td>
-                                        <div class="flex gap-1.5">
-                                            @foreach ($order->items->take(3) as $item)
-                                                @if ($item->imageUrl())
-                                                    <img src="{{ $item->imageUrl() }}" alt="" class="w-10 h-12 rounded object-cover border border-border">
-                                                @endif
-                                            @endforeach
-                                            @if ($order->items->count() > 3)
-                                                <span class="w-10 h-12 rounded bg-surface flex items-center justify-center text-xs text-ink-muted">+{{ $order->items->count() - 3 }}</span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td><span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span></td>
-                                    <td class="text-right font-semibold text-brand-700">{{ money($order->total) }}</td>
-                                    <td class="text-right">
-                                        @include('pages.account.partials.order-actions', ['order' => $order])
-                                    </td>
+                                    <th>Order #</th>
+                                    <th>Date</th>
+                                    <th>Products</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Total</th>
+                                    <th class="text-right">Action</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach ($orders as $order)
+                                    <tr>
+                                        <td>
+                                            <p class="font-medium text-ink">{{ $order->number }}</p>
+                                            <p class="text-xs text-ink-muted">{{ $order->customer_email }}</p>
+                                        </td>
+                                        <td class="text-ink-muted whitespace-nowrap">{{ $order->created_at->format('M d, Y g:i A') }}</td>
+                                        <td>
+                                            <div class="flex gap-1.5">
+                                                @foreach ($order->items->take(3) as $item)
+                                                    @if ($item->imageUrl())
+                                                        <img src="{{ $item->imageUrl() }}" alt="" class="w-10 h-12 rounded object-cover border border-border">
+                                                    @endif
+                                                @endforeach
+                                                @if ($order->items->count() > 3)
+                                                    <span class="w-10 h-12 rounded bg-surface flex items-center justify-center text-xs text-ink-muted">+{{ $order->items->count() - 3 }}</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="flex flex-col items-start gap-1">
+                                                <span class="px-2.5 py-1 rounded-md text-xs font-medium {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-medium {{ $order->paymentStatusColor() }}">{{ $order->paymentStatusLabel() }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-right font-semibold text-brand-700">{{ money($order->total) }}</td>
+                                        <td class="text-right">
+                                            @include('pages.account.partials.order-actions', ['order' => $order])
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="account-panel-footer">{{ $orders->links() }}</div>
                 </div>
-                <div class="account-panel-footer">{{ $orders->links() }}</div>
-            </div>
-        @endif
-    </div>
+            @endif
+        </div>
+    </x-account.order-pay-context>
 @endsection

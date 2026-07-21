@@ -85,6 +85,19 @@ class Order extends Model
         return ! $transaction?->isPending();
     }
 
+    public function canPay(): bool
+    {
+        if (! $this->canAcceptPayment()) {
+            return false;
+        }
+
+        if (app(\App\Services\SiteSettingsService::class)->sslCommerzConfigured()) {
+            return true;
+        }
+
+        return PaymentBank::query()->where('is_active', true)->exists();
+    }
+
     public function canPayOnline(): bool
     {
         if (! $this->canAcceptPayment()) {

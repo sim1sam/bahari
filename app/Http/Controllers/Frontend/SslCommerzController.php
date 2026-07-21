@@ -189,6 +189,9 @@ class SslCommerzController extends Controller
             'discount' => $order->discount,
             'coupon' => $order->coupon_code ? ['code' => $order->coupon_code] : null,
             'total' => $order->total,
+            'payment_method' => $order->payment_method,
+            'payment_status' => $order->payment_status,
+            'amount_paid' => (float) $order->amount_paid,
             'placed_at' => $order->created_at?->toDateTimeString(),
         ];
     }

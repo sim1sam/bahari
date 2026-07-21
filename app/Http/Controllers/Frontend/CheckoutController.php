@@ -333,6 +333,9 @@ class CheckoutController extends Controller
                 'discount' => $discount,
                 'coupon' => $coupon,
                 'total' => $total,
+                'payment_method' => $validated['payment'],
+                'payment_status' => $order->payment_status,
+                'amount_paid' => (float) $order->amount_paid,
                 'placed_at' => now()->toDateTimeString(),
             ],
         ]);

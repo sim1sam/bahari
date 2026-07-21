@@ -26,6 +26,15 @@
             </div>
         @endif
 
+        @if ($order->canAcceptPayment())
+            <div class="pt-3 border-t border-border">
+                @include('pages.account.partials.order-pay-button', [
+                    'order' => $order,
+                    'class' => 'w-full py-2.5',
+                ])
+            </div>
+        @endif
+
         @if ($order->isCustom())
             @if ($order->bank_name)
                 <div class="flex justify-between">
