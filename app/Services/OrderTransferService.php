@@ -100,10 +100,14 @@ class OrderTransferService
             ],
             'items' => $order->items->map(function ($item) {
                 $imageUrl = $this->resolveItemImageUrl($item);
+                $brand = $this->resolveItemBrand($item);
 
                 return [
                     'product_slug' => $item->product_slug,
                     'product_name' => $item->product_name,
+                    'brand' => $brand,
+                    'brand_name' => $brand,
+                    'product_brand' => $brand,
                     'product_link' => $item->product_link,
                     // Multiple keys — receiver sites look for different field names
                     'image' => $imageUrl,
@@ -139,6 +143,32 @@ class OrderTransferService
             'pending' => 'pending',
             default => 'pending',
         };
+    }
+
+    /**
+     * Build a publicly downloadable absolute image URL for the receiver site.
+     */
+    private function resolveItemBrand($item): ?string
+    {
+        $brand = trim((string) ($item->brand ?? ''));
+
+        if ($brand !== '') {
+            return $brand;
+        }
+
+        $slug = trim((string) ($item->product_slug ?? ''));
+
+        if ($slug === '') {
+            return null;
+        }
+
+        $productBrand = \App\Models\Product::query()
+            ->where('slug', $slug)
+            ->value('brand');
+
+        $productBrand = trim((string) $productBrand);
+
+        return $productBrand !== '' ? $productBrand : null;
     }
 
     /**

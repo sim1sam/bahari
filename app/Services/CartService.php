@@ -142,6 +142,7 @@ class CartService
                 'key' => $key,
                 'slug' => $product['slug'],
                 'name' => $product['name'],
+                'brand' => $product['brand'] ?? null,
                 'price' => $product['price'],
                 'image' => $product['image'],
                 'size' => $size ?: ($product['sizes'][0] ?? null),

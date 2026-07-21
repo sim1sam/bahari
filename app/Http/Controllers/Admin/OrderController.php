@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPayment;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
@@ -145,6 +146,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
+                    'brand' => $this->resolveItemBrand($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $this->resolveItemImage(
                         $request,
@@ -361,6 +363,7 @@ class OrderController extends Controller
                 $item->update([
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
+                    'brand' => $this->resolveItemBrand($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $this->resolveItemImage(
                         $request,
@@ -383,6 +386,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'product_name' => $itemData['product_name'],
                     'product_slug' => $this->resolveProductSlug($itemData),
+                    'brand' => $this->resolveItemBrand($itemData),
                     'product_link' => $itemData['product_link'] ?? null,
                     'image' => $this->resolveItemImage(
                         $request,
@@ -678,6 +682,22 @@ class OrderController extends Controller
         }
 
         return Str::slug($itemData['product_name'] ?? '') ?: 'custom';
+    }
+
+    private function resolveItemBrand(array $itemData): ?string
+    {
+        $brand = trim((string) ($itemData['brand'] ?? ''));
+
+        if ($brand !== '') {
+            return $brand;
+        }
+
+        $slug = $this->resolveProductSlug($itemData);
+
+        $productBrand = Product::query()->where('slug', $slug)->value('brand');
+        $productBrand = trim((string) $productBrand);
+
+        return $productBrand !== '' ? $productBrand : null;
     }
 
     private function resolveItemImage(

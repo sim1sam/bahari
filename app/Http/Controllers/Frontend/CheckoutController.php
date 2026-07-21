@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentBank;
 use App\Models\PaymentTransaction;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\FinancialTransactionService;
@@ -276,10 +277,17 @@ class CheckoutController extends Controller
             $order = Order::create($orderData);
 
             foreach ($items as $item) {
+                $brand = $item['brand'] ?? null;
+
+                if (! $brand && ! empty($item['slug'])) {
+                    $brand = Product::query()->where('slug', $item['slug'])->value('brand');
+                }
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_slug' => $item['slug'],
                     'product_name' => $item['name'],
+                    'brand' => $brand ?: null,
                     'image' => $item['image'],
                     'size' => $item['size'],
                     'color' => $item['color'],
