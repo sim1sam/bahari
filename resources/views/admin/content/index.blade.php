@@ -35,9 +35,6 @@
                 <a href="{{ route('admin.processed.index') }}" class="btn btn-info">
                     <i class="fas fa-check-circle mr-1"></i> Processed Product
                 </a>
-                <a href="{{ route('admin.api-settings.index') }}" class="btn btn-light">
-                    <i class="fas fa-cog mr-1"></i> Content API Settings
-                </a>
                 <form action="{{ route('admin.content.repair-images') }}" method="POST" class="d-inline" onsubmit="return confirm('Re-download images and sync prices from API payload for pending items?')">
                     @csrf
                     <button type="submit" class="btn btn-light">
@@ -214,9 +211,6 @@
                         <i class="fas fa-cloud-download-alt"></i>
                         <strong>No received images</strong>
                         <p>Items sent from the Content API will appear here for review and processing.</p>
-                        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-sm btn-outline-secondary mt-2">
-                            <i class="fas fa-cog mr-1"></i> Content API Settings
-                        </a>
                     </div>
                 @else
                     <div class="content-gallery-grid">

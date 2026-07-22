@@ -26,14 +26,11 @@
             <div>
                 <span class="orders-index-eyebrow">Order management</span>
                 <h2>All Orders</h2>
-                <p>Track customer orders, payment status, workflow, and API transfers.</p>
+                <p>Track customer orders, payment status, and workflow.</p>
             </div>
             <div class="orders-index-hero-actions">
                 <a href="{{ route('admin.orders.create') }}" class="btn btn-info">
                     <i class="fas fa-plus mr-1"></i> Create Order
-                </a>
-                <a href="{{ route('admin.orders.transfer-settings.edit') }}" class="btn btn-light">
-                    <i class="fas fa-plug mr-1"></i> API Settings
                 </a>
             </div>
         </section>
