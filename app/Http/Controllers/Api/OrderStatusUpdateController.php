@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\OrderTransferSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class OrderStatusUpdateController extends Controller
 {
@@ -28,9 +27,10 @@ class OrderStatusUpdateController extends Controller
         }
 
         $validated = $request->validate([
+            // Receiver may send their own workflow labels (purchase, warehouse, etc.)
             'order_number' => 'required|string|max:100',
-            'status' => ['required', Rule::in(['pending', 'processing', 'shipped', 'completed', 'cancelled'])],
-            'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'partial', 'due'])],
+            'status' => 'required|string|max:100',
+            'payment_status' => 'nullable|string|max:50',
             'amount_paid' => 'nullable|numeric|min:0',
             'message' => 'nullable|string|max:500',
         ]);
@@ -43,23 +43,20 @@ class OrderStatusUpdateController extends Controller
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
-        $order->status = $validated['status'];
-
-        if (array_key_exists('payment_status', $validated)) {
-            $order->payment_status = $validated['payment_status'];
-        }
-
-        if (array_key_exists('amount_paid', $validated)) {
-            $order->amount_paid = min(round((float) $validated['amount_paid'], 2), (float) $order->total);
-        }
-
-        $order->external_transfer_message = $validated['message'] ?? 'Status updated by API.';
+        $order->applyReceiverStatusUpdate(
+            $validated['status'],
+            $validated['payment_status'] ?? null,
+            array_key_exists('amount_paid', $validated) ? (float) $validated['amount_paid'] : null,
+            $validated['message'] ?? 'Status updated by receiver.',
+        );
         $order->save();
 
         return response()->json([
             'message' => 'Order status updated.',
             'order_number' => $order->number,
+            'receiver_status' => $order->receiver_status,
             'status' => $order->status,
+            'customer_status' => $order->customerFacingStatus(),
             'payment_status' => $order->payment_status,
         ]);
     }

@@ -100,7 +100,8 @@
             <div class="orders-app-list d-md-none">
                 @forelse ($orders as $order)
                     @php
-                        $statusStyle = $statusStyles[$order->status] ?? $statusStyles['pending'];
+                        $statusKey = $order->adminStatusStyleKey();
+                        $statusStyle = $statusStyles[$statusKey] ?? $statusStyles['pending'];
                         $transferKey = $order->external_transfer_status ?? 'pending';
                     @endphp
                     <article class="orders-app-card">
@@ -124,11 +125,12 @@
                         <div class="orders-app-card-chips">
                             <span class="orders-pill {{ $order->paymentStatusBadgeClass() }}">{{ $order->paymentStatusLabel() }}</span>
                             <span class="orders-pill badge-{{ $transferStyles[$transferKey] ?? 'light' }}">API {{ ucfirst($transferKey) }}</span>
-                            <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ ucfirst($order->status) }}</span>
+                            <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">Receiver: {{ $order->adminStatusLabel() }}</span>
+                            <span class="orders-pill badge-light">Customer: {{ $order->statusLabel() }}</span>
                         </div>
 
                         <div class="orders-app-card-field">
-                            <label>Update status</label>
+                            <label>Customer status (manual)</label>
                             <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="orders-status-form">
                                 @csrf
                                 @method('PATCH')
@@ -191,7 +193,8 @@
                     <tbody>
                         @forelse ($orders as $order)
                             @php
-                                $statusStyle = $statusStyles[$order->status] ?? $statusStyles['pending'];
+                                $statusKey = $order->adminStatusStyleKey();
+                                $statusStyle = $statusStyles[$statusKey] ?? $statusStyles['pending'];
                                 $transferKey = $order->external_transfer_status ?? 'pending';
                             @endphp
                             <tr>
@@ -217,10 +220,14 @@
                                     </span>
                                 </td>
                                 <td>
+                                    <div class="mb-1">
+                                        <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ $order->adminStatusLabel() }}</span>
+                                        <div class="small text-muted mt-1">Customer: {{ $order->statusLabel() }}</div>
+                                    </div>
                                     <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="orders-status-form">
                                         @csrf
                                         @method('PATCH')
-                                        <select name="status" class="form-control form-control-sm orders-status-select" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};">
+                                        <select name="status" class="form-control form-control-sm orders-status-select" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};" title="Customer status (manual)">
                                             @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
                                                 <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
                                             @endforeach

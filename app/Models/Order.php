@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -12,7 +13,7 @@ class Order extends Model
         'user_id', 'number', 'tracking_event_id', 'order_type', 'customer_name', 'customer_email', 'customer_phone',
         'address', 'city', 'zip', 'payment_method', 'reference_code', 'bank_name',
         'payment_screenshot', 'notes', 'subtotal', 'discount', 'shipping', 'shipping_zone', 'total',
-        'coupon_code', 'status', 'completed_at', 'payment_status', 'amount_paid',
+        'coupon_code', 'status', 'receiver_status', 'completed_at', 'payment_status', 'amount_paid',
         'external_transfer_status', 'external_transfer_message', 'external_transferred_at',
     ];
 
@@ -159,7 +160,7 @@ class Order extends Model
 
     public function isProcessed(): bool
     {
-        return in_array($this->status, ['processing', 'shipped', 'delivered', 'completed'], true);
+        return in_array($this->customerFacingStatus(), ['processing', 'shipped', 'delivered', 'completed'], true);
     }
 
     public function canBeDeleted(): bool
@@ -187,9 +188,29 @@ class Order extends Model
         return app(\App\Services\MediaStorageService::class)->url($this->payment_screenshot);
     }
 
+    /**
+     * Customer-facing status (simple tracking steps).
+     */
+    public function customerFacingStatus(): string
+    {
+        return self::mapReceiverStatusToLocal($this->status);
+    }
+
+    /**
+     * Admin display — exact receiver status when present.
+     */
+    public function adminStatusLabel(): string
+    {
+        if (filled($this->receiver_status)) {
+            return self::formatStatusLabel($this->receiver_status);
+        }
+
+        return $this->statusLabel();
+    }
+
     public function statusLabel(): string
     {
-        return match ($this->status) {
+        return match ($this->customerFacingStatus()) {
             'processing' => 'Processing',
             'shipped' => 'Shipped',
             'delivered' => 'Delivered',
@@ -212,7 +233,7 @@ class Order extends Model
 
     public function trackingStepIndex(): int
     {
-        return match ($this->status) {
+        return match ($this->customerFacingStatus()) {
             'processing' => 1,
             'shipped' => 2,
             'delivered', 'completed' => 3,
@@ -223,7 +244,7 @@ class Order extends Model
 
     public function isCancelled(): bool
     {
-        return $this->status === 'cancelled';
+        return $this->customerFacingStatus() === 'cancelled';
     }
 
     public function trackingProgressPercent(): int
@@ -244,12 +265,118 @@ class Order extends Model
 
     public function statusColor(): string
     {
-        return match ($this->status) {
+        return match ($this->customerFacingStatus()) {
             'processing' => 'bg-blue-100 text-blue-700',
             'shipped' => 'bg-purple-100 text-purple-700',
             'delivered', 'completed' => 'bg-green-100 text-green-700',
             'cancelled' => 'bg-red-100 text-red-700',
             default => 'bg-amber-100 text-amber-700',
+        };
+    }
+
+    public function adminStatusStyleKey(): string
+    {
+        if (filled($this->receiver_status)) {
+            return self::mapReceiverStatusToLocal($this->receiver_status);
+        }
+
+        return $this->customerFacingStatus();
+    }
+
+    /**
+     * Map receiver workflow status → suggested customer tracking status.
+     */
+    public static function mapReceiverStatusToLocal(?string $status): string
+    {
+        $key = self::normalizeStatusKey($status);
+
+        return match (true) {
+            in_array($key, ['cancelled', 'canceled', 'cancel'], true) => 'cancelled',
+            in_array($key, ['completed', 'complete', 'delivered', 'delivery', 'done'], true) => 'completed',
+            in_array($key, [
+                'shipped', 'shipping', 'ship', 'in_transit', 'transit',
+                'ship_to_dhaka', 'shipped_to_dhaka', 'to_dhaka', 'dhaka',
+                'warehouse', 'in_warehouse', 'dhaka_warehouse',
+                'parcel', 'parcel_ready', 'ready_parcel',
+                'parcel_dispatch', 'parcel_dispatched', 'parcel_dispatching',
+                'dispatch', 'dispatched', 'dispatching', 'courier', 'courier_dispatch',
+            ], true) => 'shipped',
+            in_array($key, [
+                'processing', 'process',
+                'purchase', 'purchased', 'purchasing',
+                'receiving', 'received', 'receive', 'reciving', 'reciveing',
+                'ordered', 'buying', 'sourcing',
+            ], true) => 'processing',
+            in_array($key, ['pending', 'new', 'placed', 'order_placed'], true) => 'pending',
+            default => in_array($key, ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'], true)
+                ? $key
+                : (filled($key) ? 'processing' : 'pending'),
+        };
+    }
+
+    public static function normalizeStatusKey(?string $status): string
+    {
+        $status = strtolower(trim((string) $status));
+        $status = str_replace(['-', '/', '\\'], ' ', $status);
+        $status = preg_replace('/\s+/', '_', $status) ?? $status;
+
+        return trim($status, '_');
+    }
+
+    public static function formatStatusLabel(?string $status): string
+    {
+        $status = trim((string) $status);
+
+        if ($status === '') {
+            return 'Pending';
+        }
+
+        // Keep known phrases readable
+        $normalized = self::normalizeStatusKey($status);
+
+        return match ($normalized) {
+            'parcel_dispatch', 'parcel_dispatched' => 'Parcel Dispatch',
+            'ship_to_dhaka', 'shipped_to_dhaka' => 'Ship to Dhaka',
+            default => Str::title(str_replace(['_', '-'], ' ', $status)),
+        };
+    }
+
+    /**
+     * Receiver API update: store exact admin/receiver status.
+     * Customer status is left for admin to change manually (unless still pending).
+     */
+    public function applyReceiverStatusUpdate(string $receiverStatus, ?string $paymentStatus = null, ?float $amountPaid = null, ?string $message = null): void
+    {
+        $this->receiver_status = trim($receiverStatus);
+
+        // Suggest customer status only while order is still pending.
+        if ($this->status === 'pending' || blank($this->status)) {
+            $this->status = self::mapReceiverStatusToLocal($receiverStatus);
+        }
+
+        if ($paymentStatus !== null) {
+            $this->payment_status = self::mapReceiverPaymentStatus($paymentStatus);
+        }
+
+        if ($amountPaid !== null) {
+            $this->amount_paid = min(round($amountPaid, 2), (float) $this->total);
+        }
+
+        if ($message !== null) {
+            $this->external_transfer_message = $message;
+        }
+    }
+
+    public static function mapReceiverPaymentStatus(?string $status): string
+    {
+        $key = self::normalizeStatusKey($status);
+
+        return match ($key) {
+            'paid', 'complete', 'completed' => 'paid',
+            'partial', 'part_paid', 'partially_paid' => 'partial',
+            'due', 'unpaid', 'cod' => 'due',
+            'pending' => 'pending',
+            default => 'pending',
         };
     }
 }

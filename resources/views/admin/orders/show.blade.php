@@ -124,6 +124,15 @@
                         <span class="badge {{ $order->paymentStatusBadgeClass() }} ml-1">{{ $order->paymentStatusLabel() }}</span>
                     </p>
                     <p>
+                        <strong>Receiver Status:</strong>
+                        <span class="badge badge-primary">{{ $order->adminStatusLabel() }}</span>
+                    </p>
+                    <p>
+                        <strong>Customer Status:</strong>
+                        <span class="badge badge-secondary">{{ $order->statusLabel() }}</span>
+                        <span class="text-muted small">(shown to customer)</span>
+                    </p>
+                    <p>
                         <strong>API Transfer:</strong>
                         <span class="badge badge-{{ match ($order->external_transfer_status) {
                             'sent' => 'success',
@@ -246,13 +255,21 @@
                     @endif
                     <form action="{{ route('admin.orders.status', $order) }}" method="POST">
                         @csrf @method('PATCH')
+                        <div class="form-group mb-2">
+                            <label class="mb-1">Receiver Status</label>
+                            <div>
+                                <span class="badge badge-primary">{{ $order->adminStatusLabel() }}</span>
+                                <span class="text-muted small d-block mt-1">Updated from receiver site (purchase, receiving, shipping, parcel, dispatch…)</span>
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label>Order Status</label>
+                            <label>Customer Status (manual)</label>
                             <select name="status" class="form-control" onchange="this.form.submit()">
                                 @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
                                     <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
                                 @endforeach
                             </select>
+                            <small class="text-muted">This is what the customer sees. Change it manually anytime.</small>
                         </div>
                     </form>
                 </div>

@@ -104,11 +104,14 @@ Http::acceptJson()
     ])
     ->post('https://MAIN-SITE-DOMAIN.com/api/orders/status-update', [
         'order_number' => 'BF-12345678',
-        'status' => 'shipped', // pending, processing, shipped, completed, cancelled
-        'payment_status' => 'paid', // optional: pending, paid, partial, due
+        // Receiver admin statuses (shown as-is in admin):
+        // purchase | receiving | shipping | parcel | parcel dispatch | dispatched
+        'status' => 'parcel dispatch',
+        'payment_status' => 'paid', // optional
         'amount_paid' => 2200, // optional
-        'message' => 'Order shipped from second site', // optional
+        'message' => 'Dispatched to courier', // optional
     ]);
+    // Customer status is separate and changed manually by admin on this site.
 @endverbatim</code></pre>
         </div>
     </div>
