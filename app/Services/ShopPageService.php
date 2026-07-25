@@ -118,6 +118,8 @@ class ShopPageService
     public function filterOptions(): array
     {
         $items = collect($this->baseProducts());
+        $prices = $items->pluck('price')->filter(fn ($price) => is_numeric($price))->map(fn ($price) => (float) $price);
+        $highest = (int) ceil($prices->max() ?: 0);
 
         return [
             'brands' => $items->pluck('brand')->filter()->unique()->sort()->values()->all(),
@@ -125,6 +127,8 @@ class ShopPageService
             'colors' => $items->pluck('colors')->flatten()->unique()->sort()->values()->all(),
             'categories' => $items->pluck('category')->filter()->unique()->sort()->values()->all(),
             'has_sale' => $items->contains(fn ($p) => ($p['badge'] ?? null) === 'Sale' || ($p['original_price'] ?? null) !== null),
+            'price_min' => 0,
+            'price_max' => max(100, $highest),
         ];
     }
 
@@ -266,9 +270,10 @@ class ShopPageService
                 : 0;
             $maxPrice = array_key_exists('max_price', $filters) && $filters['max_price'] !== null
                 ? (float) $filters['max_price']
-                : 9999;
+                : PHP_FLOAT_MAX;
+            $limitMax = (float) ($filters['price_limit_max'] ?? $maxPrice);
 
-            if ($minPrice > 0 || $maxPrice < 9999) {
+            if ($minPrice > 0 || $maxPrice < $limitMax) {
                 $items = array_values(array_filter(
                     $items,
                     fn ($p) => ($p['price'] ?? 0) >= $minPrice && ($p['price'] ?? 0) <= $maxPrice,

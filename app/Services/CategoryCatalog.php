@@ -50,12 +50,16 @@ class CategoryCatalog
     public function filterOptions(string $slug): array
     {
         $items = $this->baseProducts($this->find($slug) ?? []);
+        $prices = collect($items)->pluck('price')->filter(fn ($price) => is_numeric($price))->map(fn ($price) => (float) $price);
+        $highest = (int) ceil($prices->max() ?: 0);
 
         $sizes = collect($items)->pluck('sizes')->flatten()->unique()->sort()->values()->all();
 
         return [
             'sizes' => $sizes,
             'has_sale' => collect($items)->contains(fn ($p) => ($p['badge'] ?? null) === 'Sale' || ($p['original_price'] ?? null) !== null),
+            'price_min' => 0,
+            'price_max' => max(100, $highest),
         ];
     }
 
@@ -94,7 +98,21 @@ class CategoryCatalog
             ));
         }
 
-        if (! empty($filters['price'])) {
+        $hasMin = array_key_exists('min_price', $filters) && $filters['min_price'] !== null;
+        $hasMax = array_key_exists('max_price', $filters) && $filters['max_price'] !== null;
+
+        if ($hasMin || $hasMax) {
+            $minPrice = $hasMin ? (float) $filters['min_price'] : 0;
+            $maxPrice = $hasMax ? (float) $filters['max_price'] : PHP_FLOAT_MAX;
+            $limitMax = (float) ($filters['price_limit_max'] ?? $maxPrice);
+
+            if ($minPrice > 0 || $maxPrice < $limitMax) {
+                $items = array_values(array_filter(
+                    $items,
+                    fn ($p) => ($p['price'] ?? 0) >= $minPrice && ($p['price'] ?? 0) <= $maxPrice,
+                ));
+            }
+        } elseif (! empty($filters['price'])) {
             $items = array_values(array_filter($items, function ($p) use ($filters) {
                 return match ($filters['price']) {
                     'under_60' => $p['price'] < 60,

@@ -5,9 +5,18 @@
 ])
 
 @php
+    $priceMinLimit = (int) ($filterOptions['price_min'] ?? 0);
+    $priceMaxLimit = (int) ($filterOptions['price_max'] ?? 1000);
+    if ($priceMaxLimit <= $priceMinLimit) {
+        $priceMaxLimit = $priceMinLimit + 100;
+    }
+
+    $hasPriceFilter = ((int) ($filters['min_price'] ?? $priceMinLimit) > $priceMinLimit)
+        || ((int) ($filters['max_price'] ?? $priceMaxLimit) < $priceMaxLimit);
+
     $hasFilters = ($filters['sale'] ?? false)
         || ! empty($filters['sizes'] ?? [])
-        || ! empty($filters['price'] ?? '')
+        || $hasPriceFilter
         || ! empty($sort);
 @endphp
 
@@ -38,27 +47,13 @@
     </div>
 
     <div class="border-t border-border pt-6">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-brand-700 mb-3">Price</h3>
-        <div class="space-y-2">
-            @foreach ([
-                '' => 'All Prices',
-                'under_60' => 'Under $60',
-                '60_100' => '$60 – $100',
-                'over_100' => 'Over $100',
-            ] as $value => $label)
-                <label class="flex items-center gap-3 cursor-pointer group">
-                    <input
-                        type="radio"
-                        name="price"
-                        value="{{ $value }}"
-                        @checked(($filters['price'] ?? '') === $value)
-                        onchange="this.form.submit()"
-                        class="text-brand-600 border-border focus:ring-brand-500"
-                    >
-                    <span class="text-sm text-ink-muted group-hover:text-brand-600 transition-colors {{ ($filters['price'] ?? '') === $value ? 'text-brand-700 font-medium' : '' }}">{{ $label }}</span>
-                </label>
-            @endforeach
-        </div>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-brand-700 mb-3">Price (BDT)</h3>
+        <x-ecommerce.price-range-filter
+            :price-min-limit="$priceMinLimit"
+            :price-max-limit="$priceMaxLimit"
+            :min-price="$filters['min_price'] ?? null"
+            :max-price="$filters['max_price'] ?? null"
+        />
     </div>
 
     @if (! empty($filterOptions['sizes']))

@@ -23,11 +23,15 @@ class ShopController extends Controller
 
         $settings = $this->shop->settings();
         $sort = $request->query('sort');
+        $filterOptions = $this->shop->filterOptions();
+        $priceMaxLimit = (int) ($filterOptions['price_max'] ?? 1000);
+
         $filters = [
             'brands' => array_filter((array) $request->query('brands', [])),
             'sizes' => array_filter((array) $request->query('sizes', [])),
-            'min_price' => $request->filled('min_price') ? max(0, min(9999, (int) $request->query('min_price'))) : null,
-            'max_price' => $request->filled('max_price') ? max(0, min(9999, (int) $request->query('max_price'))) : null,
+            'min_price' => $request->filled('min_price') ? max(0, min($priceMaxLimit, (int) $request->query('min_price'))) : null,
+            'max_price' => $request->filled('max_price') ? max(0, min($priceMaxLimit, (int) $request->query('max_price'))) : null,
+            'price_limit_max' => $priceMaxLimit,
             'sale' => $request->boolean('sale'),
             'category' => $request->query('category'),
         ];
@@ -37,7 +41,6 @@ class ShopController extends Controller
         }
 
         $productList = $this->shop->products($sort, $filters);
-        $filterOptions = $this->shop->filterOptions();
         $activeBrands = $this->shop->activeBrands();
         $categoryRows = $this->categoryRows($productList);
 
@@ -83,9 +86,13 @@ class ShopController extends Controller
             'sort' => $sort,
             'filters' => $filters,
             'filterOptions' => $filterOptions,
-            'activeFilterCount' => collect($filters)->filter(function ($value, $key) {
+            'activeFilterCount' => collect($filters)->filter(function ($value, $key) use ($priceMaxLimit) {
                 if ($key === 'sale') {
                     return (bool) $value;
+                }
+
+                if ($key === 'price_limit_max') {
+                    return false;
                 }
 
                 if ($key === 'min_price') {
@@ -93,7 +100,7 @@ class ShopController extends Controller
                 }
 
                 if ($key === 'max_price') {
-                    return $value !== null && (int) $value < 9999;
+                    return $value !== null && (int) $value < $priceMaxLimit;
                 }
 
                 return ! empty($value);

@@ -31,13 +31,22 @@ class CategoryController extends Controller
         abort_unless($category, 404);
 
         $sort = $request->query('sort');
+        $filterOptions = $this->categories->filterOptions($slug);
+        $priceMaxLimit = (int) ($filterOptions['price_max'] ?? 1000);
+
         $filters = [
             'sizes' => array_filter((array) $request->query('sizes', [])),
-            'price' => $request->query('price'),
+            'min_price' => $request->filled('min_price') ? max(0, min($priceMaxLimit, (int) $request->query('min_price'))) : null,
+            'max_price' => $request->filled('max_price') ? max(0, min($priceMaxLimit, (int) $request->query('max_price'))) : null,
+            'price_limit_max' => $priceMaxLimit,
             'sale' => $request->boolean('sale'),
         ];
+
+        if ($filters['min_price'] !== null && $filters['max_price'] !== null && $filters['min_price'] > $filters['max_price']) {
+            [$filters['min_price'], $filters['max_price']] = [$filters['max_price'], $filters['min_price']];
+        }
+
         $productList = $this->categories->products($slug, $sort, $filters);
-        $filterOptions = $this->categories->filterOptions($slug);
 
         return view('pages.categories.show', [
             'category' => $category,
@@ -45,7 +54,25 @@ class CategoryController extends Controller
             'sort' => $sort,
             'filters' => $filters,
             'filterOptions' => $filterOptions,
-            'activeFilterCount' => collect($filters)->filter(fn ($v, $k) => $k === 'sale' ? $v : ! empty($v))->count(),
+            'activeFilterCount' => collect($filters)->filter(function ($value, $key) use ($priceMaxLimit) {
+                if ($key === 'sale') {
+                    return (bool) $value;
+                }
+
+                if ($key === 'price_limit_max') {
+                    return false;
+                }
+
+                if ($key === 'min_price') {
+                    return $value !== null && (int) $value > 0;
+                }
+
+                if ($key === 'max_price') {
+                    return $value !== null && (int) $value < $priceMaxLimit;
+                }
+
+                return ! empty($value);
+            })->count(),
             'relatedCategories' => collect($this->categories->all())
                 ->filter(fn ($c) => $c['slug'] !== $slug)
                 ->take(4)
