@@ -200,7 +200,7 @@ class ApiProcessedController extends Controller
             : $importer->import($item, $categoryId);
 
         return redirect()
-            ->route('admin.processed.live')
+            ->route('admin.products.index')
             ->with('success', 'Product is now live under '.$product->category?->name.'.');
     }
 
@@ -264,7 +264,7 @@ class ApiProcessedController extends Controller
         }
 
         return redirect()
-            ->route('admin.processed.live')
+            ->route($published > 0 ? 'admin.products.index' : 'admin.processed.index')
             ->with($published > 0 ? 'success' : 'warning', $message);
     }
 

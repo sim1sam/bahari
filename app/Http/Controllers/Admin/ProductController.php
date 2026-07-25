@@ -22,23 +22,57 @@ class ProductController extends Controller
         private ProductPurchaseExpenseService $purchaseExpenses,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $baseQuery = Product::query()
+        $perPageRaw = $request->query('per_page', 20);
+        $showAll = $perPageRaw === 'all' || $perPageRaw === 'All';
+        $perPage = $showAll ? null : (int) $perPageRaw;
+        if (! $showAll && ! in_array($perPage, [20, 50, 100], true)) {
+            $perPage = 20;
+        }
+
+        $listQuery = Product::query()
             ->where(function ($query) {
                 $query->liveFromApi()->orWhere('is_manual', true);
             });
 
+        $this->applyProductListFilters($listQuery, $request);
+
+        $filteredQuery = (clone $listQuery)
+            ->with(['category', 'apiReceivedItem'])
+            ->latest();
+
+        if ($showAll) {
+            $total = (clone $listQuery)->count();
+            $products = $filteredQuery->paginate(max($total, 1))->withQueryString();
+        } else {
+            $products = $filteredQuery->paginate($perPage)->withQueryString();
+        }
+
         return view('admin.products.index', [
-            'products' => (clone $baseQuery)
-                ->with(['category', 'apiReceivedItem'])
-                ->latest()
-                ->paginate(15),
+            'products' => $products,
+            'brands' => $this->brandOptions(),
+            'categories' => Category::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'brand' => $request->query('brand'),
+            'categoryId' => $request->query('category_id'),
+            'source' => $request->query('source'),
+            'dateFrom' => $request->query('date_from'),
+            'dateTo' => $request->query('date_to'),
+            'q' => $request->query('q'),
+            'perPage' => $showAll ? 'all' : $perPage,
             'stats' => [
-                'total' => (clone $baseQuery)->count(),
-                'live' => (clone $baseQuery)->where('is_active', true)->count(),
-                'manual' => (clone $baseQuery)->where('is_manual', true)->count(),
-                'api' => (clone $baseQuery)->where('is_manual', false)->count(),
+                'total' => Product::query()->where(function ($query) {
+                    $query->liveFromApi()->orWhere('is_manual', true);
+                })->count(),
+                'live' => Product::query()->where(function ($query) {
+                    $query->liveFromApi()->orWhere('is_manual', true);
+                })->where('is_active', true)->count(),
+                'manual' => Product::query()->where(function ($query) {
+                    $query->liveFromApi()->orWhere('is_manual', true);
+                })->where('is_manual', true)->count(),
+                'api' => Product::query()->where(function ($query) {
+                    $query->liveFromApi()->orWhere('is_manual', true);
+                })->where('is_manual', false)->count(),
             ],
         ]);
     }
@@ -148,13 +182,40 @@ class ProductController extends Controller
     public function destroyBatch(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'products' => 'required|array|min:1',
+            'select_all' => 'sometimes|boolean',
+            'filter_brand' => 'nullable|string|max:120',
+            'filter_category_id' => 'nullable|integer|exists:categories,id',
+            'filter_source' => 'nullable|in:api,manual',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
+            'filter_q' => 'nullable|string|max:200',
+            'products' => 'required_without:select_all|array|min:1',
             'products.*' => 'integer|exists:products,id',
         ]);
 
+        if ($request->boolean('select_all')) {
+            $filterRequest = Request::create('/', 'GET', [
+                'brand' => $validated['filter_brand'] ?? null,
+                'category_id' => $validated['filter_category_id'] ?? null,
+                'source' => $validated['filter_source'] ?? null,
+                'date_from' => $validated['filter_date_from'] ?? null,
+                'date_to' => $validated['filter_date_to'] ?? null,
+                'q' => $validated['filter_q'] ?? null,
+            ]);
+
+            $productIds = $this->applyProductListFilters(
+                Product::query()->where(function ($query) {
+                    $query->liveFromApi()->orWhere('is_manual', true);
+                }),
+                $filterRequest
+            )->pluck('id');
+        } else {
+            $productIds = collect($validated['products'] ?? []);
+        }
+
         $deleted = 0;
 
-        foreach ($validated['products'] as $id) {
+        foreach ($productIds as $id) {
             $product = Product::query()->find($id);
 
             if (! $product) {
@@ -174,6 +235,42 @@ class ProductController extends Controller
         return redirect()
             ->route('admin.products.index')
             ->with('success', "{$deleted} product(s) removed from storefront.");
+    }
+
+    private function applyProductListFilters($query, Request $request)
+    {
+        if ($request->filled('q')) {
+            $term = '%'.$request->string('q')->toString().'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('slug', 'like', $term)
+                    ->orWhere('brand', 'like', $term);
+            });
+        }
+
+        if ($request->filled('brand')) {
+            $query->where('brand', $request->string('brand')->toString());
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', (int) $request->input('category_id'));
+        }
+
+        if ($request->query('source', $request->input('source')) === 'api') {
+            $query->where('is_manual', false);
+        } elseif ($request->query('source', $request->input('source')) === 'manual') {
+            $query->where('is_manual', true);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        return $query;
     }
 
     private function validateProduct(Request $request, ?Product $product = null): array

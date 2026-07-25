@@ -245,8 +245,8 @@ class ApiContentController extends Controller
         $images->recordProcessedImage($item, $processedPath, $storedPath);
 
         return redirect()
-            ->route('admin.processed.show', $item)
-            ->with('success', 'Logo applied. Review in Processed and click Go Live.');
+            ->route('admin.processed.index')
+            ->with('success', 'Logo applied. Product is on the Processed list — review and click Go Live.');
     }
 
     public function processBatch(Request $request, ProductLogoService $logoService, ApiReceivedImageService $images, ApiReceivedPriceService $prices): RedirectResponse
