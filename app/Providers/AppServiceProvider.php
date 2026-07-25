@@ -32,17 +32,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFour();
 
-        // Only layouts/components that need shared chrome — avoid View::composer('*')
-        // which re-ran wishlist/cart/settings for every nested Blade partial.
-        View::composer([
-            'layouts.ecommerce',
-            'layouts.account',
-            'components.ecommerce.header',
-            'components.ecommerce.footer',
-            'components.ecommerce.*',
-            'components.account.*',
-            'pages.*',
-        ], function ($view) {
+        // Keep '*' so every component (PWA, footer, admin, etc.) gets $site.
+        // Shared payload is built once per request — no repeated wishlist/DB work.
+        View::composer('*', function ($view) {
             static $shared = null;
 
             if ($shared === null) {
