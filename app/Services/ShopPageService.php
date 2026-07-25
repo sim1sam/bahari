@@ -11,6 +11,12 @@ class ShopPageService
 {
     private const CACHE_KEY = 'shop_page_settings';
 
+    /** @var array<int, array<string, mixed>>|null */
+    private ?array $baseProductsCache = null;
+
+    /** @var array<int, string>|null */
+    private ?array $activeBrandsCache = null;
+
     public function settings(): ShopPageSetting
     {
         $data = Cache::remember(self::CACHE_KEY, 3600, fn () => ShopPageSetting::current()->toArray());
@@ -25,6 +31,8 @@ class ShopPageService
     public function clearCache(): void
     {
         Cache::forget(self::CACHE_KEY);
+        $this->baseProductsCache = null;
+        $this->activeBrandsCache = null;
     }
 
     public function isEnabled(): bool
@@ -39,7 +47,11 @@ class ShopPageService
      */
     public function activeBrands(): array
     {
-        return ShopPageBrandSchedule::currentlyActive()
+        if ($this->activeBrandsCache !== null) {
+            return $this->activeBrandsCache;
+        }
+
+        return $this->activeBrandsCache = ShopPageBrandSchedule::currentlyActive()
             ->ordered()
             ->pluck('brand')
             ->map(fn ($brand) => trim((string) $brand))
@@ -61,8 +73,12 @@ class ShopPageService
      */
     public function baseProducts(): array
     {
+        if ($this->baseProductsCache !== null) {
+            return $this->baseProductsCache;
+        }
+
         if (! $this->isEnabled() || ! $this->usesStorefrontProducts()) {
-            return [];
+            return $this->baseProductsCache = [];
         }
 
         $settings = $this->settings();
@@ -71,10 +87,10 @@ class ShopPageService
         $hasSelection = $activeBrands !== [] || $featuredIds !== [];
 
         if (! $hasSelection && ! $settings->show_all_when_empty) {
-            return [];
+            return $this->baseProductsCache = [];
         }
 
-        $query = Product::with(['category', 'apiReceivedItem'])->onStorefront();
+        $query = Product::with(['category:id,name', 'apiReceivedItem:id,product_id,status,reviewed_at'])->onStorefront();
 
         if ($hasSelection) {
             $query->where(function ($builder) use ($activeBrands, $featuredIds) {
@@ -94,9 +110,9 @@ class ShopPageService
             });
         }
 
-        return $query->orderByNewest()
+        return $this->baseProductsCache = $query->orderByNewest()
             ->get()
-            ->map(fn (Product $product) => $product->toCatalogArray() + ['id' => $product->id])
+            ->map(fn (Product $product) => $product->toCatalogArray(false) + ['id' => $product->id])
             ->values()
             ->all();
     }

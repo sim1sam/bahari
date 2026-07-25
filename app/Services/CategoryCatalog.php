@@ -10,6 +10,12 @@ class CategoryCatalog
 
     private const CARD_IMG = 'https://images.unsplash.com/%s?auto=format&fit=crop&w=400&h=300&q=80';
 
+    /** @var array<string, array<string, mixed>>|null */
+    private ?array $categoriesCache = null;
+
+    /** @var array<int, array{label: string, href: string, active: bool}>|null */
+    private ?array $navigationCache = null;
+
     public function __construct(private ProductCatalog $products) {}
 
     public function all(): array
@@ -163,6 +169,10 @@ class CategoryCatalog
      */
     public function navigationLinks(): array
     {
+        if ($this->navigationCache !== null) {
+            return $this->navigationCache;
+        }
+
         $links = [
             [
                 'label' => 'Home',
@@ -187,18 +197,8 @@ class CategoryCatalog
             ];
         }
 
-        foreach ($this->all() as $category) {
-            $slug = strtolower((string) ($category['slug'] ?? ''));
-            $name = strtolower(trim((string) ($category['name'] ?? '')));
-
-            // Keep only real category names in the navbar (exclude Sale / New).
-            if (($category['filter'] ?? null) === 'sale'
-                || in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
-                || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true)
-            ) {
-                continue;
-            }
-
+        // Lightweight nav — no product counts (was loading the full catalog per category).
+        foreach ($this->navigationCategories() as $category) {
             $links[] = [
                 'label' => $category['name'],
                 'href' => route('categories.show', $category['slug']),
@@ -206,16 +206,71 @@ class CategoryCatalog
             ];
         }
 
-        return $links;
+        return $this->navigationCache = $links;
+    }
+
+    /**
+     * @return array<int, array{slug: string, name: string}>
+     */
+    private function navigationCategories(): array
+    {
+        if ($this->usesDatabase()) {
+            return Category::query()
+                ->where('is_active', true)
+                ->where('is_sale', false)
+                ->orderBy('sort_order')
+                ->get(['slug', 'name'])
+                ->reject(function (Category $cat) {
+                    $slug = strtolower((string) $cat->slug);
+                    $name = strtolower(trim((string) $cat->name));
+
+                    return in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
+                        || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true);
+                })
+                ->map(fn (Category $cat) => [
+                    'slug' => $cat->slug,
+                    'name' => $cat->name,
+                ])
+                ->values()
+                ->all();
+        }
+
+        return collect($this->categories())
+            ->reject(function (array $category) {
+                $slug = strtolower((string) ($category['slug'] ?? ''));
+                $name = strtolower(trim((string) ($category['name'] ?? '')));
+
+                return ($category['filter'] ?? null) === 'sale'
+                    || in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
+                    || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true);
+            })
+            ->map(fn (array $category) => [
+                'slug' => $category['slug'],
+                'name' => $category['name'],
+            ])
+            ->values()
+            ->all();
     }
 
     private function categories(): array
     {
+        if ($this->categoriesCache !== null) {
+            return $this->categoriesCache;
+        }
+
         if ($this->usesDatabase()) {
-            return Category::where('is_active', '=', true, 'and')->orderBy('sort_order')->get()
+            return $this->categoriesCache = Category::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->withCount(['products as storefront_products_count' => function ($query) {
+                    $query->onStorefront();
+                }])
+                ->get()
                 ->mapWithKeys(function (Category $cat) {
                     $data = $cat->toCatalogArray();
-                    $count = $this->countFor($data);
+                    $count = ($data['filter'] ?? '') === 'sale'
+                        ? $this->saleProductCount()
+                        : (int) $cat->storefront_products_count;
 
                     return [$cat->slug => array_merge($data, [
                         'count' => $count,
@@ -256,7 +311,7 @@ class CategoryCatalog
             ]),
         ];
 
-        return collect($items)->keyBy('slug')->all();
+        return $this->categoriesCache = collect($items)->keyBy('slug')->all();
     }
 
     private function category(string $slug, string $name, string $color, string $photoId, array $extra = []): array
@@ -283,15 +338,26 @@ class CategoryCatalog
     private function countFor(array $category): int
     {
         if (($category['filter'] ?? 'category') === 'sale') {
-            return count(array_filter(
-                $this->products->all(),
-                fn ($p) => ($p['badge'] ?? null) === 'Sale' || ($p['original_price'] ?? null) !== null,
-            ));
+            return $this->saleProductCount();
         }
 
         return count(array_filter(
             $this->products->all(),
             fn ($p) => in_array($p['category'], $category['product_categories'], true),
+        ));
+    }
+
+    private function saleProductCount(): int
+    {
+        static $count = null;
+
+        if ($count !== null) {
+            return $count;
+        }
+
+        return $count = count(array_filter(
+            $this->products->all(),
+            fn ($p) => ($p['badge'] ?? null) === 'Sale' || ($p['original_price'] ?? null) !== null,
         ));
     }
 

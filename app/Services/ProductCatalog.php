@@ -6,17 +6,34 @@ use App\Models\Product;
 
 class ProductCatalog
 {
+    /** @var array<string, array<string, mixed>>|null */
+    private ?array $productsCache = null;
+
+    private ?bool $hasStorefrontProducts = null;
+
     public function all(): array
     {
-        return $this->products();
+        return array_values($this->products());
     }
 
     public function find(string $slug): ?array
     {
-        return $this->products()[$slug] ?? null;
+        if ($this->productsCache !== null) {
+            return $this->productsCache[$slug] ?? null;
+        }
+
+        if (! $this->usesStorefrontProducts()) {
+            return null;
+        }
+
+        $product = $this->storefrontQuery()
+            ->where('slug', $slug)
+            ->first();
+
+        return $product?->toCatalogArray();
     }
 
-    public function featured(): array
+    public function featured(int $limit = 8): array
     {
         if (! $this->usesStorefrontProducts()) {
             return [];
@@ -24,13 +41,14 @@ class ProductCatalog
 
         return $this->storefrontQuery()
             ->where('is_featured', true)
+            ->limit($limit)
             ->get()
-            ->map(fn ($p) => $p->toCatalogArray())
+            ->map(fn ($p) => $p->toCatalogArray(false))
             ->values()
             ->all();
     }
 
-    public function newArrivals(): array
+    public function newArrivals(int $limit = 20): array
     {
         if (! $this->usesStorefrontProducts()) {
             return [];
@@ -38,20 +56,37 @@ class ProductCatalog
 
         return $this->storefrontQuery()
             ->where('is_new_arrival', true)
+            ->limit($limit)
             ->get()
-            ->map(fn ($p) => $p->toCatalogArray())
+            ->map(fn ($p) => $p->toCatalogArray(false))
             ->values()
             ->all();
     }
 
     public function related(string $slug, int $limit = 4): array
     {
-        $products = array_values(array_filter(
-            $this->products(),
-            fn ($p) => $p['slug'] !== $slug
-        ));
+        if (! $this->usesStorefrontProducts()) {
+            return [];
+        }
 
-        return array_slice($products, 0, $limit);
+        $current = Product::query()->where('slug', $slug)->first(['id', 'category_id']);
+
+        if (! $current) {
+            return [];
+        }
+
+        $query = $this->storefrontQuery()->where('products.id', '!=', $current->id);
+
+        if ($current->category_id) {
+            $query->orderByRaw('CASE WHEN category_id = ? THEN 0 ELSE 1 END', [$current->category_id]);
+        }
+
+        return $query
+            ->limit($limit)
+            ->get()
+            ->map(fn ($p) => $p->toCatalogArray(false))
+            ->values()
+            ->all();
     }
 
     /**
@@ -85,7 +120,7 @@ class ProductCatalog
 
         return $builder
             ->get()
-            ->map(fn ($product) => $this->toCard($product->toCatalogArray()))
+            ->map(fn ($product) => $this->toCard($product->toCatalogArray(false)))
             ->values()
             ->all();
     }
@@ -108,31 +143,42 @@ class ProductCatalog
         ];
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
     private function products(): array
     {
-        if (! $this->usesStorefrontProducts()) {
-            return [];
+        if ($this->productsCache !== null) {
+            return $this->productsCache;
         }
 
-        return $this->storefrontQuery()
+        if (! $this->usesStorefrontProducts()) {
+            return $this->productsCache = [];
+        }
+
+        return $this->productsCache = $this->storefrontQuery()
             ->get()
-            ->mapWithKeys(fn ($p) => [$p->slug => $p->toCatalogArray()])
+            ->mapWithKeys(fn ($p) => [$p->slug => $p->toCatalogArray(false)])
             ->all();
     }
 
     private function storefrontQuery()
     {
-        return Product::with(['category', 'apiReceivedItem'])
+        return Product::with(['category:id,name', 'apiReceivedItem:id,product_id,status,reviewed_at'])
             ->onStorefront()
             ->orderByNewest();
     }
 
     private function usesStorefrontProducts(): bool
     {
+        if ($this->hasStorefrontProducts !== null) {
+            return $this->hasStorefrontProducts;
+        }
+
         try {
-            return Product::onStorefront()->exists();
+            return $this->hasStorefrontProducts = Product::onStorefront()->exists();
         } catch (\Throwable) {
-            return false;
+            return $this->hasStorefrontProducts = false;
         }
     }
 }

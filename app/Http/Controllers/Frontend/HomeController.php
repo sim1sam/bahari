@@ -22,18 +22,14 @@ class HomeController extends Controller
             'banners' => $this->homepage->banners(),
             'features' => $this->homepage->features(),
             'categories' => $this->categories->featuredForHome(6),
-            'featuredProducts' => $this->productCards(fn () => $this->catalog->featured(), 8),
-            'newArrivals' => $this->productCards(fn () => $this->catalog->newArrivals(), 20),
+            'featuredProducts' => collect($this->catalog->featured(8))
+                ->map(fn ($p) => $this->catalog->toCard($p))
+                ->values()
+                ->all(),
+            'newArrivals' => collect($this->catalog->newArrivals(20))
+                ->map(fn ($p) => $this->catalog->toCard($p))
+                ->values()
+                ->all(),
         ]);
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    private function productCards(callable $fetcher, int $limit): array
-    {
-        return collect($fetcher())
-            ->take($limit)
-            ->map(fn ($p) => $this->catalog->toCard($p))
-            ->values()
-            ->all();
     }
 }

@@ -63,7 +63,7 @@ class ProductController extends Controller
 
     public function newArrivals(): View
     {
-        $products = collect($this->catalog->newArrivals())
+        $products = collect($this->catalog->newArrivals(48))
             ->map(fn ($p) => $this->catalog->toCard($p))
             ->values();
 

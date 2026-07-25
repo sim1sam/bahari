@@ -16,7 +16,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\ProductCatalog::class);
+        $this->app->singleton(\App\Services\CategoryCatalog::class);
+        $this->app->singleton(\App\Services\ShopPageService::class);
+        $this->app->singleton(\App\Services\MediaStorageService::class);
+        $this->app->singleton(\App\Services\CartService::class);
+        $this->app->singleton(\App\Services\WishlistService::class);
+        $this->app->singleton(\App\Services\SiteSettingsService::class);
     }
 
     /**
@@ -26,23 +32,44 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFour();
 
-        View::composer('*', function ($view) {
-            $settings = app(SiteSettingsService::class);
-            $view->with('cartCount', app(CartService::class)->count());
+        // Only layouts/components that need shared chrome — avoid View::composer('*')
+        // which re-ran wishlist/cart/settings for every nested Blade partial.
+        View::composer([
+            'layouts.ecommerce',
+            'layouts.account',
+            'components.ecommerce.header',
+            'components.ecommerce.footer',
+            'components.ecommerce.*',
+            'components.account.*',
+            'pages.*',
+        ], function ($view) {
+            static $shared = null;
 
-            try {
-                $wishlist = app(WishlistService::class);
-                $view->with('wishlistCount', $wishlist->count());
-                $view->with('wishlistSlugs', $wishlist->slugs());
-            } catch (\Throwable) {
-                $view->with('wishlistCount', 0);
-                $view->with('wishlistSlugs', []);
+            if ($shared === null) {
+                $settings = app(SiteSettingsService::class);
+                $wishlistCount = 0;
+                $wishlistSlugs = [];
+
+                try {
+                    $wishlist = app(WishlistService::class);
+                    $wishlistSlugs = $wishlist->slugs();
+                    $wishlistCount = count($wishlistSlugs);
+                } catch (\Throwable) {
+                    // Guest / unavailable wishlist.
+                }
+
+                $shared = [
+                    'cartCount' => app(CartService::class)->count(),
+                    'wishlistCount' => $wishlistCount,
+                    'wishlistSlugs' => $wishlistSlugs,
+                    'siteSettings' => $settings->get(),
+                    'site' => $settings,
+                    'currencySymbol' => config('currency.symbol', '৳'),
+                    'currencyCode' => config('currency.code', 'BDT'),
+                ];
             }
 
-            $view->with('siteSettings', $settings->get());
-            $view->with('site', $settings);
-            $view->with('currencySymbol', config('currency.symbol', '৳'));
-            $view->with('currencyCode', config('currency.code', 'BDT'));
+            $view->with($shared);
         });
     }
 }

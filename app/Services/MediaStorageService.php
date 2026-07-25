@@ -10,6 +10,11 @@ use Illuminate\Validation\ValidationException;
 
 class MediaStorageService
 {
+    /** @var array<string, bool> */
+    private array $existsCache = [];
+
+    private ?bool $symlinkValid = null;
+
     public function url(?string $path): ?string
     {
         $path = $this->normalizePath($path);
@@ -22,11 +27,20 @@ class MediaStorageService
             return $path;
         }
 
-        if (! Storage::disk('public')->exists($path)) {
-            return null;
+        // Trust stored paths on read — existence was validated on upload/write.
+        // Avoids filesystem stat() on every product card image.
+        return $this->publicUrl($path);
+    }
+
+    public function exists(?string $path): bool
+    {
+        $path = $this->normalizePath($path);
+
+        if ($path === '' || $this->isExternal($path)) {
+            return false;
         }
 
-        return $this->publicUrl($path);
+        return $this->existsCache[$path] ??= Storage::disk('public')->exists($path);
     }
 
     public function storeFromDataUri(string $dataUri, string $directory, ?string $current = null, string $field = 'image'): string
@@ -272,21 +286,25 @@ class MediaStorageService
 
     public function storageSymlinkIsValid(): bool
     {
+        if ($this->symlinkValid !== null) {
+            return $this->symlinkValid;
+        }
+
         $link = public_path('storage');
         $target = storage_path('app/public');
 
         if (! file_exists($link) || ! is_dir($target)) {
-            return false;
+            return $this->symlinkValid = false;
         }
 
         if (is_link($link)) {
             $resolvedLink = realpath($link);
             $resolvedTarget = realpath($target);
 
-            return $resolvedLink && $resolvedTarget && $resolvedLink === $resolvedTarget;
+            return $this->symlinkValid = (bool) ($resolvedLink && $resolvedTarget && $resolvedLink === $resolvedTarget);
         }
 
-        return realpath($link) === realpath($target);
+        return $this->symlinkValid = realpath($link) === realpath($target);
     }
 
     private function normalizePath(?string $path): string

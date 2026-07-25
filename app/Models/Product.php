@@ -108,7 +108,7 @@ class Product extends Model
             ->all();
     }
 
-    public function toCatalogArray(): array
+    public function toCatalogArray(bool $withGallery = true): array
     {
         $image = $this->imageUrl();
 
@@ -120,7 +120,9 @@ class Product extends Model
             'original_price' => $this->original_price ? (float) $this->original_price : null,
             'purchase_price' => $this->purchase_price ? (float) $this->purchase_price : null,
             'image' => $image,
-            'images' => $this->imageUrls() ?: ($image ? [$image] : []),
+            'images' => $withGallery
+                ? ($this->imageUrls() ?: ($image ? [$image] : []))
+                : ($image ? [$image] : []),
             'badge' => $this->badge,
             'badge_variant' => $this->badge_variant,
             'rating' => (float) $this->rating,
