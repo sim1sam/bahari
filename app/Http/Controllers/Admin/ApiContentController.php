@@ -375,6 +375,79 @@ class ApiContentController extends Controller
             ->with('success', 'Received item deleted.');
     }
 
+    public function reimport(
+        ApiReceivedItem $item,
+        ApiReceivedImageService $images,
+        ApiReceivedPriceService $prices,
+        ApiReceivedMetadataService $metadata,
+        MediaStorageService $media
+    ): RedirectResponse {
+        if ($item->isImported()) {
+            return back()->with('error', 'Remove this product from Live first, then use Re-import.');
+        }
+
+        if (! $item->isPending() && ! $item->isProcessed()) {
+            return back()->with('error', 'Only pending or processed items can be re-imported.');
+        }
+
+        $item->load('source');
+
+        $originalImage = null;
+        foreach ($item->images ?? [] as $path) {
+            if (filled($path) && $path !== $item->processed_image) {
+                $originalImage = $path;
+                break;
+            }
+        }
+
+        if ($item->processed_image) {
+            $media->delete($item->processed_image);
+        }
+
+        $attributes = [
+            'processed_image' => null,
+            'status' => ApiReceivedItem::STATUS_PENDING,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'product_id' => null,
+        ];
+
+        if ($originalImage) {
+            $attributes['image'] = $originalImage;
+            $attributes['images'] = array_values(array_unique(array_filter([$originalImage])));
+        }
+
+        if (ApiReceivedItem::hasProcessedImageBlobColumn()) {
+            $attributes['processed_image_blob'] = null;
+        }
+
+        $item->update($attributes);
+        $item->refresh();
+
+        $repaired = $images->repairItem($item);
+        $item->refresh();
+
+        try {
+            $prices->syncItem($item);
+        } catch (\Throwable) {
+            // Price sync should not block re-import.
+        }
+
+        try {
+            $metadata->syncItem($item);
+        } catch (\Throwable) {
+            // Metadata sync should not block re-import.
+        }
+
+        $message = $repaired
+            ? 'Item re-imported. Image refreshed from API payload — process again when ready.'
+            : 'Item reset to Import list. Image could not be re-downloaded — check sender Site URL, then try Re-import again.';
+
+        return redirect()
+            ->route('admin.content.index')
+            ->with($repaired ? 'success' : 'warning', $message);
+    }
+
     public function destroyBatch(Request $request, MediaStorageService $media): RedirectResponse
     {
         $validated = $request->validate([

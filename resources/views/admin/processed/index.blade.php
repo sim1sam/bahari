@@ -261,6 +261,12 @@
                                                 <i class="fas fa-globe"></i>
                                             </button>
                                         </form>
+                                        <form action="{{ route('admin.content.reimport', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Re-import this item back to Import Product list?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-xs btn-warning" title="Re-import">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </form>
                                         <form action="{{ route('admin.processed.destroy', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this processed item permanently?')">
                                             @csrf
                                             @method('DELETE')
@@ -557,6 +563,7 @@
     .processed-actions .btn-secondary { background: #64748b; }
     .processed-actions .btn-info { background: #0891b2; }
     .processed-actions .btn-success { background: #059669; }
+    .processed-actions .btn-warning { background: #d97706; color: #fff; }
     .processed-actions .btn-danger { background: #dc2626; }
 
     .processed-actions .btn:hover {

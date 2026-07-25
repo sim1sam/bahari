@@ -220,12 +220,20 @@
                                     <input type="checkbox" class="item-check" name="items[]" value="{{ $item->id }}" form="batch-form">
                                     <span class="content-gallery-select-mark"><i class="fas fa-check"></i></span>
                                 </label>
-                                <form action="{{ route('admin.content.destroy', $item) }}" method="POST" class="content-gallery-delete" onsubmit="return confirm('Delete this received item permanently?')">
-                                    @csrf
-                                    <button type="submit" class="content-gallery-delete-btn" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <div class="content-gallery-corner-actions">
+                                    <form action="{{ route('admin.content.reimport', $item) }}" method="POST" class="content-gallery-reimport" onsubmit="return confirm('Re-import this item from the API payload?')">
+                                        @csrf
+                                        <button type="submit" class="content-gallery-reimport-btn" title="Re-import">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.content.destroy', $item) }}" method="POST" class="content-gallery-delete" onsubmit="return confirm('Delete this received item permanently?')">
+                                        @csrf
+                                        <button type="submit" class="content-gallery-delete-btn" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                                     <a href="{{ route('admin.content.show', $item) }}" class="content-gallery-media">
                                         @if ($item->imageUrl())
                                             <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}">
@@ -794,15 +802,22 @@
         color: #fff;
     }
 
-    .content-gallery-delete {
+    .content-gallery-corner-actions {
         position: absolute;
         top: 0.55rem;
         right: 0.55rem;
         z-index: 3;
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .content-gallery-delete,
+    .content-gallery-reimport {
         margin: 0;
     }
 
-    .content-gallery-delete-btn {
+    .content-gallery-delete-btn,
+    .content-gallery-reimport-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -810,7 +825,6 @@
         height: 1.65rem;
         border: 2px solid rgba(255, 255, 255, 0.95);
         border-radius: 0.45rem;
-        background: rgba(220, 38, 38, 0.88);
         color: #fff;
         font-size: 0.68rem;
         box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
@@ -818,8 +832,21 @@
         transition: background 0.15s ease, transform 0.15s ease;
     }
 
+    .content-gallery-delete-btn {
+        background: rgba(220, 38, 38, 0.88);
+    }
+
+    .content-gallery-reimport-btn {
+        background: rgba(8, 145, 178, 0.92);
+    }
+
     .content-gallery-delete-btn:hover {
         background: #b91c1c;
+        transform: scale(1.05);
+    }
+
+    .content-gallery-reimport-btn:hover {
+        background: #0e7490;
         transform: scale(1.05);
     }
 

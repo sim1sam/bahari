@@ -142,6 +142,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('content/{item}', [ApiContentController::class, 'show'])->whereNumber('item')->name('content.show');
             Route::put('content/{item}', [ApiContentController::class, 'update'])->whereNumber('item')->name('content.update');
             Route::post('content/{item}/delete', [ApiContentController::class, 'destroy'])->whereNumber('item')->name('content.destroy');
+            Route::post('content/{item}/reimport', [ApiContentController::class, 'reimport'])->whereNumber('item')->name('content.reimport');
             Route::post('content/{item}/process', [ApiContentController::class, 'process'])->whereNumber('item')->name('content.process');
             Route::post('content/{item}/reject', [ApiContentController::class, 'reject'])->whereNumber('item')->name('content.reject');
         });

@@ -116,7 +116,13 @@
             @endif
 
             @if (! $isLive)
-                <form action="{{ route('admin.processed.destroy', $item) }}" method="POST" onsubmit="return confirm('Delete this processed item permanently?')">
+                <form action="{{ route('admin.content.reimport', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Re-import this item back to Import Product list?')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-sync-alt"></i> Re-import
+                    </button>
+                </form>
+                <form action="{{ route('admin.processed.destroy', $item) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('Delete this processed item permanently?')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-outline-danger btn-sm">

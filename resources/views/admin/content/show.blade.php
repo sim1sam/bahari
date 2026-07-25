@@ -131,7 +131,13 @@
                 </div>
             </div>
 
-            <form action="{{ route('admin.content.reject', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Reject this item?')">
+            <form action="{{ route('admin.content.reimport', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Re-import this item from the API payload?')">
+                @csrf
+                <button type="submit" class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-sync-alt"></i> Re-import
+                </button>
+            </form>
+            <form action="{{ route('admin.content.reject', $item) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('Reject this item?')">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
             </form>
