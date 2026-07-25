@@ -30,11 +30,14 @@ class ApiProcessedController extends Controller
 
         return view('admin.processed.index', [
             'items' => $query->paginate($perPage)->withQueryString(),
-            'date' => $request->query('date'),
+            'dateFrom' => $request->query('date_from'),
+            'dateTo' => $request->query('date_to'),
             'brand' => $request->query('brand'),
             'perPage' => $perPage,
             'brands' => app(ApiReceivedBrandService::class)->activeBrandNames(),
-            'processedCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)->count(),
+            'processedCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_PROCESSED)
+                ->whereNull('product_id')
+                ->count(),
             'liveCount' => ApiReceivedItem::where('status', ApiReceivedItem::STATUS_IMPORTED)->count(),
             'categories' => Category::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
@@ -45,15 +48,20 @@ class ApiProcessedController extends Controller
         $query = ApiReceivedItem::queryForLists()
             ->with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_IMPORTED)
-            ->latest();
+            ->latest('reviewed_at');
 
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
+        if ($request->filled('date_from')) {
+            $query->whereDate('reviewed_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('reviewed_at', '<=', $request->date_to);
         }
 
         return view('admin.processed.live', [
             'items' => $query->paginate(20)->withQueryString(),
-            'date' => $request->query('date'),
+            'dateFrom' => $request->query('date_from'),
+            'dateTo' => $request->query('date_to'),
         ]);
     }
 
@@ -192,7 +200,7 @@ class ApiProcessedController extends Controller
             : $importer->import($item, $categoryId);
 
         return redirect()
-            ->route('admin.processed.show', $item)
+            ->route('admin.processed.live')
             ->with('success', 'Product is now live under '.$product->category?->name.'.');
     }
 
@@ -201,7 +209,8 @@ class ApiProcessedController extends Controller
         $validated = $request->validate([
             'select_all' => 'sometimes|boolean',
             'filter_brand' => 'nullable|string|max:100',
-            'filter_date' => 'nullable|date',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
             'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
             'category_id' => 'nullable|exists:categories,id',
@@ -290,7 +299,8 @@ class ApiProcessedController extends Controller
         $request->validate([
             'select_all' => 'sometimes|boolean',
             'filter_brand' => 'nullable|string|max:100',
-            'filter_date' => 'nullable|date',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
             'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
         ]);
@@ -346,7 +356,8 @@ class ApiProcessedController extends Controller
         $validated = $request->validate([
             'select_all' => 'sometimes|boolean',
             'filter_brand' => 'nullable|string|max:100',
-            'filter_date' => 'nullable|date',
+            'filter_date_from' => 'nullable|date',
+            'filter_date_to' => 'nullable|date',
             'items' => 'required_without:select_all|array|min:1',
             'items.*' => 'integer|exists:api_received_items,id',
             'layout' => 'required|in:flat,brand',
@@ -386,11 +397,12 @@ class ApiProcessedController extends Controller
         $request->merge(['select_all' => true]);
         $request->merge([
             'filter_brand' => $request->query('brand', $request->input('brand')),
-            'filter_date' => $request->query('date', $request->input('date')),
+            'filter_date_from' => $request->query('date_from', $request->input('date_from', $request->input('date'))),
+            'filter_date_to' => $request->query('date_to', $request->input('date_to', $request->input('date'))),
         ]);
 
-        if (! $request->filled('filter_brand') && ! $request->filled('filter_date')) {
-            return back()->with('error', 'Apply a brand or date filter first, or use Select all with batch download.');
+        if (! $request->filled('filter_brand') && ! $request->filled('filter_date_from') && ! $request->filled('filter_date_to')) {
+            return back()->with('error', 'Apply a brand or date range filter first, or use Select all with batch download.');
         }
 
         $request->merge(['layout' => 'brand']);
@@ -403,11 +415,10 @@ class ApiProcessedController extends Controller
         $query = ApiReceivedItem::queryForLists()
             ->with(['source', 'product'])
             ->where('status', ApiReceivedItem::STATUS_PROCESSED)
-            ->latest();
+            ->whereNull('product_id')
+            ->latest('updated_at');
 
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
+        $this->applyDateRangeFilter($query, $request->query('date_from'), $request->query('date_to'));
 
         if ($request->filled('brand')) {
             $this->applyBrandFilter($query, $request->string('brand')->toString());
@@ -435,23 +446,38 @@ class ApiProcessedController extends Controller
         return ApiReceivedItem::query()
             ->whereIn('id', $ids)
             ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->whereNull('product_id')
             ->get();
     }
 
     private function processedBatchQuery(Request $request)
     {
         $query = ApiReceivedItem::query()
-            ->where('status', ApiReceivedItem::STATUS_PROCESSED);
+            ->where('status', ApiReceivedItem::STATUS_PROCESSED)
+            ->whereNull('product_id');
 
         if ($request->filled('filter_brand')) {
             $this->applyBrandFilter($query, $request->string('filter_brand')->toString());
         }
 
-        if ($request->filled('filter_date')) {
-            $query->whereDate('created_at', $request->filter_date);
-        }
+        $this->applyDateRangeFilter(
+            $query,
+            $request->input('filter_date_from', $request->input('filter_date')),
+            $request->input('filter_date_to', $request->input('filter_date'))
+        );
 
         return $query;
+    }
+
+    private function applyDateRangeFilter($query, mixed $from, mixed $to): void
+    {
+        if (filled($from)) {
+            $query->whereDate('updated_at', '>=', $from);
+        }
+
+        if (filled($to)) {
+            $query->whereDate('updated_at', '<=', $to);
+        }
     }
 
     private function extendBatchTimeLimit(Request $request): void

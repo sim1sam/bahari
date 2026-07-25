@@ -13,15 +13,17 @@ class StorageLinkService
     {
         $link = public_path('storage');
         $target = storage_path('app/public');
+        $valid = $this->isValidLink($link, $target);
 
         return [
             'link_path' => $link,
             'target_path' => $target,
             'exists' => file_exists($link),
-            'is_link' => is_link($link),
-            'is_valid' => $this->isValidLink($link, $target),
+            // Windows junctions are not always reported by is_link().
+            'is_link' => is_link($link) || $valid,
+            'is_valid' => $valid,
             'target_exists' => is_dir($target),
-            'blocking_path' => file_exists($link) && ! is_link($link),
+            'blocking_path' => file_exists($link) && ! $valid,
         ];
     }
 
@@ -31,6 +33,10 @@ class StorageLinkService
         $link = public_path('storage');
         $target = storage_path('app/public');
 
+        if (! is_dir($target)) {
+            File::makeDirectory($target, 0755, true);
+        }
+
         if ($this->isValidLink($link, $target)) {
             return [
                 'success' => true,
@@ -38,25 +44,29 @@ class StorageLinkService
             ];
         }
 
-        if (! is_dir($target)) {
-            File::makeDirectory($target, 0755, true);
-        }
-
         $relocatedMessage = null;
 
-        if (file_exists($link) && ! is_link($link)) {
-            $relocated = $this->relocateBlockingPath($link, $target);
+        // Only move aside paths that do NOT already resolve to the target.
+        if (file_exists($link) && ! $this->isValidLink($link, $target)) {
+            if (is_link($link)) {
+                @\unlink($link);
+            } else {
+                $relocated = $this->relocateBlockingPath($link, $target);
 
-            if (! $relocated['success']) {
-                return $relocated;
+                if (! $relocated['success']) {
+                    return $relocated;
+                }
+
+                $relocatedMessage = $relocated['message'];
             }
-
-            $relocatedMessage = $relocated['message'];
         }
 
-        if (is_link($link)) {
-            @unlink($link);
+        // Remove broken symlink leftovers.
+        if (is_link($link) && ! $this->isValidLink($link, $target)) {
+            @\unlink($link);
         }
+
+        $attempts = [];
 
         try {
             Artisan::call('storage:link', ['--force' => true]);
@@ -67,8 +77,10 @@ class StorageLinkService
                     'message' => $this->buildSuccessMessage('Storage link created successfully.', $relocatedMessage),
                 ];
             }
-        } catch (\Throwable) {
-            // Fall through to manual symlink attempt.
+
+            $attempts[] = 'artisan storage:link';
+        } catch (\Throwable $e) {
+            $attempts[] = 'artisan: '.$e->getMessage();
         }
 
         try {
@@ -78,16 +90,25 @@ class StorageLinkService
                     'message' => $this->buildSuccessMessage('Storage link created successfully.', $relocatedMessage),
                 ];
             }
+
+            $attempts[] = 'manual symlink/junction';
         } catch (\Throwable $e) {
+            $attempts[] = 'manual: '.$e->getMessage();
+        }
+
+        // Final check — another process may have created it, or junction already existed.
+        if ($this->isValidLink($link, $target)) {
             return [
-                'success' => false,
-                'message' => 'Could not create storage link: '.$e->getMessage(),
+                'success' => true,
+                'message' => $this->buildSuccessMessage('Storage link is active.', $relocatedMessage),
             ];
         }
 
         return [
             'success' => false,
-            'message' => 'Could not create storage link. Your host may block symlinks — images will still work via /media/ fallback.',
+            'message' => 'Could not create storage link ('.implode('; ', $attempts).'). '
+                .'Images still work via /media/ fallback. On Windows run as Admin: mklink /J "'. $link.'" "'.$target.'". '
+                .'On Linux: ln -s "'.$target.'" "'.$link.'"',
         ];
     }
 
@@ -149,16 +170,35 @@ class StorageLinkService
 
     private function createSymlink(string $target, string $link): bool
     {
-        if (DIRECTORY_SEPARATOR === '\\') {
-            $command = 'mklink /J '.escapeshellarg($link).' '.escapeshellarg($target);
-            exec($command, $output, $code);
+        if (file_exists($link) || is_link($link)) {
+            return $this->isValidLink($link, $target);
+        }
 
-            if ($code === 0) {
+        // Windows: directory junction usually works without admin rights.
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $command = 'cmd /c mklink /J '.escapeshellarg($link).' '.escapeshellarg($target);
+            @exec($command, $output, $code);
+
+            if ($this->isValidLink($link, $target)) {
+                return true;
+            }
+        } else {
+            // Linux/macOS shell fallback when PHP symlink() is disabled.
+            $command = 'ln -s '.escapeshellarg($target).' '.escapeshellarg($link);
+            @exec($command, $output, $code);
+
+            if ($this->isValidLink($link, $target)) {
                 return true;
             }
         }
 
-        return @symlink($target, $link);
+        if (! \function_exists('symlink')) {
+            return false;
+        }
+
+        $created = @\symlink($target, $link);
+
+        return $created && $this->isValidLink($link, $target);
     }
 
     private function buildSuccessMessage(string $base, ?string $relocatedMessage): string
@@ -176,13 +216,26 @@ class StorageLinkService
             return false;
         }
 
-        if (is_link($link)) {
-            $resolvedLink = realpath($link);
-            $resolvedTarget = realpath($target);
+        $resolvedTarget = realpath($target);
 
-            return $resolvedLink && $resolvedTarget && $resolvedLink === $resolvedTarget;
+        if (! $resolvedTarget) {
+            return false;
         }
 
-        return realpath($link) === realpath($target);
+        // Symlink (Unix / Windows symlink)
+        if (is_link($link)) {
+            $resolvedLink = realpath($link);
+
+            return $resolvedLink !== false && $resolvedLink === $resolvedTarget;
+        }
+
+        // Windows junction / directory mount: is_link() is often false, but realpath matches.
+        if (is_dir($link)) {
+            $resolvedLink = realpath($link);
+
+            return $resolvedLink !== false && $resolvedLink === $resolvedTarget;
+        }
+
+        return false;
     }
 }

@@ -293,12 +293,31 @@ class MediaStorageService
     {
         $path = trim((string) $path);
 
-        if (str_starts_with($path, '/storage/')) {
+        if ($path === '') {
+            return '';
+        }
+
+        // Absolute URL that points at this app's /storage or /media — unwrap to relative disk path.
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $urlPath = parse_url($path, PHP_URL_PATH) ?: '';
+
+            if (preg_match('#^/(?:storage|media)/(.+)$#', $urlPath, $matches)) {
+                $path = rawurldecode($matches[1]);
+            } else {
+                return $path;
+            }
+        }
+
+        if (str_starts_with($path, '/media/')) {
+            $path = Str::after($path, '/media/');
+        } elseif (str_starts_with($path, 'media/')) {
+            $path = Str::after($path, 'media/');
+        } elseif (str_starts_with($path, '/storage/')) {
             $path = Str::after($path, '/storage/');
         } elseif (str_starts_with($path, 'storage/')) {
             $path = Str::after($path, 'storage/');
         }
 
-        return $path;
+        return ltrim(str_replace('\\', '/', $path), '/');
     }
 }

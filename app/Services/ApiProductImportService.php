@@ -23,7 +23,7 @@ class ApiProductImportService
         }
 
         $slug = $this->uniqueSlug($item->slug ?: $item->sku ?: $item->title);
-        $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
+        $imagePath = $this->publishProcessedImage($item->processed_image ?: $item->image);
         $pricing = $this->prices->resolve($item);
 
         $product = Product::create([
@@ -34,8 +34,8 @@ class ApiProductImportService
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
             'purchase_price' => $pricing['purchase_price'],
-            'image' => $imageUrl,
-            'images' => $imageUrl ? [$imageUrl] : [],
+            'image' => $imagePath,
+            'images' => $imagePath ? [$imagePath] : [],
             'description' => $item->description ?: 'Imported via API.',
             'sizes' => $item->sizes ?: [],
             'colors' => $item->colors ?: [],
@@ -62,7 +62,7 @@ class ApiProductImportService
 
     public function syncProduct(ApiReceivedItem $item, Product $product, ?int $categoryId = null): Product
     {
-        $imageUrl = $this->publishProcessedImage($item->processed_image ?: $item->image);
+        $imagePath = $this->publishProcessedImage($item->processed_image ?: $item->image);
         $pricing = $this->prices->resolve($item);
 
         $product->update([
@@ -71,8 +71,8 @@ class ApiProductImportService
             'price' => $pricing['price'],
             'original_price' => $pricing['original_price'],
             'purchase_price' => $pricing['purchase_price'] ?? $product->purchase_price,
-            'image' => $imageUrl ?: $product->image,
-            'images' => $imageUrl ? [$imageUrl] : $product->images,
+            'image' => $imagePath ?: $product->image,
+            'images' => $imagePath ? [$imagePath] : $product->images,
             'description' => $item->description ?: $product->description,
             'sizes' => $item->sizes ?: [],
             'colors' => $item->colors ?: [],
@@ -115,15 +115,8 @@ class ApiProductImportService
 
     public function publishProcessedImage(?string $image): ?string
     {
-        $path = $this->copyImageToProducts($image);
-
-        if (! $path) {
-            return null;
-        }
-
-        $relative = $this->media->url($path);
-
-        return $relative ? url($relative) : null;
+        // Store relative disk path only — Product::imageUrl() resolves via /media or /storage at request time.
+        return $this->copyImageToProducts($image);
     }
 
     private function copyImageToProducts(?string $image): ?string

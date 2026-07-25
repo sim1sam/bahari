@@ -92,30 +92,17 @@ class Product extends Model
 
     public function imageUrl(): ?string
     {
-        if (! $this->image) {
-            return null;
-        }
-
-        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-            return $this->image;
-        }
-
-        return app(MediaStorageService::class)->url($this->image);
+        return app(\App\Services\MediaStorageService::class)->url($this->image);
     }
 
     /** @return array<int, string|null> */
     public function imageUrls(): array
     {
         $images = $this->images ?? ($this->image ? [$this->image] : []);
+        $media = app(\App\Services\MediaStorageService::class);
 
         return collect($images)
-            ->map(function ($img) {
-                if (str_starts_with((string) $img, 'http://') || str_starts_with((string) $img, 'https://')) {
-                    return $img;
-                }
-
-                return app(MediaStorageService::class)->url($img);
-            })
+            ->map(fn ($img) => $media->url($img))
             ->filter()
             ->values()
             ->all();

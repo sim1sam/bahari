@@ -21,7 +21,8 @@
     <form id="download-filtered-form" action="{{ route('admin.processed.download-filtered') }}" method="POST" class="d-none">
         @csrf
         <input type="hidden" name="brand" value="{{ $brand }}">
-        <input type="hidden" name="date" value="{{ $date }}">
+        <input type="hidden" name="date_from" value="{{ $dateFrom }}">
+        <input type="hidden" name="date_to" value="{{ $dateTo }}">
     </form>
 
     <div class="ecom-page processed-page">
@@ -122,8 +123,12 @@
                         </select>
                     </div>
                     <div class="processed-filter-field">
-                        <label>Processed Date</label>
-                        <input type="date" name="date" class="form-control" value="{{ $date }}" aria-label="Processed date">
+                        <label>From date</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}" aria-label="From date">
+                    </div>
+                    <div class="processed-filter-field">
+                        <label>To date</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}" aria-label="To date">
                     </div>
                     <div class="processed-filter-field">
                         <label>Per Page</label>
@@ -137,10 +142,10 @@
                         <button type="submit" class="btn btn-info">
                             <i class="fas fa-filter mr-1"></i> Apply
                         </button>
-                        @if ($brand || $date || $perPage !== 20)
+                        @if ($brand || $dateFrom || $dateTo || $perPage !== 20)
                             <a href="{{ route('admin.processed.index') }}" class="btn btn-secondary">Clear</a>
                         @endif
-                        @if ($brand || $date)
+                        @if ($brand || $dateFrom || $dateTo)
                             <button type="button" class="btn btn-info" id="btn-download-filtered">
                                 <i class="fas fa-file-archive mr-1"></i> ZIP Filtered
                             </button>
@@ -148,14 +153,17 @@
                     </div>
                 </form>
 
-                @if ($brand || $date || $perPage !== 20)
+                @if ($brand || $dateFrom || $dateTo || $perPage !== 20)
                     <div class="processed-active-filters">
                         <span class="processed-active-filters-label">Active filters:</span>
                         @if ($brand)
                             <span class="processed-filter-chip"><i class="fas fa-tag"></i> {{ $brand }}</span>
                         @endif
-                        @if ($date)
-                            <span class="processed-filter-chip"><i class="fas fa-calendar"></i> {{ $date }}</span>
+                        @if ($dateFrom || $dateTo)
+                            <span class="processed-filter-chip">
+                                <i class="fas fa-calendar"></i>
+                                {{ $dateFrom ?: '…' }} → {{ $dateTo ?: '…' }}
+                            </span>
                         @endif
                         @if ($perPage !== 20)
                             <span class="processed-filter-chip"><i class="fas fa-list-ol"></i> {{ $perPage }} per page</span>
@@ -393,7 +401,7 @@
 
     .processed-filter-bar {
         display: grid;
-        grid-template-columns: minmax(160px, 1.4fr) minmax(140px, 1fr) minmax(110px, 0.7fr) auto;
+        grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr) minmax(100px, 0.7fr) auto;
         gap: 0.65rem;
         align-items: end;
         padding: 0.85rem;
@@ -616,7 +624,8 @@
     var filteredTotal = {{ (int) $items->total() }};
     var pageTotal = checks.length;
     var filterBrand = @json($brand);
-    var filterDate = @json($date);
+    var filterDateFrom = @json($dateFrom);
+    var filterDateTo = @json($dateTo);
     var selectAllPages = false;
 
     function selectedCategoryId() {
@@ -703,6 +712,8 @@
         form.querySelectorAll('input[name="select_all"]').forEach(function (el) { el.remove(); });
         form.querySelectorAll('input[name="filter_brand"]').forEach(function (el) { el.remove(); });
         form.querySelectorAll('input[name="filter_date"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_date_from"]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('input[name="filter_date_to"]').forEach(function (el) { el.remove(); });
         form.querySelectorAll('input[name="category_id"]').forEach(function (el) { el.remove(); });
     }
 
@@ -723,12 +734,20 @@
             form.appendChild(brandInput);
         }
 
-        if (filterDate) {
-            var dateInput = document.createElement('input');
-            dateInput.type = 'hidden';
-            dateInput.name = 'filter_date';
-            dateInput.value = filterDate;
-            form.appendChild(dateInput);
+        if (filterDateFrom) {
+            var dateFromInput = document.createElement('input');
+            dateFromInput.type = 'hidden';
+            dateFromInput.name = 'filter_date_from';
+            dateFromInput.value = filterDateFrom;
+            form.appendChild(dateFromInput);
+        }
+
+        if (filterDateTo) {
+            var dateToInput = document.createElement('input');
+            dateToInput.type = 'hidden';
+            dateToInput.name = 'filter_date_to';
+            dateToInput.value = filterDateTo;
+            form.appendChild(dateToInput);
         }
     }
 

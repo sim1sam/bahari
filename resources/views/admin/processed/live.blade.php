@@ -4,9 +4,24 @@
 @section('page_title', 'Live on Storefront')
 
 @section('content')
-    <div class="mb-3">
-        <a href="{{ route('admin.processed.index') }}" class="btn btn-default btn-sm">Back to Processed</a>
-        <a href="{{ route('admin.api-settings.index') }}" class="btn btn-outline-secondary btn-sm">Content API Settings</a>
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+        <div>
+            <a href="{{ route('admin.processed.index') }}" class="btn btn-default btn-sm">Back to Processed</a>
+        </div>
+        <form action="{{ route('admin.processed.live') }}" method="GET" class="form-inline d-flex flex-wrap gap-2 align-items-end">
+            <div>
+                <label class="small text-muted d-block mb-1">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ $dateFrom }}">
+            </div>
+            <div>
+                <label class="small text-muted d-block mb-1">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ $dateTo }}">
+            </div>
+            <button type="submit" class="btn btn-info btn-sm">Filter</button>
+            @if ($dateFrom || $dateTo)
+                <a href="{{ route('admin.processed.live') }}" class="btn btn-secondary btn-sm">Clear</a>
+            @endif
+        </form>
     </div>
 
     <div class="card">
@@ -26,7 +41,7 @@
                     @forelse ($items as $item)
                         <tr>
                             <td>
-                                @if ($url = $item->displayImageUrl())
+                                @if ($url = $item->product?->imageUrl() ?: $item->displayImageUrl())
                                     <img src="{{ $url }}" alt="" class="rounded border" style="height:48px;width:48px;object-fit:cover">
                                 @endif
                             </td>
