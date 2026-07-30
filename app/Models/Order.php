@@ -213,7 +213,8 @@ class Order extends Model
     }
 
     /**
-     * Customer + admin badge label — same text when receiver status exists.
+     * Single status label for admin + customer (same text).
+     * Prefers API/receiver workflow status when present.
      */
     public function statusLabel(): string
     {
@@ -230,6 +231,40 @@ class Order extends Model
             'confirmed' => 'Confirmed',
             default => 'Pending',
         };
+    }
+
+    /**
+     * Value selected in the unified admin status dropdown.
+     */
+    public function workflowStatusValue(): string
+    {
+        if (filled($this->receiver_status)) {
+            return (string) $this->receiver_status;
+        }
+
+        return (string) ($this->status ?: 'pending');
+    }
+
+    /**
+     * One status list for admin (Processing = transfer; others sync to customer).
+     *
+     * @return array<string, string>
+     */
+    public static function workflowStatusOptions(): array
+    {
+        return [
+            'pending' => 'Pending',
+            'processing' => 'Processing (transfer to API)',
+            'confirmed' => 'Confirmed',
+            'kolkata_warehouse' => 'Kolkata Warehouse',
+            'shipped' => 'Shipped',
+            'dhaka_warehouse' => 'Dhaka Warehouse',
+            'ready_for_delivery' => 'Ready for Delivery',
+            'dispatched' => 'Dispatched',
+            'delivered' => 'Delivered',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+        ];
     }
 
     /** @return array<int, array{key: string, label: string, description: string, icon: string}> */

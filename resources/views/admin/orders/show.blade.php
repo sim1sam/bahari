@@ -124,44 +124,9 @@
                         <span class="badge {{ $order->paymentStatusBadgeClass() }} ml-1">{{ $order->paymentStatusLabel() }}</span>
                     </p>
                     <p>
-                        <strong>Receiver Status:</strong>
-                        <span class="badge badge-primary">{{ $order->adminStatusLabel() }}</span>
-                        @if (filled($order->receiver_status))
-                            <code class="small ml-1">{{ $order->receiver_status }}</code>
-                        @else
-                            <span class="text-muted small ml-1">(waiting for status API — set below to match Kolkata site)</span>
-                        @endif
-                    </p>
-                    @php
-                        $receiverStatuses = [
-                            'pending' => 'Pending',
-                            'confirmed' => 'Confirmed',
-                            'kolkata_warehouse' => 'Kolkata Warehouse',
-                            'shipped' => 'Shipped',
-                            'dhaka_warehouse' => 'Dhaka Warehouse',
-                            'ready_for_delivery' => 'Ready for Delivery',
-                            'dispatched' => 'Dispatched',
-                            'delivered' => 'Delivered',
-                            'cancelled' => 'Cancelled',
-                        ];
-                    @endphp
-                    <form action="{{ route('admin.orders.receiver-status', $order) }}" method="POST" class="mb-3">
-                        @csrf
-                        @method('PATCH')
-                        <label class="small text-muted d-block mb-1">Set status to match Kolkata 2 Dhaka (customer sees same)</label>
-                        <div class="d-flex flex-wrap align-items-center" style="gap:.5rem">
-                            <select name="admin_status" class="form-control form-control-sm" style="max-width:240px" required>
-                                @foreach ($receiverStatuses as $value => $label)
-                                    <option value="{{ $value }}" @selected(($order->receiver_status ?: '') === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">Update Customer Status</button>
-                        </div>
-                    </form>
-                    <p>
-                        <strong>Customer Status:</strong>
-                        <span class="badge badge-secondary">{{ $order->statusLabel() }}</span>
-                        <span class="text-muted small">(same label after status sync via <code>/api/orders</code>)</span>
+                        <strong>Status:</strong>
+                        <span class="badge badge-primary">{{ $order->statusLabel() }}</span>
+                        <span class="text-muted small ml-1">(same for admin + customer)</span>
                     </p>
                     <p>
                         <strong>API Transfer:</strong>
@@ -286,21 +251,14 @@
                     @endif
                     <form action="{{ route('admin.orders.status', $order) }}" method="POST">
                         @csrf @method('PATCH')
-                        <div class="form-group mb-2">
-                            <label class="mb-1">Receiver Status</label>
-                            <div>
-                                <span class="badge badge-primary">{{ $order->adminStatusLabel() }}</span>
-                                <span class="text-muted small d-block mt-1">Updated from receiver site (purchase, receiving, shipping, parcel, dispatch…)</span>
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <label>Customer Status (manual)</label>
+                            <label>Status</label>
                             <select name="status" class="form-control" onchange="this.form.submit()">
-                                @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
-                                    <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
+                                @foreach (App\Models\Order::workflowStatusOptions() as $value => $label)
+                                    <option value="{{ $value }}" @selected($order->workflowStatusValue() === $value)>{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">This is what the customer sees. Change it manually anytime.</small>
+                            <small class="text-muted">One status for admin and customer. Choose <strong>Processing</strong> to transfer to the sale API. When the API sends status, it shows here and to the customer.</small>
                         </div>
                     </form>
                 </div>

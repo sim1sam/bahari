@@ -125,45 +125,17 @@
                         <div class="orders-app-card-chips">
                             <span class="orders-pill {{ $order->paymentStatusBadgeClass() }}">{{ $order->paymentStatusLabel() }}</span>
                             <span class="orders-pill badge-{{ $transferStyles[$transferKey] ?? 'light' }}">API {{ ucfirst($transferKey) }}</span>
-                            <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">Receiver: {{ $order->adminStatusLabel() }}</span>
-                            <span class="orders-pill badge-light">Customer: {{ $order->statusLabel() }}</span>
-                        </div>
-
-                        @php
-                            $receiverStatusesMobile = [
-                                'pending' => 'Pending',
-                                'confirmed' => 'Confirmed',
-                                'kolkata_warehouse' => 'Kolkata Warehouse',
-                                'shipped' => 'Shipped',
-                                'dhaka_warehouse' => 'Dhaka Warehouse',
-                                'ready_for_delivery' => 'Ready for Delivery',
-                                'dispatched' => 'Dispatched',
-                                'delivered' => 'Delivered',
-                                'cancelled' => 'Cancelled',
-                            ];
-                        @endphp
-                        <div class="orders-app-card-field">
-                            <label>Match Kolkata 2 Dhaka status</label>
-                            <form action="{{ route('admin.orders.receiver-status', $order) }}" method="POST" class="orders-status-form">
-                                @csrf
-                                @method('PATCH')
-                                <select name="admin_status" class="form-control orders-status-select orders-status-select--app" onchange="this.form.submit()">
-                                    <option value="" disabled @selected(! filled($order->receiver_status))>— Select status —</option>
-                                    @foreach ($receiverStatusesMobile as $value => $label)
-                                        <option value="{{ $value }}" @selected(($order->receiver_status ?: '') === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </form>
+                            <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ $order->statusLabel() }}</span>
                         </div>
 
                         <div class="orders-app-card-field">
-                            <label>Local status / transfer</label>
+                            <label>Status</label>
                             <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="orders-status-form">
                                 @csrf
                                 @method('PATCH')
                                 <select name="status" class="form-control orders-status-select orders-status-select--app" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};">
-                                    @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
-                                        <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
+                                    @foreach (App\Models\Order::workflowStatusOptions() as $value => $label)
+                                        <option value="{{ $value }}" @selected($order->workflowStatusValue() === $value)>{{ $label }}</option>
                                     @endforeach
                                 </select>
                             </form>
@@ -248,39 +220,14 @@
                                 </td>
                                 <td>
                                     <div class="mb-1">
-                                        <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ $order->adminStatusLabel() }}</span>
-                                        <div class="small text-muted mt-1">Customer: {{ $order->statusLabel() }}</div>
+                                        <span class="orders-app-status-pill" style="background:{{ $statusStyle['bg'] }};color:{{ $statusStyle['text'] }}">{{ $order->statusLabel() }}</span>
                                     </div>
-                                    @php
-                                        $receiverStatuses = [
-                                            'pending' => 'Pending',
-                                            'confirmed' => 'Confirmed',
-                                            'kolkata_warehouse' => 'Kolkata Warehouse',
-                                            'shipped' => 'Shipped',
-                                            'dhaka_warehouse' => 'Dhaka Warehouse',
-                                            'ready_for_delivery' => 'Ready for Delivery',
-                                            'dispatched' => 'Dispatched',
-                                            'delivered' => 'Delivered',
-                                            'cancelled' => 'Cancelled',
-                                        ];
-                                        $currentReceiver = $order->receiver_status ?: '';
-                                    @endphp
-                                    <form action="{{ route('admin.orders.receiver-status', $order) }}" method="POST" class="orders-status-form mb-1">
-                                        @csrf
-                                        @method('PATCH')
-                                        <select name="admin_status" class="form-control form-control-sm orders-status-select" onchange="this.form.submit()" title="Match Kolkata 2 Dhaka status (shown to customer)">
-                                            <option value="" disabled @selected($currentReceiver === '')>— Receiver status —</option>
-                                            @foreach ($receiverStatuses as $value => $label)
-                                                <option value="{{ $value }}" @selected($currentReceiver === $value)>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </form>
                                     <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="orders-status-form">
                                         @csrf
                                         @method('PATCH')
-                                        <select name="status" class="form-control form-control-sm orders-status-select" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};" title="Local status / trigger transfer">
-                                            @foreach (['pending','processing','shipped','completed','cancelled'] as $status)
-                                                <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
+                                        <select name="status" class="form-control form-control-sm orders-status-select" onchange="this.form.submit()" style="--status-bg: {{ $statusStyle['bg'] }}; --status-text: {{ $statusStyle['text'] }};" title="One status for admin + customer. Processing transfers to API.">
+                                            @foreach (App\Models\Order::workflowStatusOptions() as $value => $label)
+                                                <option value="{{ $value }}" @selected($order->workflowStatusValue() === $value)>{{ $label }}</option>
                                             @endforeach
                                         </select>
                                     </form>

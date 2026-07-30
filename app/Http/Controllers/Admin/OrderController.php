@@ -526,84 +526,79 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse
     {
         $adminStatuses = \App\Http\Controllers\Api\OrderStatusUpdateController::ADMIN_STATUSES;
-        $localStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+        $allowed = array_keys(Order::workflowStatusOptions());
 
-        // Receiver workflow status (same labels as Kolkata 2 Dhaka / status API)
-        $incoming = $request->input('admin_status') ?: $request->input('status');
-        $normalizedAdmin = Order::normalizeAdminStatus(is_string($incoming) ? $incoming : null);
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in($allowed)],
+            'admin_status' => ['nullable', 'string', Rule::in($adminStatuses)],
+        ]);
 
-        if (
-            $request->filled('admin_status')
-            || (is_string($incoming) && in_array($normalizedAdmin, $adminStatuses, true) && ! in_array($incoming, $localStatuses, true))
-        ) {
-            $validated = $request->validate([
-                'admin_status' => ['nullable', 'string', Rule::in($adminStatuses)],
-                'status' => ['nullable', 'string', Rule::in(array_merge($localStatuses, $adminStatuses))],
-            ]);
+        $incoming = $validated['admin_status'] ?? $validated['status'];
+        $normalized = Order::normalizeAdminStatus($incoming) ?: $incoming;
 
-            $adminStatus = Order::normalizeAdminStatus($validated['admin_status'] ?? $validated['status'] ?? null);
+        // Processing → transfer to sale API; one status "Processing" until API sends update.
+        if ($normalized === 'processing') {
+            $wasProcessing = $order->status === 'processing';
+            $order->status = 'processing';
+            $order->receiver_status = null;
+            $order->save();
 
-            if (! $adminStatus || ! in_array($adminStatus, $adminStatuses, true)) {
-                return back()->with('error', 'Invalid receiver status.');
+            $message = 'Order status updated to Processing.';
+
+            if (! $wasProcessing) {
+                $message .= $transfer->transfer($order->fresh())
+                    ? ' Order transferred to API site.'
+                    : ' Order transfer did not complete. Check transfer status.';
             }
 
+            return back()->with('success', $message);
+        }
+
+        // Pending (before/without receiver workflow)
+        if ($normalized === 'pending' && ! $request->filled('admin_status')) {
+            $order->status = 'pending';
+            $order->receiver_status = null;
+            $order->save();
+
+            return back()->with('success', 'Order status updated to Pending.');
+        }
+
+        // Completed (local) maps to delivered workflow
+        if ($normalized === 'completed') {
+            $normalized = 'delivered';
+        }
+
+        // API workflow statuses — same label for admin + customer
+        if (in_array($normalized, $adminStatuses, true)) {
             $order->applyReceiverStatusUpdate(
-                $adminStatus,
+                $normalized,
                 null,
                 null,
-                'Updated from admin to match receiver site.',
+                'Status updated.',
             );
             $order->save();
 
             return back()->with(
                 'success',
-                'Receiver status set to '.$order->statusLabel().'. Customer account shows the same status.'
+                'Status updated to '.$order->statusLabel().' (admin and customer see the same).'
             );
         }
 
-        $validated = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,completed,cancelled',
-        ]);
-
-        $wasProcessing = $order->status === 'processing';
-        $order->update($validated);
-
-        // Manual local status change clears stale receiver label unless cancelled/completed path needs it
-        if ($order->receiver_status && ! in_array($validated['status'], ['cancelled'], true)) {
-            // Keep receiver_status; display still prefers it via statusLabel()
+        // Fallback local statuses (e.g. shipped without receiver key)
+        $order->status = $normalized;
+        if (in_array($normalized, ['shipped', 'cancelled'], true)) {
+            $order->receiver_status = $normalized === 'shipped' ? 'shipped' : 'cancelled';
         }
+        $order->save();
 
-        $message = 'Order status updated.';
-
-        if (! $wasProcessing && $order->status === 'processing') {
-            $message .= $transfer->transfer($order)
-                ? ' Order transferred to API site.'
-                : ' Order transfer did not complete. Check transfer status.';
-        }
-
-        return back()->with('success', $message);
+        return back()->with('success', 'Order status updated to '.$order->statusLabel().'.');
     }
 
     public function updateReceiverStatus(Request $request, Order $order): RedirectResponse
     {
-        $adminStatuses = \App\Http\Controllers\Api\OrderStatusUpdateController::ADMIN_STATUSES;
+        $request->merge(['status' => $request->input('admin_status')]);
 
-        $validated = $request->validate([
-            'admin_status' => ['required', 'string', Rule::in($adminStatuses)],
-        ]);
-
-        $order->applyReceiverStatusUpdate(
-            $validated['admin_status'],
-            null,
-            null,
-            'Updated from admin to match receiver site.',
-        );
-        $order->save();
-
-        return back()->with(
-            'success',
-            'Status synced: '.$order->statusLabel().' (customer sees the same).'
-        );
+        return $this->updateStatus($request, $order, app(OrderTransferService::class));
     }
 
     public function approve(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse
