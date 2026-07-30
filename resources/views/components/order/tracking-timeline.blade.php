@@ -1,10 +1,11 @@
 @props(['order'])
 
 @php
-    $steps = \App\Models\Order::trackingSteps();
+    $steps = $order->trackingStepsForDisplay();
     $currentIndex = $order->trackingStepIndex();
     $isCancelled = $order->isCancelled();
     $progress = $order->trackingProgressPercent();
+    $stepCount = max(1, count($steps));
 @endphp
 
 <div class="order-track-timeline" data-progress="{{ $progress }}" data-cancelled="{{ $isCancelled ? '1' : '0' }}">
@@ -22,38 +23,37 @@
         </div>
     @endif
 
-    {{-- Desktop horizontal timeline --}}
-    <div class="hidden md:block">
-        <div class="relative px-4 pt-2 pb-4">
-            <div class="order-track-rail absolute left-[12.5%] right-[12.5%] top-8 h-1 rounded-full bg-border"></div>
-            <div class="order-track-rail-fill absolute left-[12.5%] top-8 h-1 rounded-full bg-brand-600" style="width: 0%; --track-target-width: {{ $isCancelled ? 0 : $progress }}%;"></div>
+    <div class="hidden md:block overflow-x-auto">
+        <div class="relative px-4 pt-2 pb-4" style="min-width: {{ max(640, $stepCount * 110) }}px">
+            <div class="order-track-rail absolute left-[6%] right-[6%] top-8 h-1 rounded-full bg-border"></div>
+            <div class="order-track-rail-fill absolute left-[6%] top-8 h-1 rounded-full bg-brand-600" style="width: 0%; --track-target-width: {{ $isCancelled ? 0 : $progress }}%;"></div>
 
-            <ol class="relative grid grid-cols-4 gap-2">
+            <ol class="relative grid gap-2" style="grid-template-columns: repeat({{ $stepCount }}, minmax(0, 1fr));">
                 @foreach ($steps as $index => $step)
                     @php
                         $isComplete = ! $isCancelled && $index < $currentIndex;
                         $isCurrent = ! $isCancelled && $index === $currentIndex;
                         $isUpcoming = ! $isCancelled && $index > $currentIndex;
                     @endphp
-                    <li class="order-track-step flex flex-col items-center text-center" style="--step-delay: {{ $index * 0.15 }}s">
+                    <li class="order-track-step flex flex-col items-center text-center" style="--step-delay: {{ $index * 0.1 }}s">
                         <div @class([
-                            'order-track-node relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-2 transition-all duration-500',
+                            'order-track-node relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-500',
                             'border-brand-600 bg-brand-600 text-white shadow-lg shadow-brand-600/30 order-track-node--current' => $isCurrent,
                             'border-brand-600 bg-brand-600 text-white order-track-node--done' => $isComplete,
                             'border-border bg-surface-elevated text-ink-muted' => $isUpcoming || $isCancelled,
                         ])>
                             @if ($isComplete)
-                                <svg class="order-track-check h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="order-track-check h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                                 </svg>
                             @elseif ($step['icon'] === 'clipboard')
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                             @elseif ($step['icon'] === 'cog')
-                                <svg class="h-6 w-6 {{ $isCurrent ? 'order-track-spin' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <svg class="h-5 w-5 {{ $isCurrent ? 'order-track-spin' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             @elseif ($step['icon'] === 'truck')
-                                <svg class="h-6 w-6 {{ $isCurrent ? 'order-track-bounce' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m10 0h2m-2 0a2 2 0 104 0m-6 0a2 2 0 11-4 0m8-6h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16h-4"/></svg>
+                                <svg class="h-5 w-5 {{ $isCurrent ? 'order-track-bounce' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m10 0h2m-2 0a2 2 0 104 0m-6 0a2 2 0 11-4 0m8-6h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16h-4"/></svg>
                             @else
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             @endif
 
                             @if ($isCurrent)
@@ -61,18 +61,17 @@
                             @endif
                         </div>
                         <p @class([
-                            'mt-4 text-sm font-semibold',
+                            'mt-3 text-xs font-semibold leading-snug',
                             'text-brand-700' => $isComplete || $isCurrent,
                             'text-ink-muted' => $isUpcoming || $isCancelled,
                         ])>{{ $step['label'] }}</p>
-                        <p class="mt-1 max-w-[9rem] text-xs text-ink-muted">{{ $step['description'] }}</p>
+                        <p class="mt-1 max-w-[7.5rem] text-[11px] text-ink-muted">{{ $step['description'] }}</p>
                     </li>
                 @endforeach
             </ol>
         </div>
     </div>
 
-    {{-- Mobile vertical timeline --}}
     <div class="md:hidden">
         <ol class="relative space-y-0 pl-2">
             @foreach ($steps as $index => $step)
@@ -82,7 +81,7 @@
                     $isUpcoming = ! $isCancelled && $index > $currentIndex;
                     $isLast = $index === count($steps) - 1;
                 @endphp
-                <li class="order-track-step relative flex gap-4 pb-8 last:pb-0" style="--step-delay: {{ $index * 0.12 }}s">
+                <li class="order-track-step relative flex gap-4 pb-8 last:pb-0" style="--step-delay: {{ $index * 0.1 }}s">
                     @if (! $isLast)
                         <div class="absolute left-[1.65rem] top-14 bottom-0 w-0.5 bg-border">
                             <div @class([

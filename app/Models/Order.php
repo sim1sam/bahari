@@ -189,10 +189,14 @@ class Order extends Model
     }
 
     /**
-     * Customer-facing status (simple tracking steps).
+     * Customer-facing status key (for timeline / colors).
      */
     public function customerFacingStatus(): string
     {
+        if (filled($this->receiver_status)) {
+            return self::mapReceiverStatusToLocal($this->receiver_status);
+        }
+
         return self::mapReceiverStatusToLocal($this->status);
     }
 
@@ -208,14 +212,22 @@ class Order extends Model
         return $this->statusLabel();
     }
 
+    /**
+     * Customer + admin badge label — same text when receiver status exists.
+     */
     public function statusLabel(): string
     {
+        if (filled($this->receiver_status)) {
+            return self::formatStatusLabel($this->receiver_status);
+        }
+
         return match ($this->customerFacingStatus()) {
             'processing' => 'Processing',
             'shipped' => 'Shipped',
             'delivered' => 'Delivered',
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
+            'confirmed' => 'Confirmed',
             default => 'Pending',
         };
     }
@@ -231,8 +243,64 @@ class Order extends Model
         ];
     }
 
+    /**
+     * Receiver transfer workflow shown to customers after status sync.
+     *
+     * @return array<int, array{key: string, label: string, description: string, icon: string}>
+     */
+    public static function receiverTrackingSteps(): array
+    {
+        return [
+            ['key' => 'pending', 'label' => 'Pending', 'description' => 'Order received', 'icon' => 'clipboard'],
+            ['key' => 'confirmed', 'label' => 'Confirmed', 'description' => 'Order confirmed', 'icon' => 'cog'],
+            ['key' => 'kolkata_warehouse', 'label' => 'Kolkata Warehouse', 'description' => 'At Kolkata warehouse', 'icon' => 'cog'],
+            ['key' => 'shipped', 'label' => 'Shipped', 'description' => 'Shipped toward Dhaka', 'icon' => 'truck'],
+            ['key' => 'dhaka_warehouse', 'label' => 'Dhaka Warehouse', 'description' => 'At Dhaka warehouse', 'icon' => 'truck'],
+            ['key' => 'ready_for_delivery', 'label' => 'Ready for Delivery', 'description' => 'Ready for local delivery', 'icon' => 'truck'],
+            ['key' => 'dispatched', 'label' => 'Dispatched', 'description' => 'Out for delivery', 'icon' => 'truck'],
+            ['key' => 'delivered', 'label' => 'Delivered', 'description' => 'Delivered successfully', 'icon' => 'check'],
+        ];
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string, description: string, icon: string}>
+     */
+    public function trackingStepsForDisplay(): array
+    {
+        if (filled($this->receiver_status) || filled($this->external_transferred_at)) {
+            return self::receiverTrackingSteps();
+        }
+
+        return self::trackingSteps();
+    }
+
     public function trackingStepIndex(): int
     {
+        if (filled($this->receiver_status) || filled($this->external_transferred_at)) {
+            $key = self::normalizeStatusKey($this->receiver_status ?: $this->status);
+
+            if (in_array($key, ['cancelled', 'canceled', 'cancel'], true)) {
+                return -1;
+            }
+
+            $keys = array_column(self::receiverTrackingSteps(), 'key');
+            $idx = array_search($key, $keys, true);
+
+            if ($idx === false) {
+                // Fall back to mapped local step inside receiver timeline.
+                $mapped = self::mapReceiverStatusToLocal($key);
+
+                return match ($mapped) {
+                    'processing' => 1,
+                    'shipped' => 3,
+                    'delivered', 'completed' => 7,
+                    default => 0,
+                };
+            }
+
+            return (int) $idx;
+        }
+
         return match ($this->customerFacingStatus()) {
             'processing' => 1,
             'shipped' => 2,
@@ -254,9 +322,9 @@ class Order extends Model
         }
 
         $index = $this->trackingStepIndex();
-        $steps = count(self::trackingSteps());
+        $steps = count($this->trackingStepsForDisplay());
 
-        if ($steps <= 1) {
+        if ($steps <= 1 || $index < 0) {
             return 0;
         }
 
@@ -266,7 +334,7 @@ class Order extends Model
     public function statusColor(): string
     {
         return match ($this->customerFacingStatus()) {
-            'processing' => 'bg-blue-100 text-blue-700',
+            'processing', 'confirmed' => 'bg-blue-100 text-blue-700',
             'shipped' => 'bg-purple-100 text-purple-700',
             'delivered', 'completed' => 'bg-green-100 text-green-700',
             'cancelled' => 'bg-red-100 text-red-700',
@@ -296,13 +364,14 @@ class Order extends Model
             in_array($key, [
                 'shipped', 'shipping', 'ship', 'in_transit', 'transit',
                 'ship_to_dhaka', 'shipped_to_dhaka', 'to_dhaka', 'dhaka',
-                'warehouse', 'in_warehouse', 'dhaka_warehouse',
+                'warehouse', 'in_warehouse', 'dhaka_warehouse', 'kolkata_warehouse',
+                'ready_for_delivery', 'ready_delivery',
                 'parcel', 'parcel_ready', 'ready_parcel',
                 'parcel_dispatch', 'parcel_dispatched', 'parcel_dispatching',
                 'dispatch', 'dispatched', 'dispatching', 'courier', 'courier_dispatch',
             ], true) => 'shipped',
             in_array($key, [
-                'processing', 'process',
+                'processing', 'process', 'confirmed', 'confirm',
                 'purchase', 'purchased', 'purchasing',
                 'receiving', 'received', 'receive', 'reciving', 'reciveing',
                 'ordered', 'buying', 'sourcing',
@@ -331,10 +400,18 @@ class Order extends Model
             return 'Pending';
         }
 
-        // Keep known phrases readable
         $normalized = self::normalizeStatusKey($status);
 
         return match ($normalized) {
+            'pending' => 'Pending',
+            'confirmed' => 'Confirmed',
+            'kolkata_warehouse' => 'Kolkata Warehouse',
+            'shipped' => 'Shipped',
+            'dhaka_warehouse' => 'Dhaka Warehouse',
+            'ready_for_delivery' => 'Ready for Delivery',
+            'dispatched' => 'Dispatched',
+            'delivered' => 'Delivered',
+            'cancelled', 'canceled' => 'Cancelled',
             'parcel_dispatch', 'parcel_dispatched' => 'Parcel Dispatch',
             'ship_to_dhaka', 'shipped_to_dhaka' => 'Ship to Dhaka',
             default => Str::title(str_replace(['_', '-'], ' ', $status)),
@@ -342,16 +419,17 @@ class Order extends Model
     }
 
     /**
-     * Receiver API update: store exact admin/receiver status.
-     * Customer status is left for admin to change manually (unless still pending).
+     * Receiver API update: store exact admin_status and sync customer-visible status.
      */
     public function applyReceiverStatusUpdate(string $receiverStatus, ?string $paymentStatus = null, ?float $amountPaid = null, ?string $message = null): void
     {
         $this->receiver_status = trim($receiverStatus);
 
-        // Suggest customer status only while order is still pending.
-        if ($this->status === 'pending' || blank($this->status)) {
-            $this->status = self::mapReceiverStatusToLocal($receiverStatus);
+        // Keep customer tracking in sync with receiver admin status.
+        $this->status = self::mapReceiverStatusToLocal($receiverStatus);
+
+        if (in_array($this->status, ['completed', 'delivered'], true) && ! $this->completed_at) {
+            $this->completed_at = now();
         }
 
         if ($paymentStatus !== null) {

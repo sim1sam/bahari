@@ -265,7 +265,7 @@
                         <p><code>amount, payment_method, bank_name, notes, created_at</code></p>
                         <hr>
                         <p class="transfer-side-label">Incoming status update to this site</p>
-                        <p class="mb-0"><code>POST {{ url('/api/orders/status-update') }}</code> with <code>order_number, status, payment_status, amount_paid, message</code></p>
+                        <p class="mb-0"><code>POST {{ url('/api/orders/status-update') }}</code> with <code>order_number, admin_status</code> (optional: <code>payment_status, amount_paid, message</code>). <code>admin_status</code>: pending, confirmed, kolkata_warehouse, shipped, dhaka_warehouse, ready_for_delivery, dispatched, delivered, cancelled</p>
                     </div>
                 </div>
             </div>
@@ -362,11 +362,9 @@ $response = Http::acceptJson()
         'Authorization' => 'Bearer YOUR_ACCESS_TOKEN',
     ])
     ->post('https://your-main-site.com/api/orders/status-update', [
-        'order_number' => 'BF-12345678',
-        'status' => 'shipped',
-        'payment_status' => 'paid',
-        'amount_paid' => 2200,
-        'message' => 'Updated from receiver site',
+        'order_number' => 'ORD-1001',
+        'admin_status' => 'kolkata_warehouse',
+        // optional: payment_status, amount_paid, message
     ]);
 
 if ($response->successful()) {

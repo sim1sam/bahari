@@ -103,15 +103,16 @@ Http::acceptJson()
         'Authorization' => 'Bearer PASTE_ACCESS_TOKEN_HERE',
     ])
     ->post('https://MAIN-SITE-DOMAIN.com/api/orders/status-update', [
-        'order_number' => 'BF-12345678',
-        // Receiver admin statuses (shown as-is in admin):
-        // purchase | receiving | shipping | parcel | parcel dispatch | dispatched
-        'status' => 'parcel dispatch',
+        'order_number' => 'ORD-1001',
+        // admin_status values:
+        // pending | confirmed | kolkata_warehouse | shipped | dhaka_warehouse
+        // ready_for_delivery | dispatched | delivered | cancelled
+        'admin_status' => 'kolkata_warehouse',
         'payment_status' => 'paid', // optional
         'amount_paid' => 2200, // optional
-        'message' => 'Dispatched to courier', // optional
+        'message' => 'Arrived at Kolkata warehouse', // optional
     ]);
-    // Customer status is separate and changed manually by admin on this site.
+    // Same admin_status is shown to customers on this site.
 @endverbatim</code></pre>
         </div>
     </div>
