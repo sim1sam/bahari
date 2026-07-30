@@ -189,6 +189,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
             Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
             Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+            Route::patch('orders/{order}/receiver-status', [OrderController::class, 'updateReceiverStatus'])->name('orders.receiver-status');
             Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
             Route::post('orders/{order}/retransfer', [OrderController::class, 'retransfer'])->name('orders.retransfer');
             Route::post('orders/{order}/payments', [OrderController::class, 'storePayment'])->name('orders.payments.store');

@@ -53,6 +53,9 @@ class OrderTransferService
                     'external_transferred_at' => now(),
                 ])->save();
 
+                // If receiver returns admin_status in the same API response, apply it.
+                $this->applyStatusFromTransferResponse($order, $response->json() ?? []);
+
                 return true;
             }
 
@@ -70,6 +73,39 @@ class OrderTransferService
         return false;
     }
 
+    /**
+     * Apply admin_status returned by the receiver in the transfer API response.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function applyStatusFromTransferResponse(Order $order, array $data): void
+    {
+        $status = $data['admin_status']
+            ?? $data['receiver_status']
+            ?? data_get($data, 'order.admin_status')
+            ?? data_get($data, 'order.receiver_status')
+            ?? data_get($data, 'data.admin_status')
+            ?? null;
+
+        if (! filled($status) || ! is_string($status)) {
+            return;
+        }
+
+        $normalized = Order::normalizeAdminStatus($status);
+
+        if (! $normalized || ! in_array($normalized, \App\Http\Controllers\Api\OrderStatusUpdateController::ADMIN_STATUSES, true)) {
+            return;
+        }
+
+        $order->applyReceiverStatusUpdate(
+            $normalized,
+            isset($data['payment_status']) && is_string($data['payment_status']) ? $data['payment_status'] : null,
+            isset($data['amount_paid']) && is_numeric($data['amount_paid']) ? (float) $data['amount_paid'] : null,
+            isset($data['message']) && is_string($data['message']) ? $data['message'] : 'Status from transfer response.',
+        );
+        $order->save();
+    }
+
     private function payload(Order $order): array
     {
         $order->loadMissing(['items', 'payments', 'user']);
@@ -81,8 +117,20 @@ class OrderTransferService
             : null;
 
         return [
+            // Same Order Transfer API — receiver posts status updates here (same API key/token).
+            'status_callback_url' => url('/api/orders'),
+            'api' => [
+                'status_update_url' => url('/api/orders'),
+                'status_update_url_alt' => url('/api/orders/status-update'),
+                'auth' => [
+                    'header_api_key' => 'X-API-Key',
+                    'header_token' => 'Authorization: Bearer {access_token}',
+                ],
+            ],
             'order' => [
                 'number' => $order->number,
+                'order_number' => $order->number,
+                'source_order_number' => $order->number,
                 'status' => $order->status,
                 'type' => $order->order_type,
                 'customer_name' => $order->customer_name,

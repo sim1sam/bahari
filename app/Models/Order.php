@@ -419,14 +419,83 @@ class Order extends Model
     }
 
     /**
+     * Find order by number used in transfer/status sync.
+     * Accepts BF-..., OR-BF-..., ORD-..., INV-BF-... from receiver sites.
+     */
+    public static function findByTransferNumber(string $orderNumber): ?self
+    {
+        $raw = trim($orderNumber);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        $exact = static::query()->where('number', $raw)->first();
+        if ($exact) {
+            return $exact;
+        }
+
+        $stripped = preg_replace('/^(OR-|ORD-|INV-)+/i', '', $raw) ?: $raw;
+        if ($stripped !== $raw) {
+            $byStripped = static::query()->where('number', $stripped)->first();
+            if ($byStripped) {
+                return $byStripped;
+            }
+        }
+
+        if (preg_match('/(BF-[A-Z0-9]+)/i', $raw, $matches)) {
+            $byBf = static::query()->where('number', $matches[1])->first();
+            if ($byBf) {
+                return $byBf;
+            }
+        }
+
+        return static::query()
+            ->where('number', 'like', '%'.$stripped)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * Normalize receiver admin_status (slug or label) to canonical key.
+     */
+    public static function normalizeAdminStatus(?string $status): ?string
+    {
+        $key = self::normalizeStatusKey($status);
+
+        if ($key === '') {
+            return null;
+        }
+
+        $aliases = [
+            'kolkata' => 'kolkata_warehouse',
+            'kolkata_ware_house' => 'kolkata_warehouse',
+            'at_kolkata_warehouse' => 'kolkata_warehouse',
+            'dhaka' => 'dhaka_warehouse',
+            'at_dhaka_warehouse' => 'dhaka_warehouse',
+            'ready_delivery' => 'ready_for_delivery',
+            'ready' => 'ready_for_delivery',
+            'out_for_delivery' => 'dispatched',
+            'canceled' => 'cancelled',
+            'cancel' => 'cancelled',
+            'complete' => 'delivered',
+            'completed' => 'delivered',
+            'confirm' => 'confirmed',
+        ];
+
+        return $aliases[$key] ?? $key;
+    }
+
+    /**
      * Receiver API update: store exact admin_status and sync customer-visible status.
      */
     public function applyReceiverStatusUpdate(string $receiverStatus, ?string $paymentStatus = null, ?float $amountPaid = null, ?string $message = null): void
     {
-        $this->receiver_status = trim($receiverStatus);
+        $normalized = self::normalizeAdminStatus($receiverStatus) ?: trim($receiverStatus);
+        $this->receiver_status = $normalized;
 
         // Keep customer tracking in sync with receiver admin status.
-        $this->status = self::mapReceiverStatusToLocal($receiverStatus);
+        $this->status = self::mapReceiverStatusToLocal($normalized);
 
         if (in_array($this->status, ['completed', 'delivered'], true) && ! $this->completed_at) {
             $this->completed_at = now();

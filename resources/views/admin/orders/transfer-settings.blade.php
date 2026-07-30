@@ -16,7 +16,7 @@
             <div>
                 <span class="transfer-eyebrow">Order management</span>
                 <h2>Order API Settings</h2>
-                <p>Configure the remote site that receives orders when status changes to Processing.</p>
+                <p>One API for outbound transfer and inbound status updates. Same API key and access token both ways.</p>
                 <div class="transfer-hero-meta">
                     <span class="transfer-hero-chip">
                         <i class="fas fa-globe"></i> {{ $setting->site_name ?: 'Transfer site' }}
@@ -237,14 +237,16 @@
                         </div>
                     </div>
                     <div class="transfer-side-body">
-                        <p class="transfer-side-label">Headers sent</p>
+                        <p class="transfer-side-label">Headers (both directions)</p>
                         <ul class="transfer-code-list">
                             <li><code>Accept: application/json</code></li>
                             <li><code>X-API-Key: your API key</code></li>
                             <li><code>Authorization: Bearer your_access_token</code></li>
                         </ul>
-                        <p class="transfer-side-label mb-0">Payload includes</p>
-                        <p class="mb-0 text-muted">order, items, and payments.</p>
+                        <p class="transfer-side-label">Outbound (this site → receiver)</p>
+                        <p class="text-muted">POST to your configured domain + endpoint path with <code>order</code>, <code>items</code>, <code>payments</code>, and <code>status_callback_url</code>.</p>
+                        <p class="transfer-side-label mb-0">Inbound status (receiver → this site)</p>
+                        <p class="mb-0 text-muted"><code>POST {{ url('/api/orders') }}</code> with <code>order_number</code> + <code>admin_status</code>. Same credentials.</p>
                     </div>
                 </div>
 
@@ -258,14 +260,20 @@
                     </div>
                     <div class="transfer-side-body transfer-side-body--compact">
                         <p class="transfer-side-label">order</p>
-                        <p><code>number, status, type, customer_name, customer_email, customer_phone, address, city, zip, payment_method, payment_status, reference_code, bank_name, notes, coupon_code, subtotal, discount, shipping, total, amount_paid, created_at</code></p>
+                        <p><code>number, order_number, source_order_number, status, type, customer_name, customer_email, customer_phone, address, city, zip, payment_method, payment_status, reference_code, bank_name, notes, coupon_code, subtotal, discount, shipping, total, amount_paid, created_at</code></p>
                         <p class="transfer-side-label">items[]</p>
-                        <p><code>product_slug, product_name, product_link, image, size, color, quantity, price</code></p>
+                        <p><code>product_slug, product_name, brand, product_link, image, size, color, quantity, price</code></p>
                         <p class="transfer-side-label">payments[]</p>
                         <p><code>amount, payment_method, bank_name, notes, created_at</code></p>
+                        <p class="transfer-side-label">Top-level</p>
+                        <p><code>status_callback_url</code> → <code>{{ url('/api/orders') }}</code></p>
                         <hr>
-                        <p class="transfer-side-label">Incoming status update to this site</p>
-                        <p class="mb-0"><code>POST {{ url('/api/orders/status-update') }}</code> with <code>order_number, admin_status</code> (optional: <code>payment_status, amount_paid, message</code>). <code>admin_status</code>: pending, confirmed, kolkata_warehouse, shipped, dhaka_warehouse, ready_for_delivery, dispatched, delivered, cancelled</p>
+                        <p class="transfer-side-label">Incoming status update (same API)</p>
+                        <p><code>POST {{ url('/api/orders') }}</code></p>
+                        <p><code>POST {{ url('/api/orders/import') }}</code></p>
+                        <p><code>POST {{ url('/api/orders/status-update') }}</code></p>
+                        <p>Body: <code>order_number</code>, <code>admin_status</code> (optional: <code>payment_status</code>, <code>amount_paid</code>, <code>message</code>)</p>
+                        <p class="mb-0"><strong>admin_status:</strong> pending, confirmed, kolkata_warehouse, shipped, dhaka_warehouse, ready_for_delivery, dispatched, delivered, cancelled</p>
                     </div>
                 </div>
             </div>
@@ -275,7 +283,7 @@
             <div class="transfer-card-head">
                 <div>
                     <h3 class="mb-0">Laravel Receiver Script Example</h3>
-                    <p class="mb-0 text-muted">Add this on the other website. Keep the API key and token same as this setting page.</p>
+                    <p class="mb-0 text-muted">Add this on the other website. Keep the API key and token same as this setting page. Return <code>admin_status</code> in the response if you want this site to sync status from the same transfer call.</p>
                 </div>
             </div>
             <div class="transfer-card-body p-0">
@@ -339,6 +347,7 @@ Route::post('/orders/import', function (Request $request) {
     return response()->json([
         'message' => 'Order received',
         'order_number' => $data['order']['number'],
+        'admin_status' => 'pending',
     ]);
 });
 @endverbatim</code></pre>
@@ -348,29 +357,29 @@ Route::post('/orders/import', function (Request $request) {
         <div class="transfer-card transfer-card--code">
             <div class="transfer-card-head">
                 <div>
-                    <h3 class="mb-0">Send Status Update Back To This Site</h3>
-                    <p class="mb-0 text-muted">Use this from the other website when its order status changes. It uses the same API key and access token.</p>
+                    <h3 class="mb-0">Send Status Update Back To This Site (same API)</h3>
+                    <p class="mb-0 text-muted">POST to <code>{{ url('/api/orders') }}</code> with the same API key and access token whenever status changes on the receiver.</p>
                 </div>
             </div>
             <div class="transfer-card-body p-0">
-<pre class="transfer-code-block mb-0"><code>@verbatim
-use Illuminate\Support\Facades\Http;
+<pre class="transfer-code-block mb-0"><code>use Illuminate\Support\Facades\Http;
 
 $response = Http::acceptJson()
     ->withHeaders([
         'X-API-Key' => 'YOUR_API_KEY',
         'Authorization' => 'Bearer YOUR_ACCESS_TOKEN',
     ])
-    ->post('https://your-main-site.com/api/orders/status-update', [
-        'order_number' => 'ORD-1001',
+    ->post('{{ url('/api/orders') }}', [
+        // Use original website number BF-..., not only OR-BF-...
+        'order_number' => 'BF-A5045D18',
         'admin_status' => 'kolkata_warehouse',
         // optional: payment_status, amount_paid, message
     ]);
 
 if ($response->successful()) {
-    // status updated on main site
+    // same label shown to customers + admin on this site
 }
-@endverbatim</code></pre>
+</code></pre>
             </div>
         </div>
     </div>

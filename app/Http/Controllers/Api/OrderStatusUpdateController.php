@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderTransferSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class OrderStatusUpdateController extends Controller
@@ -33,16 +34,30 @@ class OrderStatusUpdateController extends Controller
         }
 
         if (! hash_equals((string) $setting->api_key, (string) $request->header('X-API-Key'))) {
+            Log::warning('Order status-update: invalid API key', [
+                'order_number' => $request->input('order_number'),
+            ]);
+
             return response()->json(['message' => 'Invalid API key.'], 401);
         }
 
         if (! hash_equals((string) $setting->access_token, (string) $request->bearerToken())) {
+            Log::warning('Order status-update: invalid access token', [
+                'order_number' => $request->input('order_number'),
+            ]);
+
             return response()->json(['message' => 'Invalid access token.'], 401);
         }
 
         // Prefer admin_status; keep legacy "status" for older receivers.
-        if ($request->filled('admin_status') && ! $request->filled('status')) {
-            $request->merge(['status' => $request->input('admin_status')]);
+        $rawStatus = $request->input('admin_status') ?: $request->input('status');
+        $normalizedStatus = Order::normalizeAdminStatus(is_string($rawStatus) ? $rawStatus : null);
+
+        if (filled($normalizedStatus)) {
+            $request->merge([
+                'admin_status' => $normalizedStatus,
+                'status' => $normalizedStatus,
+            ]);
         }
 
         $validated = $request->validate([
@@ -55,19 +70,30 @@ class OrderStatusUpdateController extends Controller
         ]);
 
         $adminStatus = $validated['admin_status']
-            ?? $validated['status']
+            ?? Order::normalizeAdminStatus($validated['status'] ?? null)
             ?? null;
 
-        if (! filled($adminStatus)) {
-            return response()->json(['message' => 'admin_status is required.'], 422);
+        if (! filled($adminStatus) || ! in_array($adminStatus, self::ADMIN_STATUSES, true)) {
+            return response()->json([
+                'message' => 'admin_status is invalid.',
+                'allowed' => self::ADMIN_STATUSES,
+                'received' => $rawStatus,
+            ], 422);
         }
 
-        $order = Order::query()
-            ->where('number', $validated['order_number'])
-            ->first();
+        $order = Order::findByTransferNumber($validated['order_number']);
 
         if (! $order) {
-            return response()->json(['message' => 'Order not found.'], 404);
+            Log::warning('Order status-update: order not found', [
+                'order_number' => $validated['order_number'],
+                'admin_status' => $adminStatus,
+            ]);
+
+            return response()->json([
+                'message' => 'Order not found.',
+                'order_number' => $validated['order_number'],
+                'hint' => 'Send the original website order number (e.g. BF-A5045D18), not only the receiver OR- prefix number.',
+            ], 404);
         }
 
         $order->applyReceiverStatusUpdate(
@@ -77,6 +103,13 @@ class OrderStatusUpdateController extends Controller
             $validated['message'] ?? 'Status updated by receiver.',
         );
         $order->save();
+
+        Log::info('Order status-update: applied', [
+            'order_number' => $order->number,
+            'received_order_number' => $validated['order_number'],
+            'admin_status' => $order->receiver_status,
+            'status' => $order->status,
+        ]);
 
         return response()->json([
             'message' => 'Order status updated.',

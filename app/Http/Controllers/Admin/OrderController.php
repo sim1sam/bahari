@@ -19,6 +19,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -524,12 +525,53 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse
     {
+        $adminStatuses = \App\Http\Controllers\Api\OrderStatusUpdateController::ADMIN_STATUSES;
+        $localStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+
+        // Receiver workflow status (same labels as Kolkata 2 Dhaka / status API)
+        $incoming = $request->input('admin_status') ?: $request->input('status');
+        $normalizedAdmin = Order::normalizeAdminStatus(is_string($incoming) ? $incoming : null);
+
+        if (
+            $request->filled('admin_status')
+            || (is_string($incoming) && in_array($normalizedAdmin, $adminStatuses, true) && ! in_array($incoming, $localStatuses, true))
+        ) {
+            $validated = $request->validate([
+                'admin_status' => ['nullable', 'string', Rule::in($adminStatuses)],
+                'status' => ['nullable', 'string', Rule::in(array_merge($localStatuses, $adminStatuses))],
+            ]);
+
+            $adminStatus = Order::normalizeAdminStatus($validated['admin_status'] ?? $validated['status'] ?? null);
+
+            if (! $adminStatus || ! in_array($adminStatus, $adminStatuses, true)) {
+                return back()->with('error', 'Invalid receiver status.');
+            }
+
+            $order->applyReceiverStatusUpdate(
+                $adminStatus,
+                null,
+                null,
+                'Updated from admin to match receiver site.',
+            );
+            $order->save();
+
+            return back()->with(
+                'success',
+                'Receiver status set to '.$order->statusLabel().'. Customer account shows the same status.'
+            );
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:pending,processing,shipped,completed,cancelled',
         ]);
 
         $wasProcessing = $order->status === 'processing';
         $order->update($validated);
+
+        // Manual local status change clears stale receiver label unless cancelled/completed path needs it
+        if ($order->receiver_status && ! in_array($validated['status'], ['cancelled'], true)) {
+            // Keep receiver_status; display still prefers it via statusLabel()
+        }
 
         $message = 'Order status updated.';
 
@@ -540,6 +582,28 @@ class OrderController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    public function updateReceiverStatus(Request $request, Order $order): RedirectResponse
+    {
+        $adminStatuses = \App\Http\Controllers\Api\OrderStatusUpdateController::ADMIN_STATUSES;
+
+        $validated = $request->validate([
+            'admin_status' => ['required', 'string', Rule::in($adminStatuses)],
+        ]);
+
+        $order->applyReceiverStatusUpdate(
+            $validated['admin_status'],
+            null,
+            null,
+            'Updated from admin to match receiver site.',
+        );
+        $order->save();
+
+        return back()->with(
+            'success',
+            'Status synced: '.$order->statusLabel().' (customer sees the same).'
+        );
     }
 
     public function approve(Request $request, Order $order, OrderTransferService $transfer): RedirectResponse

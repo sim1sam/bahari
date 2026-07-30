@@ -26,6 +26,10 @@
                     </div>
                     <span class="px-3 py-1.5 rounded-xl text-sm font-medium h-fit {{ $order->statusColor() }}">{{ $order->statusLabel() }}</span>
                 </div>
+                <div class="mt-5 border-t border-border pt-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-ink mb-4">Order Progress</p>
+                    <x-order.tracking-timeline :order="$order" />
+                </div>
             </div>
             @if ($order->isCustom())
                 <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-100 text-violet-700">Custom Order</span>
@@ -70,6 +74,13 @@
                         <button type="submit" class="px-4 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50">Delete Order</button>
                     </form>
                 @endif
+            </div>
+
+            <div class="account-panel mb-6">
+                <div class="account-panel-header"><h2 class="font-semibold">Order Progress</h2></div>
+                <div class="account-panel-body">
+                    <x-order.tracking-timeline :order="$order" />
+                </div>
             </div>
 
             <div class="grid grid-cols-3 gap-8">
