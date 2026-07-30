@@ -235,7 +235,7 @@ class ApiContentController extends Controller
 
         try {
             $storedPath = $images->persistLocalImage($item, $imagePath);
-            $processedPath = $logoService->applyLogoToReceivedItem($storedPath);
+            $processedPath = $logoService->applyLogoToReceivedItem($storedPath, null, (float) $item->price);
         } catch (ValidationException $e) {
             return back()->with('error', collect($e->errors())->flatten()->first() ?: 'Failed to apply logo.');
         } catch (\Throwable $e) {
@@ -309,7 +309,7 @@ class ApiContentController extends Controller
 
                 try {
                     $storedPath = $images->persistLocalImage($item, $imagePath);
-                    $processedPath = $logoService->applyLogoToReceivedItem($storedPath);
+                    $processedPath = $logoService->applyLogoToReceivedItem($storedPath, null, (float) $item->price);
                     $images->recordProcessedImage($item, $processedPath, $storedPath);
                     $processed++;
                 } catch (\Throwable) {
