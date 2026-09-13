@@ -162,9 +162,12 @@
                 </div>
             </div>
             <div class="settings-side-body">
-                <p class="settings-side-text mb-2">Footer menu links are managed under Homepage → Footer Links.</p>
+                <p class="settings-side-text mb-2">Footer menu links are managed under Homepage → Footer Links. Content pages (Contact Us, FAQs, Shipping, Returns) are under Pages.</p>
                 <a href="{{ route('admin.homepage.footer-links.index') }}" class="btn btn-primary btn-sm btn-block mb-2">
                     <i class="fas fa-link mr-1"></i> Footer Links
+                </a>
+                <a href="{{ route('admin.pages.index') }}" class="btn btn-outline-primary btn-sm btn-block mb-2">
+                    <i class="fas fa-file-alt mr-1"></i> Pages
                 </a>
                 <a href="{{ route('admin.newsletter.index') }}" class="btn btn-info btn-sm btn-block">
                     <i class="fas fa-envelope mr-1"></i> Newsletter Subscribers

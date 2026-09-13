@@ -13,6 +13,13 @@ return [
         'route' => 'admin.homepage.index',
         'active' => 'admin.homepage.*',
     ],
+    'pages' => [
+        'label' => 'Pages',
+        'icon' => 'fas fa-file-alt',
+        'route' => 'admin.pages.index',
+        'active' => 'admin.pages.*',
+        'permission' => 'homepage',
+    ],
     'products' => [
         'label' => 'Products',
         'icon' => 'fas fa-tshirt',

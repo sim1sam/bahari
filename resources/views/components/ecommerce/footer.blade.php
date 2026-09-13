@@ -49,9 +49,14 @@
                 </div>
             </div>
 
-            @if (count($shopLinks) > 0 && $site->footerShopTitle())
+            @php
+                $shopTitle = $site->footerShopTitle() ?: 'Shop';
+                $supportTitle = $site->footerSupportTitle() ?: 'Support';
+            @endphp
+
+            @if (count($shopLinks) > 0)
             <div>
-                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->footerShopTitle() }}</h3>
+                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $shopTitle }}</h3>
                 <ul class="space-y-2.5 text-sm text-zinc-400">
                     @foreach ($shopLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
@@ -60,9 +65,9 @@
             </div>
             @endif
 
-            @if (count($supportLinks) > 0 && $site->footerSupportTitle())
+            @if (count($supportLinks) > 0)
             <div>
-                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $site->footerSupportTitle() }}</h3>
+                <h3 class="font-semibold text-sm uppercase tracking-wider mb-4">{{ $supportTitle }}</h3>
                 <ul class="space-y-2.5 text-sm text-zinc-400">
                     @foreach ($supportLinks as $link)
                         <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>

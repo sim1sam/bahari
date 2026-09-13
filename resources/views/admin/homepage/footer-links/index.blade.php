@@ -6,7 +6,7 @@
 @section('content')
     @component('admin.homepage.partials.list-layout', [
         'title' => 'Footer Links',
-        'description' => 'Navigation links grouped under Shop and Support columns in the storefront footer.',
+        'description' => 'Navigation links for Shop, Support, and Legal. Support links can open Pages (Contact Us, FAQs, Shipping Info, Returns).',
         'createRoute' => route('admin.homepage.footer-links.create'),
         'createLabel' => 'Add Link',
         'items' => $links,
@@ -17,7 +17,7 @@
         @slot('tableHead')
             <th>Group</th>
             <th>Label</th>
-            <th>URL</th>
+            <th>Target</th>
             <th>Order</th>
             <th>Status</th>
             <th class="text-right">Actions</th>
@@ -27,7 +27,14 @@
             <tr>
                 <td><span class="settings-status settings-status--public">{{ App\Models\FooterLink::GROUPS[$link->group] ?? $link->group }}</span></td>
                 <td><strong>{{ $link->label }}</strong></td>
-                <td><code>{{ Str::limit($link->url, 40) }}</code></td>
+                <td>
+                    @if ($link->page)
+                        <span class="badge badge-info">Page</span>
+                        <code>{{ $link->page->title }}</code>
+                    @else
+                        <code>{{ Str::limit($link->url, 40) }}</code>
+                    @endif
+                </td>
                 <td>{{ $link->sort_order }}</td>
                 <td>
                     <span class="settings-status {{ $link->is_active ? 'settings-status--live' : 'settings-status--hidden' }}">

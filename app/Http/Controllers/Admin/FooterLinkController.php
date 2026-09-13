@@ -17,13 +17,16 @@ class FooterLinkController extends Controller
     public function index(): View
     {
         return view('admin.homepage.footer-links.index', [
-            'links' => FooterLink::orderBy('group')->orderBy('sort_order')->paginate(20),
+            'links' => FooterLink::with('page')->orderBy('group')->orderBy('sort_order')->paginate(20),
         ]);
     }
 
     public function create(): View
     {
-        return view('admin.homepage.footer-links.form', ['link' => new FooterLink]);
+        return view('admin.homepage.footer-links.form', [
+            'link' => new FooterLink,
+            'pages' => \App\Models\Page::query()->orderBy('title')->get(['id', 'title', 'slug']),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -36,7 +39,10 @@ class FooterLinkController extends Controller
 
     public function edit(FooterLink $footerLink): View
     {
-        return view('admin.homepage.footer-links.form', ['link' => $footerLink]);
+        return view('admin.homepage.footer-links.form', [
+            'link' => $footerLink,
+            'pages' => \App\Models\Page::query()->orderBy('title')->get(['id', 'title', 'slug']),
+        ]);
     }
 
     public function update(Request $request, FooterLink $footerLink): RedirectResponse
@@ -60,13 +66,23 @@ class FooterLinkController extends Controller
         $data = $request->validate([
             'group' => ['required', Rule::in(array_keys(FooterLink::GROUPS))],
             'label' => 'required|string|max:100',
-            'url' => 'required|string|max:500',
+            'page_id' => 'nullable|exists:pages,id',
+            'url' => 'nullable|string|max:500',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 
+        $data['page_id'] = $data['page_id'] ?? null;
         $data['sort_order'] = $data['sort_order'] ?? 0;
         $data['is_active'] = $request->boolean('is_active', true);
+
+        if (filled($data['page_id'])) {
+            $page = \App\Models\Page::find($data['page_id']);
+            $data['url'] = $page ? '/pages/'.$page->slug : ($data['url'] ?? '#');
+        } else {
+            $data['page_id'] = null;
+            $data['url'] = filled($data['url'] ?? null) ? $data['url'] : '#';
+        }
 
         return $data;
     }

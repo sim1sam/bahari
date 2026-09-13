@@ -89,6 +89,7 @@ return [
             'icon' => 'fas fa-cog',
             'items' => [
                 'homepage',
+                'pages',
                 'settings_branding',
                 'settings_watermark',
                 'settings_footer',

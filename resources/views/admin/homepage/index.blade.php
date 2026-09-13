@@ -9,7 +9,7 @@
             <div>
                 <span class="settings-eyebrow">Settings</span>
                 <h2>Homepage</h2>
-                <p>Manage hero sliders, banners, trust features, footer links, and newsletter subscribers.</p>
+                <p>Manage hero sliders, banners, trust features, footer links, pages, and newsletter subscribers.</p>
                 <div class="settings-hero-meta">
                     <span class="settings-hero-chip"><i class="fas fa-images"></i> {{ $sliderCount }} slider{{ $sliderCount === 1 ? '' : 's' }}</span>
                     <span class="settings-hero-chip"><i class="fas fa-envelope"></i> {{ $subscriberCount }} subscriber{{ $subscriberCount === 1 ? '' : 's' }}</span>
@@ -90,6 +90,12 @@
                 <h5>Footer Links</h5>
                 <p class="settings-module-count">{{ $footerLinkCount }} link{{ $footerLinkCount === 1 ? '' : 's' }}</p>
                 <a href="{{ route('admin.homepage.footer-links.index') }}" class="btn btn-secondary btn-sm mt-auto">Manage</a>
+            </article>
+            <article class="settings-module-card">
+                <span class="settings-module-icon settings-module-icon--features"><i class="fas fa-file-alt"></i></span>
+                <h5>Pages</h5>
+                <p class="settings-module-count">{{ $pageCount }} page{{ $pageCount === 1 ? '' : 's' }}</p>
+                <a href="{{ route('admin.pages.index') }}" class="btn btn-info btn-sm mt-auto">Manage</a>
             </article>
             <article class="settings-module-card">
                 <span class="settings-module-icon settings-module-icon--newsletter"><i class="fas fa-envelope"></i></span>

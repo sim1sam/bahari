@@ -47,12 +47,14 @@ class HomepageContentService
 
     public function footerLinks(string $group): array
     {
-        return Cache::remember("footer_links_{$group}", 3600, function () use ($group) {
+        // v3: page-aware URLs (busts old cached "#" support links)
+        return Cache::remember("footer_links_v3_{$group}", 3600, function () use ($group) {
             return FooterLink::active()
+                ->with('page')
                 ->where('group', $group)
                 ->orderBy('sort_order')
                 ->get()
-                ->map(fn ($l) => ['label' => $l->label, 'url' => $l->url])
+                ->map(fn ($l) => ['label' => $l->label, 'url' => $l->resolvedUrl()])
                 ->all();
         });
     }
@@ -63,8 +65,11 @@ class HomepageContentService
         Cache::forget('homepage_banners');
         Cache::forget(self::BANNERS_CACHE_KEY);
         Cache::forget('homepage_features');
-        Cache::forget('footer_links_shop');
-        Cache::forget('footer_links_support');
-        Cache::forget('footer_links_legal');
+
+        foreach (['shop', 'support', 'legal'] as $group) {
+            Cache::forget("footer_links_{$group}");
+            Cache::forget("footer_links_v2_{$group}");
+            Cache::forget("footer_links_v3_{$group}");
+        }
     }
 }
