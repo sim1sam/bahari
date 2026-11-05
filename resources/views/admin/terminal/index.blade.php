@@ -74,12 +74,14 @@
                     @php
                         $iconClass = match ($tool['key']) {
                             'database_migration' => 'terminal-tool-icon--migration',
+                            'cache_clear' => 'terminal-tool-icon--cache',
                             'npm_build' => 'terminal-tool-icon--build',
                             'storage_link' => 'terminal-tool-icon--storage',
                             default => 'terminal-tool-icon--migration',
                         };
                         $btnClass = match ($tool['key']) {
                             'database_migration' => 'btn-primary',
+                            'cache_clear' => 'btn-warning',
                             'npm_build' => 'btn-info',
                             'storage_link' => 'btn-success',
                             default => 'btn-primary',

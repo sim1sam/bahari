@@ -16,6 +16,11 @@ class ApiReceivedCategoryService
             return null;
         }
 
+        // Never create payment / finance labels as product categories.
+        if (Category::isNonProductName($name)) {
+            return null;
+        }
+
         $existing = Category::query()
             ->where(function ($query) use ($name) {
                 $query->where('name', $name)
@@ -24,7 +29,11 @@ class ApiReceivedCategoryService
             ->first();
 
         if ($existing) {
-            return $existing;
+            if ($existing->isNonProduct() && $existing->is_active) {
+                $existing->update(['is_active' => false]);
+            }
+
+            return $existing->isNonProduct() ? null : $existing;
         }
 
         return Category::create([
@@ -39,11 +48,15 @@ class ApiReceivedCategoryService
     {
         $categoryName = trim((string) $categoryName);
 
-        if ($categoryName === '') {
+        if ($categoryName === '' || Category::isNonProductName($categoryName)) {
             return;
         }
 
         $category = $this->register($categoryName);
+
+        if (! $category) {
+            return;
+        }
         $stored = $item->getAttributes();
         $updates = [];
 

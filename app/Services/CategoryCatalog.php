@@ -210,9 +210,11 @@ class CategoryCatalog
     }
 
     /**
+     * Product categories for the header menu (max 8).
+     *
      * @return array<int, array{slug: string, name: string}>
      */
-    private function navigationCategories(): array
+    private function navigationCategories(int $limit = 8): array
     {
         if ($this->usesDatabase()) {
             return Category::query()
@@ -220,13 +222,8 @@ class CategoryCatalog
                 ->where('is_sale', false)
                 ->orderBy('sort_order')
                 ->get(['slug', 'name'])
-                ->reject(function (Category $cat) {
-                    $slug = strtolower((string) $cat->slug);
-                    $name = strtolower(trim((string) $cat->name));
-
-                    return in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
-                        || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true);
-                })
+                ->reject(fn (Category $cat) => $this->shouldHideFromNav($cat->slug, $cat->name))
+                ->take($limit)
                 ->map(fn (Category $cat) => [
                     'slug' => $cat->slug,
                     'name' => $cat->name,
@@ -237,19 +234,29 @@ class CategoryCatalog
 
         return collect($this->categories())
             ->reject(function (array $category) {
-                $slug = strtolower((string) ($category['slug'] ?? ''));
-                $name = strtolower(trim((string) ($category['name'] ?? '')));
-
                 return ($category['filter'] ?? null) === 'sale'
-                    || in_array($slug, ['sale', 'new', 'new-in', 'new-arrivals'], true)
-                    || in_array($name, ['sale', 'new', 'new in', 'new arrivals'], true);
+                    || $this->shouldHideFromNav($category['slug'] ?? '', $category['name'] ?? '');
             })
+            ->take($limit)
             ->map(fn (array $category) => [
                 'slug' => $category['slug'],
                 'name' => $category['name'],
             ])
             ->values()
             ->all();
+    }
+
+    private function shouldHideFromNav(string $slug, string $name): bool
+    {
+        $slugKey = strtolower(trim($slug));
+        $nameKey = strtolower(trim($name));
+
+        if (in_array($slugKey, ['sale', 'new', 'new-in', 'new-arrivals'], true)
+            || in_array($nameKey, ['sale', 'new', 'new in', 'new arrivals'], true)) {
+            return true;
+        }
+
+        return Category::isNonProductName($slug) || Category::isNonProductName($name);
     }
 
     private function categories(): array

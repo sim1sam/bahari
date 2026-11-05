@@ -279,6 +279,12 @@ return [
         'route' => 'admin.migration.index',
         'active' => 'admin.migration.*',
     ],
+    'cache_clear' => [
+        'label' => 'Cache Clear',
+        'icon' => 'fas fa-broom',
+        'route' => 'admin.cache-clear.index',
+        'active' => 'admin.cache-clear.*',
+    ],
     'npm_build' => [
         'label' => 'NPM Build',
         'icon' => 'fas fa-code',

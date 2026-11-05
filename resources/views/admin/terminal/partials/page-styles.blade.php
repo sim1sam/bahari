@@ -46,6 +46,7 @@
     }
 
     .terminal-tool-icon--migration { background: #eff6ff; color: #2563eb; }
+    .terminal-tool-icon--cache { background: #fffbeb; color: #d97706; }
     .terminal-tool-icon--build { background: #f5f3ff; color: #7c3aed; }
     .terminal-tool-icon--storage { background: #ecfdf5; color: #059669; }
 

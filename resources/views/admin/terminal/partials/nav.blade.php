@@ -5,6 +5,9 @@
     <a href="{{ route('admin.migration.index') }}" class="settings-nav-link @if (request()->routeIs('admin.migration.*')) active @endif">
         <i class="fas fa-database"></i> Migration
     </a>
+    <a href="{{ route('admin.cache-clear.index') }}" class="settings-nav-link @if (request()->routeIs('admin.cache-clear.*')) active @endif">
+        <i class="fas fa-broom"></i> Cache Clear
+    </a>
     <a href="{{ route('admin.frontend-build.index') }}" class="settings-nav-link @if (request()->routeIs('admin.frontend-build.*')) active @endif">
         <i class="fas fa-code"></i> NPM Build
     </a>

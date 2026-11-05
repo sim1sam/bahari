@@ -36,6 +36,18 @@ class TerminalController extends Controller
             ];
         }
 
+        if ($user->canAccessAdminFeature('cache_clear')) {
+            $tools[] = [
+                'key' => 'cache_clear',
+                'label' => $features['cache_clear']['label'],
+                'icon' => $features['cache_clear']['icon'],
+                'route' => $features['cache_clear']['route'],
+                'description' => 'Clear cache, views, routes, and config after deploying updates.',
+                'status' => 'ready',
+                'status_label' => 'Ready',
+            ];
+        }
+
         if ($user->canAccessAdminFeature('npm_build')) {
             $buildStatus = $frontendBuild->status();
             $tools[] = [

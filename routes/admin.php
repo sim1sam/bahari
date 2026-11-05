@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\NewsletterSubscriberController;
 use App\Models\User;
 use App\Http\Controllers\Admin\FrontendBuildController;
+use App\Http\Controllers\Admin\CacheClearController;
 use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTransferSettingController;
@@ -260,6 +261,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.feature:database_migration')->group(function () {
             Route::get('migration', [MigrationController::class, 'index'])->name('migration.index');
             Route::post('migration', [MigrationController::class, 'store'])->name('migration.store');
+        });
+
+        Route::middleware('admin.feature:cache_clear')->group(function () {
+            Route::get('cache-clear', [CacheClearController::class, 'index'])->name('cache-clear.index');
+            Route::post('cache-clear', [CacheClearController::class, 'store'])->name('cache-clear.store');
         });
 
         Route::middleware('admin.feature:npm_build')->group(function () {

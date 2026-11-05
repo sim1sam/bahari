@@ -138,11 +138,11 @@
             />
         </div>
 
-        <nav class="hidden lg:flex items-center gap-8 pb-4 border-t border-border pt-4 -mt-px">
+        <nav class="hidden lg:flex items-center gap-5 xl:gap-7 pb-4 border-t border-border pt-4 -mt-px overflow-x-auto">
             @foreach ($navLinks as $link)
                 <a
                     href="{{ $link['href'] }}"
-                    class="text-sm font-medium transition-colors {{ $link['active'] ? 'text-brand-600' : 'text-ink-muted hover:text-brand-600' }}"
+                    class="shrink-0 whitespace-nowrap text-sm font-medium transition-colors {{ $link['active'] ? 'text-brand-600' : 'text-ink-muted hover:text-brand-600' }}"
                 >
                     {{ $link['label'] }}
                 </a>

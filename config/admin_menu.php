@@ -114,6 +114,7 @@ return [
             'items' => [
                 'terminal',
                 'database_migration',
+                'cache_clear',
                 'npm_build',
                 'storage_link',
             ],
