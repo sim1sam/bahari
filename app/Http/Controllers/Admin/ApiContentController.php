@@ -533,4 +533,5 @@ class ApiContentController extends Controller
 
         $item->delete();
     }
+
 }

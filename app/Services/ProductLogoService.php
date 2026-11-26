@@ -63,7 +63,17 @@ class ProductLogoService
         imagealphablending($base, true);
         imagesavealpha($base, true);
 
-        // CRM order: logo → hashtags/sizes bar → price tag
+        // Bulk hashtag bar sits at the image bottom; crop to card 3:4 first so object-top won't hide it.
+        $willDrawHashtagBar = filled(trim((string) $brand))
+            || filled(trim((string) $hashtags))
+            || filled(trim((string) $sizes));
+        if ($willDrawHashtagBar) {
+            $base = $this->normalizeToCardAspect($base);
+            imagealphablending($base, true);
+            imagesavealpha($base, true);
+        }
+
+        // CRM order: logo → hashtags/sizes bar (bulk only) → price tag
         $baseW = imagesx($base);
         $baseH = imagesy($base);
         $logoW = imagesx($logo);
@@ -126,7 +136,48 @@ class ProductLogoService
     }
 
     /**
-     * CRM-style bottom bar: #brand + hashtags, then size lines.
+     * Crop to 3:4 like the product card (keep top / center sides) before overlays.
+     *
+     * @param  \GdImage|resource  $image
+     * @return \GdImage|resource
+     */
+    private function normalizeToCardAspect($image)
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        if ($width < 1 || $height < 1) {
+            return $image;
+        }
+
+        $targetRatio = 3 / 4; // width ÷ height
+        $currentRatio = $width / $height;
+
+        if (abs($currentRatio - $targetRatio) < 0.01) {
+            return $image;
+        }
+
+        if ($currentRatio < $targetRatio) {
+            // Taller than card → crop bottom (card uses object-top).
+            $newHeight = max(1, (int) round($width / $targetRatio));
+            $cropped = imagecreatetruecolor($width, $newHeight);
+            imagecopy($cropped, $image, 0, 0, 0, 0, $width, $newHeight);
+            imagedestroy($image);
+
+            return $cropped;
+        }
+
+        // Wider than card → crop sides, keep center.
+        $newWidth = max(1, (int) round($height * $targetRatio));
+        $srcX = (int) round(($width - $newWidth) / 2);
+        $cropped = imagecreatetruecolor($newWidth, $height);
+        imagecopy($cropped, $image, 0, 0, $srcX, 0, $newWidth, $height);
+        imagedestroy($image);
+
+        return $cropped;
+    }
+
+    /**
+     * CRM-style bottom bar: #brand + hashtags, then size lines (bulk uploads).
      *
      * @param  \GdImage|resource  $image
      */
@@ -176,15 +227,19 @@ class ProductLogoService
         $areaHeightPercent = min(30, 10 + ($lineCount * 8));
         $oldAreaHeight = (int) (($height * $areaHeightPercent) / 100);
         $oldPadding = max(0, ($oldAreaHeight - $totalHeight) / 2);
-        $newPadding = max(1, (int) ($oldPadding * 0.2));
+        $newPadding = max(4, (int) ($oldPadding * 0.35));
         $areaHeight = $totalHeight + (2 * $newPadding);
+        // Sit at the image bottom (CRM). Storefront Add-to-Cart is a separate overlay.
         $areaY = max(0, $height - $areaHeight);
         $areaX = 0;
         $areaWidth = $width;
 
-        // Semi-transparent black bar (CRM default opacity 80%).
-        $bg = imagecolorallocatealpha($image, 0, 0, 0, (int) (127 * (100 - 80) / 100));
-        imagefilledrectangle($image, $areaX, $areaY, $areaX + $areaWidth, $areaY + $areaHeight, $bg);
+        // Solid black layer + merge — JPEG-safe (allocatealpha often fails on JPG bases).
+        $overlay = imagecreatetruecolor($areaWidth, $areaHeight);
+        $black = imagecolorallocate($overlay, 0, 0, 0);
+        imagefilledrectangle($overlay, 0, 0, $areaWidth, $areaHeight, $black);
+        imagecopymerge($image, $overlay, $areaX, $areaY, 0, 0, $areaWidth, $areaHeight, 80);
+        imagedestroy($overlay);
 
         $white = imagecolorallocate($image, 255, 255, 255);
         $startY = $areaY + $newPadding;
