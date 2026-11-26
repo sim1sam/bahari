@@ -213,9 +213,15 @@
                     </div>
 
                     <div class="form-group mb-3">
+                        <label>Hashtags</label>
+                        <input type="text" name="hashtags" class="form-control" value="{{ old('hashtags') }}" placeholder="newarrival sale festive">
+                        <small class="text-muted">CRM-style: brand becomes <code>#brand</code> plus these tags on the image bottom bar.</small>
+                    </div>
+
+                    <div class="form-group mb-3">
                         <label>Size Details</label>
-                        <textarea name="sizes" id="sizes-field" class="form-control" rows="2" placeholder="XS, S, M, L, XL — or one per line">{{ old('sizes') }}</textarea>
-                        <small class="text-muted">Comma or line separated. Applied to every product in this batch.</small>
+                        <textarea name="sizes" id="sizes-field" class="form-control" rows="2" placeholder="Size: XS(36) - XL(44) — or one size per line">{{ old('sizes') }}</textarea>
+                        <small class="text-muted">Shown on the image bottom bar with hashtags (CRM style). Also saved on each product.</small>
                     </div>
 
                     <div class="form-group mb-3">

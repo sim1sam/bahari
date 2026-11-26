@@ -13,8 +13,14 @@ class ProductLogoService
 {
     public function __construct(private MediaStorageService $media) {}
 
-    public function applyLogoToReceivedItem(string $sourceImage, ?string $logoPath = null, ?float $price = null): string
-    {
+    public function applyLogoToReceivedItem(
+        string $sourceImage,
+        ?string $logoPath = null,
+        ?float $price = null,
+        ?string $brand = null,
+        ?string $hashtags = null,
+        ?string $sizes = null,
+    ): string {
         $logoPath = $logoPath ?? SiteSetting::current()->api_logo;
 
         if (! $logoPath) {
@@ -57,9 +63,7 @@ class ProductLogoService
         imagealphablending($base, true);
         imagesavealpha($base, true);
 
-        // Replace sender red price ribbon with site primary + white price text.
-        $this->rebrandPriceBanner($base, $price);
-
+        // CRM order: logo → hashtags/sizes bar → price tag
         $baseW = imagesx($base);
         $baseH = imagesy($base);
         $logoW = imagesx($logo);
@@ -84,6 +88,9 @@ class ProductLogoService
 
         imagedestroy($logo);
         imagedestroy($resizedLogo);
+
+        $this->addHashtagsAndSizes($base, $brand, $hashtags, $sizes);
+        $this->rebrandPriceBanner($base, $price);
 
         Storage::disk('public')->makeDirectory('api-received/processed');
         $extension = strtolower(pathinfo($basePath, PATHINFO_EXTENSION)) ?: 'jpg';
@@ -119,54 +126,227 @@ class ProductLogoService
     }
 
     /**
-     * Detect the top-right red price ribbon, paint it with the site primary color,
-     * and redraw the price in white in the same area.
+     * CRM-style bottom bar: #brand + hashtags, then size lines.
+     *
+     * @param  \GdImage|resource  $image
+     */
+    private function addHashtagsAndSizes($image, ?string $brand, ?string $hashtags, ?string $sizes): void
+    {
+        $brandHashtag = '';
+        $brand = trim((string) $brand);
+        if ($brand !== '') {
+            $brandHashtag = '#'.strtolower((string) preg_replace('/\s+/', '', $brand));
+        }
+
+        $hashtagLine = trim($brandHashtag.' '.$this->formatHashtagsFromField((string) $hashtags));
+        $sizeLines = array_values(array_filter(array_map(
+            'trim',
+            preg_split('/\r\n|\n|\r/', (string) $sizes) ?: []
+        )));
+
+        // Comma-only size lists → single line (CRM often uses one size summary line).
+        if ($sizeLines === [] && filled($sizes)) {
+            $sizeLines = [trim((string) $sizes)];
+        } elseif (count($sizeLines) === 1 && str_contains($sizeLines[0], ',')) {
+            // keep as one line
+        }
+
+        $lines = [];
+        if ($hashtagLine !== '') {
+            $lines[] = $hashtagLine;
+        }
+        foreach ($sizeLines as $line) {
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        if ($lines === []) {
+            return;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $fontSize = max(12, (int) ($width / 30) + 2);
+        $fontPath = $this->resolveRegularFontPath();
+        $lineHeight = $fontPath ? ($fontSize + 8) : (imagefontheight(5) + 8);
+        $lineCount = count($lines);
+        $totalHeight = $lineCount * $lineHeight;
+
+        $areaHeightPercent = min(30, 10 + ($lineCount * 8));
+        $oldAreaHeight = (int) (($height * $areaHeightPercent) / 100);
+        $oldPadding = max(0, ($oldAreaHeight - $totalHeight) / 2);
+        $newPadding = max(1, (int) ($oldPadding * 0.2));
+        $areaHeight = $totalHeight + (2 * $newPadding);
+        $areaY = max(0, $height - $areaHeight);
+        $areaX = 0;
+        $areaWidth = $width;
+
+        // Semi-transparent black bar (CRM default opacity 80%).
+        $bg = imagecolorallocatealpha($image, 0, 0, 0, (int) (127 * (100 - 80) / 100));
+        imagefilledrectangle($image, $areaX, $areaY, $areaX + $areaWidth, $areaY + $areaHeight, $bg);
+
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $startY = $areaY + $newPadding;
+
+        foreach ($lines as $index => $line) {
+            if ($fontPath && function_exists('imagettfbbox') && function_exists('imagettftext')) {
+                $bbox = imagettfbbox($fontSize, 0, $fontPath, $line);
+                $textWidth = abs(($bbox[4] ?? 0) - ($bbox[0] ?? 0));
+                $x = (int) ($areaX + (($areaWidth - $textWidth) / 2));
+                $y = (int) ($startY + ($index * $lineHeight) + $fontSize);
+                imagettftext($image, $fontSize, 0, $x, $y, $white, $fontPath, $line);
+            } else {
+                $charW = imagefontwidth(5);
+                $x = (int) ($areaX + (($areaWidth - (strlen($line) * $charW)) / 2));
+                $y = (int) ($startY + ($index * $lineHeight));
+                imagestring($image, 5, $x, $y, $line, $white);
+            }
+        }
+    }
+
+    private function formatHashtagsFromField(string $hashtags): string
+    {
+        $tags = array_filter(array_map('trim', preg_split('/\s+/', $hashtags) ?: []));
+        $formatted = [];
+        foreach ($tags as $tag) {
+            if ($tag === '') {
+                continue;
+            }
+            $formatted[] = str_starts_with($tag, '#') ? $tag : '#'.$tag;
+        }
+
+        return implode(' ', $formatted);
+    }
+
+    /**
+     * Draw the CRM content-processing price tag (same size/position rules).
+     * Covers any existing red ribbon first, then paints the rounded BDT tag.
      *
      * @param  \GdImage|resource  $image
      */
     private function rebrandPriceBanner($image, ?float $price): void
     {
-        $box = $this->detectRedPriceBanner($image);
-
-        // Fresh product photos have no red ribbon — draw a site-color price card.
-        if ($box === null) {
-            if ($price === null || $price <= 0) {
-                return;
-            }
-            $box = $this->defaultPriceBannerBox($image);
-        }
-
-        [$r, $g, $b] = $this->primaryRgb();
-        $fill = imagecolorallocate($image, $r, $g, $b);
-        imagefilledrectangle($image, $box['x1'], $box['y1'], $box['x2'], $box['y2'], $fill);
-
         if ($price === null || $price <= 0) {
             return;
         }
 
-        $this->drawWhitePriceText($image, $box, $this->formatBannerPrice($price));
+        [$r, $g, $b] = $this->primaryRgb();
+        $fill = imagecolorallocate($image, $r, $g, $b);
+
+        // Cover sender ribbon (if any) so leftovers never show through.
+        $detected = $this->detectRedPriceBanner($image);
+        if ($detected !== null) {
+            imagefilledrectangle(
+                $image,
+                $detected['x1'],
+                $detected['y1'],
+                $detected['x2'],
+                $detected['y2'],
+                $fill
+            );
+        }
+
+        $this->addCrmStylePriceTag($image, $this->formatBannerPrice($price));
     }
 
     /**
-     * Top-right price card used when the source image has no existing ribbon.
+     * Same algorithm as CRM ImageProcessingService::addPriceTag —
+     * text-sized rounded pill, right-aligned, ~10% from top.
      *
      * @param  \GdImage|resource  $image
-     * @return array{x1:int,y1:int,x2:int,y2:int}
      */
-    private function defaultPriceBannerBox($image): array
+    private function addCrmStylePriceTag($image, string $priceText): void
     {
         $width = imagesx($image);
         $height = imagesy($image);
-        $bannerW = max(90, (int) round($width * 0.28));
-        $bannerH = max(28, (int) round($height * 0.07));
-        $margin = max(8, (int) round($width * 0.02));
+        $fontSize = max(14, (int) ($width / 25));
+        $fontPath = $this->resolveBoldFontPath();
+        $padding = (int) ($width / 40);
+        $positionY = 10; // CRM default: 10% from top
+        [$fillR, $fillG, $fillB] = $this->primaryRgb();
 
-        return [
-            'x1' => max(0, $width - $bannerW - $margin),
-            'y1' => $margin,
-            'x2' => $width - $margin,
-            'y2' => $margin + $bannerH,
-        ];
+        $lines = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $priceText)))));
+        if ($lines === []) {
+            return;
+        }
+
+        $maxTextW = 0;
+        $lineHeights = [];
+        foreach ($lines as $line) {
+            if ($fontPath && function_exists('imagettfbbox')) {
+                $bbox = imagettfbbox($fontSize, 0, $fontPath, $line);
+                $lineW = abs(($bbox[4] ?? 0) - ($bbox[0] ?? 0));
+                $lineH = abs(($bbox[5] ?? 0) - ($bbox[1] ?? 0));
+            } else {
+                $lineW = strlen($line) * imagefontwidth(5);
+                $lineH = imagefontheight(5);
+            }
+            $maxTextW = max($maxTextW, $lineW);
+            $lineHeights[] = $lineH;
+        }
+
+        $lineSpacing = (int) ($fontSize * 0.3);
+        $totalTextH = array_sum($lineHeights) + ($lineSpacing * (count($lines) - 1));
+        $tagW = (int) ($maxTextW + ($padding * 4));
+        $tagH = (int) ($totalTextH + ($padding * 2));
+        $tagY = (int) (($height * $positionY) / 100);
+        $tagX = $width - $tagW;
+
+        if ($tagX < 0) {
+            $tagX = 10;
+        }
+        if ($tagX + $tagW > $width) {
+            $tagX = max(0, $width - $tagW - 10);
+        }
+        if ($tagY < 0) {
+            $tagY = 10;
+        }
+        if ($tagY + $tagH > $height) {
+            $tagY = max(0, $height - $tagH - 10);
+        }
+
+        $this->drawRoundedRectangle($image, $tagX, $tagY, $tagW, $tagH, [$fillR, $fillG, $fillB], 10);
+
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $currentY = $tagY + $padding;
+        foreach ($lines as $index => $line) {
+            $lineH = $lineHeights[$index];
+            if ($fontPath && function_exists('imagettfbbox') && function_exists('imagettftext')) {
+                $bbox = imagettfbbox($fontSize, 0, $fontPath, $line);
+                $lineW = abs(($bbox[4] ?? 0) - ($bbox[0] ?? 0));
+                $textX = (int) ($tagX + ($tagW / 2) - ($lineW / 2));
+                $textY = (int) ($currentY + $lineH);
+                imagettftext($image, $fontSize, 0, $textX, $textY, $white, $fontPath, $line);
+            } else {
+                $lineW = strlen($line) * imagefontwidth(5);
+                $textX = (int) ($tagX + ($tagW / 2) - ($lineW / 2));
+                imagestring($image, 5, $textX, (int) $currentY, $line, $white);
+            }
+            $currentY += $lineH + $lineSpacing;
+        }
+    }
+
+    /**
+     * @param  \GdImage|resource  $image
+     * @param  array{0:int,1:int,2:int}  $color
+     */
+    private function drawRoundedRectangle($image, int $x, int $y, int $width, int $height, array $color, int $radius): void
+    {
+        $bg = imagecolorallocate($image, $color[0], $color[1], $color[2]);
+
+        if ($radius <= 0) {
+            imagefilledrectangle($image, $x, $y, $x + $width, $y + $height, $bg);
+
+            return;
+        }
+
+        imagefilledrectangle($image, $x + $radius, $y, $x + $width - $radius, $y + $height, $bg);
+        imagefilledrectangle($image, $x, $y + $radius, $x + $width, $y + $height - $radius, $bg);
+        imagefilledellipse($image, $x + $radius, $y + $radius, $radius * 2, $radius * 2, $bg);
+        imagefilledellipse($image, $x + $width - $radius, $y + $radius, $radius * 2, $radius * 2, $bg);
+        imagefilledellipse($image, $x + $radius, $y + $height - $radius, $radius * 2, $radius * 2, $bg);
+        imagefilledellipse($image, $x + $width - $radius, $y + $height - $radius, $radius * 2, $radius * 2, $bg);
     }
 
     /**
@@ -413,22 +593,38 @@ class ProductLogoService
 
     private function resolveBoldFontPath(): ?string
     {
-        $candidates = [
-            // Prefer Trebuchet MS for the price ribbon.
+        return $this->firstReadableFont([
             resource_path('fonts/trebucbd.ttf'),
             resource_path('fonts/trebuc.ttf'),
             'C:/Windows/Fonts/trebucbd.ttf',
             'C:/Windows/Fonts/TREBUCBD.TTF',
             'C:/Windows/Fonts/trebuc.ttf',
             'C:/Windows/Fonts/TREBUC.TTF',
-            // Fallbacks if Trebuchet is unavailable on the server.
             resource_path('fonts/DejaVuSans-Bold.ttf'),
             'C:/Windows/Fonts/arialbd.ttf',
             '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
             '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
             '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
-        ];
+        ]);
+    }
 
+    private function resolveRegularFontPath(): ?string
+    {
+        return $this->firstReadableFont([
+            resource_path('fonts/trebuc.ttf'),
+            resource_path('fonts/trebucbd.ttf'),
+            'C:/Windows/Fonts/trebuc.ttf',
+            'C:/Windows/Fonts/TREBUC.TTF',
+            'C:/Windows/Fonts/arial.ttf',
+            resource_path('fonts/DejaVuSans.ttf'),
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        ]) ?? $this->resolveBoldFontPath();
+    }
+
+    /** @param  array<int, string>  $candidates */
+    private function firstReadableFont(array $candidates): ?string
+    {
         foreach ($candidates as $path) {
             if (is_readable($path)) {
                 return $path;

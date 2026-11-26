@@ -80,6 +80,7 @@ class ProductBulkController extends Controller
             'brand_custom' => 'nullable|string|max:120',
             'ecommerce_category_id' => 'required|exists:categories,id',
             'sizes' => 'nullable|string|max:2000',
+            'hashtags' => 'nullable|string|max:2000',
             'stock' => 'nullable|integer|min:0',
             'images' => 'required|array|min:1',
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
@@ -112,7 +113,9 @@ class ProductBulkController extends Controller
             $indices = array_keys($validated['items'] ?? []);
         }
 
-        $sizes = $this->parseSizes($validated['sizes'] ?? null);
+        $sizesRaw = trim((string) ($validated['sizes'] ?? ''));
+        $hashtagsRaw = trim((string) ($validated['hashtags'] ?? ''));
+        $sizes = $this->parseSizes($sizesRaw !== '' ? $sizesRaw : null);
         $stock = (int) ($validated['stock'] ?? 100);
         $goLive = $request->boolean('go_live');
         $brand = $this->resolveBrandInput($request);
@@ -148,7 +151,14 @@ class ProductBulkController extends Controller
                 }
 
                 $originalPath = $this->media->storeUpload($imageFile, 'products/originals');
-                $processedPath = $this->logoService->applyLogoToReceivedItem($originalPath, null, $retail);
+                $processedPath = $this->logoService->applyLogoToReceivedItem(
+                    $originalPath,
+                    null,
+                    $retail,
+                    $brand !== '' ? $brand : null,
+                    $hashtagsRaw !== '' ? $hashtagsRaw : null,
+                    $sizesRaw !== '' ? $sizesRaw : null,
+                );
 
                 $shipping = ShippingCharge::find($shippingChargeId);
                 $name = $this->buildProductName($brand, $title, $shipping?->item_name, $index);
