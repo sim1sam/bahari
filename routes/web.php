@@ -85,13 +85,14 @@ Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wi
 Route::middleware(['auth', 'customer'])->group(function () {
     Route::delete('/wishlist/{slug}', [WishlistController::class, 'remove'])->name('wishlist.remove');
     Route::get('/wishlist', fn () => redirect()->route('account.wishlist'))->name('wishlist.index');
+});
+
+Route::middleware('guest.checkout')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/shipping-zone', [CartController::class, 'setShippingZone'])->name('cart.shipping-zone');
     Route::patch('/cart/{key}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{key}', [CartController::class, 'remove'])->name('cart.remove');
-});
 
-Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');

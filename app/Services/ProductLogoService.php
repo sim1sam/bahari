@@ -128,8 +128,12 @@ class ProductLogoService
     {
         $box = $this->detectRedPriceBanner($image);
 
+        // Fresh product photos have no red ribbon — draw a site-color price card.
         if ($box === null) {
-            return;
+            if ($price === null || $price <= 0) {
+                return;
+            }
+            $box = $this->defaultPriceBannerBox($image);
         }
 
         [$r, $g, $b] = $this->primaryRgb();
@@ -141,6 +145,28 @@ class ProductLogoService
         }
 
         $this->drawWhitePriceText($image, $box, $this->formatBannerPrice($price));
+    }
+
+    /**
+     * Top-right price card used when the source image has no existing ribbon.
+     *
+     * @param  \GdImage|resource  $image
+     * @return array{x1:int,y1:int,x2:int,y2:int}
+     */
+    private function defaultPriceBannerBox($image): array
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $bannerW = max(90, (int) round($width * 0.28));
+        $bannerH = max(28, (int) round($height * 0.07));
+        $margin = max(8, (int) round($width * 0.02));
+
+        return [
+            'x1' => max(0, $width - $bannerW - $margin),
+            'y1' => $margin,
+            'x2' => $width - $margin,
+            'y2' => $margin + $bannerH,
+        ];
     }
 
     /**

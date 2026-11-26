@@ -20,6 +20,9 @@
                 <a href="{{ route('admin.products.create') }}" class="btn btn-info">
                     <i class="fas fa-plus mr-1"></i> Create Product
                 </a>
+                <a href="{{ route('admin.products.bulk.create') }}" class="btn btn-primary">
+                    <i class="fas fa-layer-group mr-1"></i> Bulk Add
+                </a>
                 <a href="{{ route('admin.processed.index') }}" class="btn btn-light">
                     <i class="fas fa-check-circle mr-1"></i> Processed Product
                 </a>

@@ -337,6 +337,11 @@ class SiteSettingsService
         return $this->assetUrl($this->get()->api_logo);
     }
 
+    public function guestCheckoutEnabled(): bool
+    {
+        return (bool) ($this->get()->guest_checkout_enabled ?? false);
+    }
+
     public function shippingFeeInsideDhaka(): float
     {
         $settings = $this->get();

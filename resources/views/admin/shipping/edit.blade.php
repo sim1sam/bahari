@@ -8,6 +8,7 @@
         $insideFee = old('shipping_fee_inside_dhaka', $settings->shipping_fee_inside_dhaka ?? 80);
         $outsideFee = old('shipping_fee_outside_dhaka', $settings->shipping_fee_outside_dhaka ?? 150);
         $freeThreshold = old('free_shipping_threshold', $settings->free_shipping_threshold ?? 2000);
+        $guestCheckoutOn = (bool) old('guest_checkout_enabled', $settings->guest_checkout_enabled ?? false);
     @endphp
 
     <div class="settings-page">
@@ -146,6 +147,27 @@
                                     </div>
                                 </div>
                             </section>
+
+                            <section class="settings-form-panel mt-4 mb-0">
+                                <div class="settings-form-panel-head">
+                                    <span class="settings-form-panel-icon settings-form-panel-icon--shipping"><i class="fas fa-user-clock"></i></span>
+                                    <div>
+                                        <h4>Guest Checkout</h4>
+                                        <p>Allow customers to add to cart and place orders without signing in.</p>
+                                    </div>
+                                </div>
+                                <div class="settings-toggle-card {{ $guestCheckoutOn ? 'settings-toggle-card--on' : '' }}">
+                                    <div class="settings-toggle-copy">
+                                        <h5>Enable guest checkout</h5>
+                                        <p>When on, visitors can shop and checkout as guests. Login is still available if they prefer.</p>
+                                    </div>
+                                    <label class="settings-toggle" for="guest_checkout_enabled">
+                                        <input type="checkbox" class="settings-toggle-input" id="guest_checkout_enabled" name="guest_checkout_enabled" value="1" @checked($guestCheckoutOn)>
+                                        <span class="settings-toggle-track"><span class="settings-toggle-thumb"></span></span>
+                                        <span class="settings-toggle-label">{{ $guestCheckoutOn ? 'Enabled' : 'Disabled' }}</span>
+                                    </label>
+                                </div>
+                            </section>
                         </div>
                         <div class="settings-card-footer">
                             <button type="submit" class="btn btn-info btn-lg">
@@ -170,6 +192,7 @@
                                 <li>The matching fee is added to the order total.</li>
                                 <li>Orders above the free shipping threshold pay ৳0 delivery.</li>
                                 <li>Admin manual orders also use these zone fees when recalculating totals.</li>
+                                <li>Turn on <strong>Guest Checkout</strong> so visitors can order without creating an account.</li>
                             </ul>
                         </div>
                     </div>
@@ -181,4 +204,17 @@
 
 @push('styles')
     @include('admin.settings.partials.page-styles')
+@endpush
+
+@push('scripts')
+<script>
+    document.querySelectorAll('.settings-toggle-input').forEach(function (input) {
+        input.addEventListener('change', function () {
+            var card = input.closest('.settings-toggle-card');
+            var label = card && card.querySelector('.settings-toggle-label');
+            if (card) card.classList.toggle('settings-toggle-card--on', input.checked);
+            if (label) label.textContent = input.checked ? 'Enabled' : 'Disabled';
+        });
+    });
+</script>
 @endpush

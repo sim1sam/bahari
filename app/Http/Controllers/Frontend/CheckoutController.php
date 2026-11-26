@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentBank;
 use App\Models\PaymentTransaction;
-use App\Models\User;
 use App\Services\CartService;
 use App\Services\FinancialTransactionService;
 use App\Services\MediaStorageService;
@@ -41,11 +40,25 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $user = $this->user();
-        $addresses = $user->addresses()->latest('is_default')->latest()->get();
-        $selectedAddress = old('address_id')
-            ? $addresses->firstWhere('id', (int) old('address_id'))
-            : $user->defaultAddress();
+        $user = Auth::user();
+        $isGuest = $user === null;
+        $addresses = $isGuest
+            ? collect()
+            : $user->addresses()->latest('is_default')->latest()->get();
+        $selectedAddress = $isGuest
+            ? null
+            : (old('address_id')
+                ? $addresses->firstWhere('id', (int) old('address_id'))
+                : $user->defaultAddress());
+
+        $checkoutDetails = [
+            'name' => $selectedAddress?->recipient_name ?? ($user?->name),
+            'email' => $user?->email,
+            'phone' => $selectedAddress?->phone,
+            'address' => $selectedAddress?->address_line,
+            'city' => $selectedAddress?->city,
+            'zip' => $selectedAddress?->zip,
+        ];
 
         $items = array_values($this->cart->items());
         $eventId = $this->metaCapi->newEventId();
@@ -70,14 +83,7 @@ class CheckoutController extends Controller
                 'value' => $trackingCart['total_value'],
                 'num_items' => $trackingCart['total_quantity'],
             ],
-            $this->metaCapi->userDataFromCustomer([
-                'name' => $selectedAddress?->recipient_name ?? $user->name,
-                'email' => $user->email,
-                'phone' => $selectedAddress?->phone,
-                'address' => $selectedAddress?->address_line,
-                'city' => $selectedAddress?->city,
-                'zip' => $selectedAddress?->zip,
-            ], $user->id),
+            $this->metaCapi->userDataFromCustomer($checkoutDetails, $user?->id),
             route('checkout.index'),
         );
 
@@ -95,27 +101,14 @@ class CheckoutController extends Controller
             'freeShippingAt' => $this->siteSettings->freeShippingThreshold(),
             'addresses' => $addresses,
             'selectedAddress' => $selectedAddress,
+            'isGuest' => $isGuest,
             'addressTypes' => CustomerAddress::types(),
             'banks' => PaymentBank::activeForCheckout(),
             'sslCommerzEnabled' => $this->siteSettings->sslCommerzConfigured(),
-            'checkoutDetails' => [
-                'name' => $selectedAddress?->recipient_name ?? $user->name,
-                'email' => $user->email,
-                'phone' => $selectedAddress?->phone,
-                'address' => $selectedAddress?->address_line,
-                'city' => $selectedAddress?->city,
-                'zip' => $selectedAddress?->zip,
-            ],
+            'checkoutDetails' => $checkoutDetails,
             'trackingEventId' => $eventId,
             'trackingCart' => $trackingCart,
-            'trackingUser' => TrackingPayload::userFields([
-                'name' => $selectedAddress?->recipient_name ?? $user->name,
-                'email' => $user->email,
-                'phone' => $selectedAddress?->phone,
-                'address' => $selectedAddress?->address_line,
-                'city' => $selectedAddress?->city,
-                'zip' => $selectedAddress?->zip,
-            ], $user->id),
+            'trackingUser' => TrackingPayload::userFields($checkoutDetails, $user?->id),
         ]);
     }
 
@@ -191,13 +184,13 @@ class CheckoutController extends Controller
             }
         }
 
-        $user = $this->user();
-        $selectedAddress = ! empty($validated['address_id'])
+        $user = Auth::user();
+        $selectedAddress = ($user && ! empty($validated['address_id']))
             ? $user->addresses()->whereKey($validated['address_id'])->first()
             : null;
         $isNewAddress = ($validated['address_mode'] ?? 'existing') === 'new' || ! $selectedAddress;
 
-        if ($isNewAddress && ($request->boolean('save_address') || ! $user->addresses()->exists())) {
+        if ($user && $isNewAddress && ($request->boolean('save_address') || ! $user->addresses()->exists())) {
             $makeDefault = $request->boolean('make_default') || ! $user->addresses()->exists();
 
             if ($makeDefault) {
@@ -408,11 +401,4 @@ class CheckoutController extends Controller
         );
     }
 
-    private function user(): User
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        return $user;
-    }
 }

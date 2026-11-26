@@ -40,16 +40,17 @@
                 enctype="multipart/form-data"
                 @submit="preparePaymentSubmit"
                 x-data="{
-                    mode: @js(old('address_mode', $selectedAddress ? 'existing' : 'new')),
+                    mode: @js(old('address_mode', ($isGuest ?? false) || ! $selectedAddress ? 'new' : 'existing')),
                     selectedId: @js((string) old('address_id', $selectedAddress?->id ?? '')),
                     addresses: @js($addressPayload),
+                    isGuest: @js((bool) ($isGuest ?? false)),
                     details: {
-                        name: @js(old('name', $checkoutDetails['name'])),
-                        email: @js(old('email', $checkoutDetails['email'])),
-                        phone: @js(old('phone', $checkoutDetails['phone'])),
-                        address: @js(old('address', $checkoutDetails['address'])),
-                        city: @js(old('city', $checkoutDetails['city'])),
-                        zip: @js(old('zip', $checkoutDetails['zip'])),
+                        name: @js(old('name', $checkoutDetails['name'] ?? '')),
+                        email: @js(old('email', $checkoutDetails['email'] ?? '')),
+                        phone: @js(old('phone', $checkoutDetails['phone'] ?? '')),
+                        address: @js(old('address', $checkoutDetails['address'] ?? '')),
+                        city: @js(old('city', $checkoutDetails['city'] ?? '')),
+                        zip: @js(old('zip', $checkoutDetails['zip'] ?? '')),
                     },
                     payment: @js(old('payment', 'cod')),
                     shippingZone: @js(old('shipping_zone', $shippingZone)),
@@ -169,7 +170,7 @@
                     addNewAddress() {
                         this.mode = 'new';
                         this.selectedId = '';
-                        this.details.name = @js(old('name', auth()->user()->name));
+                        this.details.name = @js(old('name', $checkoutDetails['name'] ?? ''));
                         this.details.phone = '';
                         this.details.address = '';
                         this.details.city = '';
@@ -260,44 +261,56 @@
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                 <div>
                                     <h2 class="text-lg font-semibold text-ink">Customer Details</h2>
-                                    <p class="mt-1 text-sm text-ink-muted">Choose a saved shipping address or add another one.</p>
+                                    <p class="mt-1 text-sm text-ink-muted">
+                                        @if ($isGuest ?? false)
+                                            Checkout as a guest — no account required.
+                                        @else
+                                            Choose a saved shipping address or add another one.
+                                        @endif
+                                    </p>
                                 </div>
-                                <a href="{{ route('account.addresses.index') }}" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Manage addresses</a>
+                                @if ($isGuest ?? false)
+                                    <a href="{{ route('login') }}" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Have an account? Sign in</a>
+                                @else
+                                    <a href="{{ route('account.addresses.index') }}" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Manage addresses</a>
+                                @endif
                             </div>
 
-                            @if ($addresses->isNotEmpty())
-                                <div class="mt-6 grid sm:grid-cols-2 gap-3">
-                                    @foreach ($addresses as $address)
-                                        <label class="relative block rounded-xl border border-border p-4 cursor-pointer transition-colors hover:border-brand-300 has-checked:border-brand-600 has-checked:bg-brand-50">
-                                            <input
-                                                type="radio"
-                                                value="{{ $address->id }}"
-                                                x-model="selectedId"
-                                                @change="useSavedAddress({{ $address->id }})"
-                                                class="absolute right-4 top-4 text-brand-600 focus:ring-brand-500"
-                                            >
-                                            <span class="inline-flex items-center gap-2 pr-8 text-sm font-semibold text-ink">
-                                                {{ $address->label ?: $address->typeLabel() }}
-                                                <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">{{ $address->typeLabel() }}</span>
-                                            </span>
-                                            @if ($address->is_default)
-                                                <span class="mt-2 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">Default</span>
-                                            @endif
-                                            <p class="mt-3 text-sm text-ink-muted">{{ $address->recipient_name }} · {{ $address->phone }}</p>
-                                            <p class="mt-1 text-sm text-ink">{{ $address->address_line }}, {{ $address->city }} {{ $address->zip }}</p>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
+                            @unless ($isGuest ?? false)
+                                @if ($addresses->isNotEmpty())
+                                    <div class="mt-6 grid sm:grid-cols-2 gap-3">
+                                        @foreach ($addresses as $address)
+                                            <label class="relative block rounded-xl border border-border p-4 cursor-pointer transition-colors hover:border-brand-300 has-checked:border-brand-600 has-checked:bg-brand-50">
+                                                <input
+                                                    type="radio"
+                                                    value="{{ $address->id }}"
+                                                    x-model="selectedId"
+                                                    @change="useSavedAddress({{ $address->id }})"
+                                                    class="absolute right-4 top-4 text-brand-600 focus:ring-brand-500"
+                                                >
+                                                <span class="inline-flex items-center gap-2 pr-8 text-sm font-semibold text-ink">
+                                                    {{ $address->label ?: $address->typeLabel() }}
+                                                    <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">{{ $address->typeLabel() }}</span>
+                                                </span>
+                                                @if ($address->is_default)
+                                                    <span class="mt-2 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">Default</span>
+                                                @endif
+                                                <p class="mt-3 text-sm text-ink-muted">{{ $address->recipient_name }} · {{ $address->phone }}</p>
+                                                <p class="mt-1 text-sm text-ink">{{ $address->address_line }}, {{ $address->city }} {{ $address->zip }}</p>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @endif
 
-                            <button
-                                type="button"
-                                class="mt-5 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink hover:border-brand-300 hover:text-brand-700 transition-colors"
-                                @click="addNewAddress()"
-                            >
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 6v12m6-6H6"/></svg>
-                                Add another address
-                            </button>
+                                <button
+                                    type="button"
+                                    class="mt-5 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink hover:border-brand-300 hover:text-brand-700 transition-colors"
+                                    @click="addNewAddress()"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 6v12m6-6H6"/></svg>
+                                    Add another address
+                                </button>
+                            @endunless
                         </div>
 
                         <div class="p-6 sm:p-8 bg-surface-elevated rounded-2xl border border-border">
@@ -327,28 +340,30 @@
                         <div class="p-6 sm:p-8 bg-surface-elevated rounded-2xl border border-border">
                             <h2 class="text-lg font-semibold text-ink">Shipping Address</h2>
                             <div class="grid gap-4 mt-6">
-                                <div x-show="mode === 'new'" x-cloak class="grid sm:grid-cols-2 gap-4 rounded-xl bg-brand-50/50 border border-brand-100 p-4">
-                                    <div>
-                                        <label for="address_type" class="block text-sm font-medium text-ink mb-1.5">Address type</label>
-                                        <select name="address_type" id="address_type" class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
-                                            @foreach ($addressTypes as $value => $label)
-                                                <option value="{{ $value }}" @selected(old('address_type', 'home') === $value)>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
+                                @unless ($isGuest ?? false)
+                                    <div x-show="mode === 'new'" x-cloak class="grid sm:grid-cols-2 gap-4 rounded-xl bg-brand-50/50 border border-brand-100 p-4">
+                                        <div>
+                                            <label for="address_type" class="block text-sm font-medium text-ink mb-1.5">Address type</label>
+                                            <select name="address_type" id="address_type" class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+                                                @foreach ($addressTypes as $value => $label)
+                                                    <option value="{{ $value }}" @selected(old('address_type', 'home') === $value)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="address_label" class="block text-sm font-medium text-ink mb-1.5">Label <span class="text-ink-muted">(optional)</span></label>
+                                            <input type="text" name="address_label" id="address_label" value="{{ old('address_label') }}" placeholder="Apartment, Branch, etc." class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+                                        </div>
+                                        <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
+                                            <input type="checkbox" name="save_address" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('save_address', true))>
+                                            Save this address for next checkout
+                                        </label>
+                                        <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
+                                            <input type="checkbox" name="make_default" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('make_default'))>
+                                            Make it my default shipping address
+                                        </label>
                                     </div>
-                                    <div>
-                                        <label for="address_label" class="block text-sm font-medium text-ink mb-1.5">Label <span class="text-ink-muted">(optional)</span></label>
-                                        <input type="text" name="address_label" id="address_label" value="{{ old('address_label') }}" placeholder="Apartment, Branch, etc." class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
-                                    </div>
-                                    <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
-                                        <input type="checkbox" name="save_address" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('save_address', true))>
-                                        Save this address for next checkout
-                                    </label>
-                                    <label class="sm:col-span-2 flex items-center gap-2 text-sm text-ink-muted">
-                                        <input type="checkbox" name="make_default" value="1" class="rounded border-border text-brand-600 focus:ring-brand-500" @checked(old('make_default'))>
-                                        Make it my default shipping address
-                                    </label>
-                                </div>
+                                @endunless
 
                                 <div>
                                     <label for="address" class="block text-sm font-medium text-ink mb-1.5">Street Address</label>

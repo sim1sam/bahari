@@ -26,7 +26,10 @@ class ShippingSettingsController extends Controller
             'shipping_fee_inside_dhaka' => 'required|numeric|min:0',
             'shipping_fee_outside_dhaka' => 'required|numeric|min:0',
             'free_shipping_threshold' => 'required|numeric|min:0',
+            'guest_checkout_enabled' => 'boolean',
         ]);
+
+        $validated['guest_checkout_enabled'] = $request->boolean('guest_checkout_enabled');
 
         $settings = SiteSetting::current();
         $settings->update($validated);

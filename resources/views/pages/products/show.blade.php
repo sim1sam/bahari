@@ -31,21 +31,27 @@
             <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
                 {{-- Gallery --}}
                 <div x-data="{ active: 0, images: @js($product['images']) }">
-                    <div class="relative aspect-[3/4] rounded-2xl overflow-hidden bg-brand-50 border border-border">
-                        <img
-                            :src="images[active]"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover object-top"
-                        >
+                    <div class="relative">
+                        <div class="relative aspect-[3/4] rounded-2xl overflow-hidden bg-brand-50 border border-border">
+                            <img
+                                :src="images[active]"
+                                alt=""
+                                class="w-full h-full object-cover object-top"
+                            >
+                        </div>
+                        {{-- Details page: bottom-right of image (same corner as product cards) --}}
                         <button
                             type="button"
-                            class="absolute top-3 right-3 z-20 inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/95 shadow-md ring-1 ring-black/5 text-brand-600 hover:bg-white hover:text-brand-700 hover:scale-105 transition-all"
-                            :class="$store.wishlist.has(@js($product['slug'])) ? 'text-brand-700 bg-brand-50 ring-brand-200' : ''"
+                            class="absolute z-[70] inline-flex h-12 w-12 items-center justify-center text-brand-600 hover:text-brand-700"
+                            style="bottom: 1rem; right: 0.75rem;"
+                            :class="$store.wishlist.has(@js($product['slug'])) ? 'text-brand-700' : ''"
                             @click="$store.wishlist.toggle(@js($product['slug']))"
+                            aria-label="Add to wishlist"
                             :aria-label="$store.wishlist.has(@js($product['slug'])) ? 'Remove from wishlist' : 'Add to wishlist'"
                             :aria-pressed="$store.wishlist.has(@js($product['slug'])) ? 'true' : 'false'"
                         >
-                            <svg class="w-6 h-6" :fill="$store.wishlist.has(@js($product['slug'])) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+                                 :fill="$store.wishlist.has(@js($product['slug'])) ? 'currentColor' : 'none'">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                             </svg>
                         </button>

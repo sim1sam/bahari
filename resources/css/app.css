@@ -478,3 +478,23 @@
         }
     }
 }
+
+/* Product card: mobile wishlist above full-width Add to Cart; desktop corner */
+.product-card-wishlist {
+    right: 4px;
+    bottom: 2.65rem; /* flush above compact Add to Cart on mobile */
+}
+
+.product-card-add {
+    padding-right: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .product-card-wishlist {
+        bottom: 12px; /* image bottom-right on desktop */
+    }
+
+    .product-card-add {
+        padding-right: 3.5rem; /* leave room for corner wishlist on hover */
+    }
+}

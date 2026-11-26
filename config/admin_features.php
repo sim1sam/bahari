@@ -24,13 +24,27 @@ return [
         'label' => 'Products',
         'icon' => 'fas fa-tshirt',
         'route' => 'admin.products.index',
-        'active' => 'admin.products.*',
+        'active' => 'admin.products.index|admin.products.create|admin.products.edit|admin.products.update|admin.products.store|admin.products.destroy|admin.products.destroy-batch',
+    ],
+    'products_bulk' => [
+        'label' => 'Bulk Add Products',
+        'icon' => 'fas fa-layer-group',
+        'route' => 'admin.products.bulk.create',
+        'active' => 'admin.products.bulk.*',
+        'permission' => 'products',
     ],
     'categories' => [
         'label' => 'Categories',
         'icon' => 'fas fa-tags',
         'route' => 'admin.categories.index',
         'active' => 'admin.categories.*',
+    ],
+    'shipping_charges' => [
+        'label' => 'Shipping Categories',
+        'icon' => 'fas fa-shipping-fast',
+        'route' => 'admin.shipping-charges.index',
+        'active' => 'admin.shipping-charges.*',
+        'permission' => 'products',
     ],
     'users' => [
         'label' => 'Users',

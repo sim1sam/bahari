@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.feature' => \App\Http\Middleware\CheckAdminFeature::class,
             'admin.activity' => \App\Http\Middleware\LogAdminActivity::class,
             'customer' => \App\Http\Middleware\CustomerMiddleware::class,
+            'guest.checkout' => \App\Http\Middleware\AllowGuestCheckout::class,
             'api.source' => \App\Http\Middleware\VerifyApiSource::class,
         ]);
 

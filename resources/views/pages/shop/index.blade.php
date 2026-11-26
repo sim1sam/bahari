@@ -189,7 +189,7 @@
                                 @click="slide(-1)"
                                 x-show="canLeft"
                                 x-cloak
-                                class="absolute left-0 top-1/2 z-20 -translate-y-1/2 -translate-x-1 sm:-translate-x-2 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 transition-colors"
+                                class="absolute left-0 top-1/2 z-[5] -translate-y-1/2 -translate-x-1 sm:-translate-x-2 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 transition-colors"
                                 aria-label="Previous products"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
@@ -199,7 +199,7 @@
                                 @click="slide(1)"
                                 x-show="canRight"
                                 x-cloak
-                                class="absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1 sm:translate-x-2 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 transition-colors"
+                                class="absolute right-0 top-1/2 z-[5] -translate-y-1/2 translate-x-1 sm:translate-x-2 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 transition-colors"
                                 aria-label="Next products"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
@@ -211,7 +211,7 @@
                                 class="shop-product-track shop-category-scroll flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory touch-pan-x"
                             >
                                 @foreach ($rowProducts as $product)
-                                    <div class="snap-start shrink-0 shop-product-slide" style="width: 240px; min-width: 240px;">
+                                    <div class="relative z-10 snap-start shrink-0 shop-product-slide" style="width: 240px; min-width: 240px;">
                                         <x-ecommerce.product-card
                                             :name="$product['name']"
                                             :price="$product['price']"

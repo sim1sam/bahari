@@ -15,7 +15,7 @@
 ])
 
 <article
-    {{ $attributes->merge(['class' => 'group relative flex flex-col w-full bg-surface-elevated rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all duration-300']) }}
+    {{ $attributes->merge(['class' => 'group relative flex flex-col w-full bg-surface-elevated rounded-2xl border border-border hover:shadow-lg hover:border-brand-200 transition-all duration-300']) }}
     @if ($slug)
         data-track-product
         data-product-id="{{ $slug }}"
@@ -29,78 +29,82 @@
         @if ($listName) data-list-name="{{ $listName }}" @endif
     @endif
 >
-    <div class="relative aspect-[3/4] bg-brand-50 overflow-hidden">
-        <a href="{{ $href }}" class="block w-full h-full">
-            @if ($image)
-                <img
-                    src="{{ $image }}"
-                    alt="{{ $name }}"
-                    class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-                >
-                <div class="hidden w-full h-full items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
-                    <svg class="w-14 h-14 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-            @else
-                <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
-                    <svg class="w-14 h-14 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+    <div class="relative">
+        <div class="relative aspect-[3/4] overflow-hidden rounded-t-2xl bg-brand-50">
+            <a href="{{ $href }}" class="block w-full h-full">
+                @if ($image)
+                    <img
+                        src="{{ $image }}"
+                        alt="{{ $name }}"
+                        class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                    >
+                    <div class="hidden w-full h-full items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
+                        <svg class="w-14 h-14 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                @else
+                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
+                        <svg class="w-14 h-14 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                @endif
+            </a>
+
+            @if ($badge)
+                <div class="absolute top-3 left-3 pointer-events-none z-10">
+                    <x-ui.badge :variant="$badgeVariant">{{ $badge }}</x-ui.badge>
                 </div>
             @endif
-        </a>
 
-        @if ($badge)
-            <div class="absolute top-3 left-3 pointer-events-none z-10">
-                <x-ui.badge :variant="$badgeVariant">{{ $badge }}</x-ui.badge>
-            </div>
-        @endif
+            @if ($slug)
+                {{-- Mobile: full-width cart; Desktop: hover reveal with space for corner wishlist --}}
+                <div class="product-card-add absolute inset-x-0 bottom-0 z-10 px-3 pb-2.5 pt-1.5 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-transform duration-300">
+                    <form
+                        action="{{ route('cart.add') }}"
+                        method="POST"
+                        x-data
+                        @click.stop
+                        @submit.prevent="window.dispatchEvent(new CustomEvent('cart:add', { detail: { form: $el } }))"
+                        data-track-add-to-cart
+                        data-product-id="{{ $slug }}"
+                        data-slug="{{ $slug }}"
+                        data-product-sku="{{ $slug }}"
+                        data-product-name="{{ $name }}"
+                        data-product-price="{{ $price }}"
+                        data-product-type="{{ $category }}"
+                        data-product-brand="{{ $brand ?? config('app.name') }}"
+                        data-quantity="1"
+                    >
+                        @csrf
+                        <input type="hidden" name="slug" value="{{ $slug }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="w-full py-1.5 rounded-lg bg-brand-700/95 text-white text-xs font-medium backdrop-blur-sm hover:bg-brand-800 transition-colors">
+                            Add to Cart
+                        </button>
+                    </form>
+                </div>
 
-        @if ($slug)
-            <button
-                type="button"
-                class="absolute top-2.5 right-2.5 z-20 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/95 shadow-md ring-1 ring-black/5 text-brand-600 hover:bg-white hover:text-brand-700 hover:scale-105 transition-all"
-                :class="$store.wishlist.has(@js($slug)) ? 'text-brand-700 bg-brand-50 ring-brand-200' : ''"
-                @click.stop.prevent="$store.wishlist.toggle(@js($slug))"
-                :aria-label="$store.wishlist.has(@js($slug)) ? 'Remove from wishlist' : 'Add to wishlist'"
-                :aria-pressed="$store.wishlist.has(@js($slug)) ? 'true' : 'false'"
-            >
-                <svg class="w-5 h-5" :fill="$store.wishlist.has(@js($slug)) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                </svg>
-            </button>
-        @endif
-
-        @if ($slug)
-            <div class="absolute inset-x-0 bottom-0 p-3 z-10 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-transform duration-300">
-                <form
-                    action="{{ route('cart.add') }}"
-                    method="POST"
-                    x-data
-                    @click.stop
-                    @submit.prevent="window.dispatchEvent(new CustomEvent('cart:add', { detail: { form: $el } }))"
-                    data-track-add-to-cart
-                    data-product-id="{{ $slug }}"
-                    data-slug="{{ $slug }}"
-                    data-product-sku="{{ $slug }}"
-                    data-product-name="{{ $name }}"
-                    data-product-price="{{ $price }}"
-                    data-product-type="{{ $category }}"
-                    data-product-brand="{{ $brand ?? config('app.name') }}"
-                    data-quantity="1"
+                {{-- Mobile: above Add to Cart; Desktop: image bottom-right --}}
+                <button
+                    type="button"
+                    class="product-card-wishlist absolute z-50 inline-flex h-10 w-10 items-center justify-center text-brand-600 hover:text-brand-700"
+                    :class="$store.wishlist.has(@js($slug)) ? 'text-brand-700' : ''"
+                    @click.stop.prevent="$store.wishlist.toggle(@js($slug))"
+                    aria-label="Add to wishlist"
+                    :aria-label="$store.wishlist.has(@js($slug)) ? 'Remove from wishlist' : 'Add to wishlist'"
+                    :aria-pressed="$store.wishlist.has(@js($slug)) ? 'true' : 'false'"
                 >
-                    @csrf
-                    <input type="hidden" name="slug" value="{{ $slug }}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="w-full py-2.5 rounded-lg bg-brand-700/95 text-white text-sm font-medium backdrop-blur-sm hover:bg-brand-800 transition-colors">
-                        Add to Cart
-                    </button>
-                </form>
-            </div>
-        @endif
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+                         :fill="$store.wishlist.has(@js($slug)) ? 'currentColor' : 'none'">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </button>
+            @endif
+        </div>
     </div>
 
     <div class="p-4 flex flex-col flex-1">

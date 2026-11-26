@@ -62,31 +62,33 @@ class CartController extends Controller
     public function add(Request $request): RedirectResponse|JsonResponse
     {
         if (! Auth::check()) {
-            session()->put('url.intended', url()->previous() ?: route('home'));
+            if (! $this->settings->guestCheckoutEnabled()) {
+                session()->put('url.intended', url()->previous() ?: route('home'));
 
-            if ($request->expectsJson()) {
-                return response()->json(['redirect' => route('login')], 401);
+                if ($request->expectsJson()) {
+                    return response()->json(['redirect' => route('login')], 401);
+                }
+
+                return redirect()->route('login')->with('error', 'Please sign in before adding items to your cart.');
+            }
+        } else {
+            if (! Auth::user()->hasActiveRole()) {
+                Auth::logout();
+
+                if ($request->expectsJson()) {
+                    return response()->json(['redirect' => route('login')], 403);
+                }
+
+                return redirect()->route('login')->with('error', 'Your account role has been deactivated.');
             }
 
-            return redirect()->route('login')->with('error', 'Please sign in before adding items to your cart.');
-        }
+            if (Auth::user()->isAdmin()) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Please sign in with a customer account to add items to your cart.'], 403);
+                }
 
-        if (! Auth::user()->hasActiveRole()) {
-            Auth::logout();
-
-            if ($request->expectsJson()) {
-                return response()->json(['redirect' => route('login')], 403);
+                return redirect()->route('home')->with('error', 'Please sign in with a customer account to add items to your cart.');
             }
-
-            return redirect()->route('login')->with('error', 'Your account role has been deactivated.');
-        }
-
-        if (Auth::user()->isAdmin()) {
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'Please sign in with a customer account to add items to your cart.'], 403);
-            }
-
-            return redirect()->route('home')->with('error', 'Please sign in with a customer account to add items to your cart.');
         }
 
         $validated = $request->validate([

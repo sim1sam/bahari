@@ -47,7 +47,9 @@ return [
             'icon' => 'fas fa-box-open',
             'items' => [
                 'products',
+                'products_bulk',
                 'categories',
+                'shipping_charges',
                 'api_brands',
                 'api_content',
                 'api_processed',

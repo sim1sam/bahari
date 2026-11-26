@@ -32,7 +32,9 @@ use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderTransferSettingController;
 use App\Http\Controllers\Admin\PaymentBankController;
+use App\Http\Controllers\Admin\ProductBulkController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ShippingChargeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShippingSettingsController;
@@ -75,7 +77,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.feature:products')->group(function () {
             Route::delete('products/batch', [ProductController::class, 'destroyBatch'])->name('products.destroy-batch');
+            Route::get('products/bulk', [ProductBulkController::class, 'create'])->name('products.bulk.create');
+            Route::post('products/bulk', [ProductBulkController::class, 'store'])->name('products.bulk.store');
+            Route::get('products/bulk/calculate-prices', [ProductBulkController::class, 'calculatePrices'])->name('products.bulk.calculate-prices');
             Route::resource('products', ProductController::class)->except(['show']);
+        });
+
+        Route::middleware('admin.feature:products')->group(function () {
+            Route::get('shipping-charges', [ShippingChargeController::class, 'index'])->name('shipping-charges.index');
+            Route::post('shipping-charges', [ShippingChargeController::class, 'store'])->name('shipping-charges.store');
+            Route::put('shipping-charges/conversion-rate', [ShippingChargeController::class, 'updateConversionRate'])->name('shipping-charges.conversion-rate');
+            Route::put('shipping-charges/{shippingCharge}', [ShippingChargeController::class, 'update'])->name('shipping-charges.update');
+            Route::delete('shipping-charges/{shippingCharge}', [ShippingChargeController::class, 'destroy'])->name('shipping-charges.destroy');
         });
 
         Route::middleware('admin.feature:categories')->group(function () {
